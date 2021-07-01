@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    volumes:
+            - /tmp:/tmp
+            - ./logs:/var/logs
+            - ./browsing:/var/browsing:ro
+            - ./baresip:/var/baresip:ro
+    devices:
+            - /dev/video0:/dev/video0
+            - /dev/snd:/dev/snd
+    environment:
+      GW_ID: "0"     # used for virtual audio device mapping
+      BARESIP_CMD_FILE: "tcpJsonCmd.py" # Baresip control via remote TCP/JSON commands
+      SIP_ACCOUNT_FILE: "accounts" # SIP account for registering
+      BROWSE_FILE: "rendezvousJitsi.py" # python browsing based on Selenium
+      ROOM_NAME: "testRTCmediaGW" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
+    stop_grace_period: 20s
+
