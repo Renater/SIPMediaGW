@@ -12,7 +12,7 @@ Environment
 ### Virtual devices ###
 Example for 4 gateways, co-hosted on GW_server machine:
 
-1. **Audio**
+- **Audio**
 
 		sudo apt-get install linux-image-extra-virtual
 		echo "options snd-aloop enable=1,1,1,1,1,1,1,1 index=0,1,2,3,4,5,6,7" | sudo tee  /etc/modprobe.d/alsa-loopback.conf
@@ -20,7 +20,7 @@ Example for 4 gateways, co-hosted on GW_server machine:
 		sudo modprobe snd-aloop
 		
 
-2. **Video**
+- **Video**
 
 		sudo apt-get install v4l2loopback-utils
 		echo "options v4l2loopback devices=4 exclusive_caps=1,1,1,1" | sudo tee  /etc/modprobe.d/v4l2loopback.conf
@@ -49,23 +49,23 @@ A minimalist configuration is provided here: [turnserver.conf](docs/turnserver.c
 Configuration
 -----------
 
-* **/browsing**
+- **/browsing**
 
 	This directory contains browsing scripts (python/selenium) to enter in a room of a specific web conferencing service.
 	
-* **/baresip**
+- **/baresip**
 
 	This directory contains  Baresip (https://github.com/baresip/baresip) related configuration files:
 
-	1. config_default
+	- config_default
 
 		Defaulf baresip configuration file used as a template configuration by the gateway.
 		
-	2. tcpJsonCmd.py (+netstring.py)
+	- tcpJsonCmd.py (+netstring.py)
 
 		Remote controls baresip.
 		
-	2. accounts
+	- accounts
 
 		Where to specify the  SIP parameters of the gateway (URI, register, TURN... ).
 		
@@ -73,7 +73,7 @@ Configuration
 		
 			Displayname<sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
 			
-* **docker-compose.yml**
+- **docker-compose.yml**
 
 	The docker compose file, provided here with a single gateway configuration.
 	
@@ -81,7 +81,7 @@ Configuration
   
   >	 **_NOTE:_** A specific account file must be provided for each gateway.
 	
-* **entry_point.sh**
+- **entry_point.sh**
 
 	Docker entry point which is actually the SIP media gateway implementation.
 
