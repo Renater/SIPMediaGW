@@ -50,6 +50,9 @@ check_v4l2() {
 sudo killall -9 baresip Xvfb chrome chromedriver ffmpeg
 /etc/init.d/dbus start > /dev/null 2>&1
 
+# Cleanup to be "stateless" on startup (otherwise pulseaudio daemon can't start)
+rm -rf /var/run/pulse /var/lib/pulse /root/.config/pulse
+
 pulseaudio -D --verbose --exit-idle-time=-1 --system --disallow-exit
 
 HW0=$(( 2*$GW_ID ))
