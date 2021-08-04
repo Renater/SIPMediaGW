@@ -65,7 +65,7 @@ Configuration
 
 		Remote controls baresip.
 		
-	- accounts
+	- <a name="accounts">accounts</a>
 
 		Where to specify the  SIP parameters of the gateway (URI, register, TURN... ).
 		
@@ -96,7 +96,7 @@ Launch a gateway:
 
 	sudo docker-compose up
 	
-Once the gateway is running, a SIP endpoint can join the room by calling the gateway, through the SIP URI configurated in the account file.
+Once the gateway is running, a SIP endpoint can join the room by calling the gateway, through the SIP URI (sip:user@domain) configurated in the [account file](#accounts).
 	
 Troubleshoot
 --------
