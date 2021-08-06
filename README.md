@@ -32,9 +32,14 @@ Example for 4 gateways, co-hosted on GW_server machine:
 To be accessible from any SIP endpoint, the gateway needs SIP registering facilities.
 Kamailio is an open-source SIP server which can be easily installed (https://kamailio.org/docs/tutorials/devel/kamailio-install-guide-deb/).
 
-The SIP server must be accessible through a public IPv4 address.
-In a full self-hosted approach,  the SIP server should be in the same private network (+NAT) as GW_server machine.
+Briefly, it can be installed as follows:
 
+	sudo apt-get install kamailio kamailio-mysql-modules kamailio-tls-modules
+
+The main configuration files with TLS support are provided here: [kamailio.cfg](docs/kamailio.cfg) , [tls.cfg](docs/tls.cfg)
+
+
+ >	 **_NOTE:_** Configuration lines related to domain name need to be adapted with your owns. Alternatively a public IPv4 address might be used.
  
 ### TURN server ###
 
