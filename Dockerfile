@@ -5,8 +5,13 @@ RUN pip3 install selenium requests
 
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt install -y ./google-chrome-stable_current_amd64.deb
-RUN  wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip \
-     && unzip chromedriver_linux64.zip && sudo mv chromedriver /usr/bin/chromedriver && chmod +x /usr/bin/chromedriver
+RUN CHROME_STRING=$(google-chrome --version) \
+    && CHROME_VERSION_STRING=$(echo "${CHROME_STRING}" | grep -oP "\d+\.\d+\.\d+\.\d+") \
+    && CHROME_MAJOR_VERSION=$(echo "${CHROME_VERSION_STRING%%.*}") \
+    && wget --no-verbose -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}" \
+    && CHROME_DRIVER_VERSION=$(cat "/tmp/LATEST_RELEASE") \
+    && wget https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
+    && unzip chromedriver_linux64.zip && sudo mv chromedriver /usr/bin/chromedriver && chmod +x /usr/bin/chromedriver
 
 COPY entrypoint.sh /var/
 RUN mkdir /var/.baresip
