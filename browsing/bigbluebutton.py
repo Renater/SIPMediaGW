@@ -22,14 +22,17 @@ chrome_options = Options()
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--use-fake-ui-for-media-stream')
 chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--disable-gpu')
 chrome_options.add_argument('--start-fullscreen')
 chrome_options.add_argument('--window-size='+dispWidth+','+dispHeight)
 chrome_options.add_argument('--window-position=0,0')
 chrome_options.add_argument('--hide-scrollbars')
 chrome_options.add_argument('--disable-notifications')
+chrome_options.add_argument('--disable-logging') 
+chrome_options.add_argument("--log-level=3")
 chrome_options.add_experimental_option("excludeSwitches", ['enable-automation']);
 
-driver = webdriver.Chrome('/usr/bin/chromedriver',options=chrome_options)
+driver = webdriver.Chrome('/usr/bin/chromedriver',options=chrome_options, service_log_path='/dev/null')
 driver.get(url)
 
 # Accept Cookies

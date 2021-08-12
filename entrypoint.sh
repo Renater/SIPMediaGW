@@ -109,7 +109,9 @@ fi
 DISP_NAME=$(grep -v '^#' /var/baresip/$SIP_ACCOUNT_FILE |  awk -F'<' '{print $1}')
 
 ### Start Selenium/Chrome ###
-DISPLAY=:$SERVERNUM0 python3 /var/browsing/$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP > /dev/null 2>&1  &
+echo "DEBUG: DISPLAY=:"$SERVERNUM0" python3 /var/browsing/"$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP 
+logFile="/var/logs/SIPWG"$GW_ID"_chrome_"$( date +%Y%m%j%H%M ).log
+DISPLAY=:$SERVERNUM0 python3 /var/browsing/$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP > logFile 2>&1  &
 
 cleanup() {
     echo "Cleaning up..."
@@ -118,6 +120,7 @@ cleanup() {
     ### Quit Baresip ### 
     echo "/quit" | netcat 127.0.0.1 5555
     sleep 10
+    rm /tmp/.X$SERVERNUM0-lock /tmp/.X$SERVERNUM1-lock
     exit
 }
 trap cleanup SIGINT SIGQUIT SIGTERM
