@@ -2,6 +2,7 @@
 
 import sys
 import time
+import traceback
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -12,6 +13,7 @@ from selenium.common.exceptions import WebDriverException
 args = sys.argv
 dispName = args[2]
 url = 'https://rendez-vous.renater.fr/'+args[1]+'#userInfo.displayName="'+dispName+'"'
+print("Web browsing URL: "+url, flush=True)
 dispRes = args[3]
 dispWidth = dispRes.split('x')[0]
 dispHeight = dispRes.split('x')[1]
@@ -30,26 +32,35 @@ chrome_options.add_argument('--disable-logging')
 chrome_options.add_argument("--log-level=3")
 chrome_options.add_experimental_option("excludeSwitches", ['enable-automation']);
 
-driver = webdriver.Chrome('/usr/bin/chromedriver',options=chrome_options, service_log_path='/dev/null')
-driver.get(url)
+try:
+    driver = webdriver.Chrome('/usr/bin/chromedriver',options=chrome_options, service_log_path='/dev/null')
+    driver.get(url)
 
+    # Validate MOTD
+    try:
+        element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#motd_do_not_show_again")))
+        element.click()
+    except Exception as e:
+        print("MOTD not found", flush=True)
 
-# Validate MOTD
-element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#motd_do_not_show_again")))
-element.click()
+    # Accept Cookies
+    try:
+        element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#cookie_footer > section > section > section > a")))
+        element.click()
+    except Exception as e:
+        print("Cookies banner not found", flush=True)
 
-# Accept Cookies
-element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#cookie_footer > section:nth-child(1) > section:nth-child(1) > section:nth-child(4)")))
-element.click()
+    while True:
+        time.sleep(1)
+        try:
+            driver.title
+        except WebDriverException:
+            break
 
-while True:
-  time.sleep(1)
-  try:
-    driver.title
-  except WebDriverException:
-    break
+    driver.quit()
 
-driver.quit()
+except Exception as e:
+    traceback.print_exc(file=sys.stdout)
 
 print("All done!")
 
