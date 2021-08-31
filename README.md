@@ -9,7 +9,7 @@ A Docker based media gateway to be used on top of a web conferencing service, in
 Environment
 --------
 
-### <a name="devices">Virtual devices </a>###
+### <a name="devices">Virtual devices </a>
 Example for 4 gateways, co-hosted on GW_server machine:
 
 - **Audio**
