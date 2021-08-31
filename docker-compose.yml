@@ -7,13 +7,14 @@ services:
             - ./browsing:/var/browsing:ro
             - ./baresip:/var/baresip:ro
     devices:
-            - /dev/video0:/dev/video0
+            - /dev/video${ID}:/dev/video0
             - /dev/snd:/dev/snd
     environment:
-      GW_ID: "0"     # used for virtual audio device mapping
+      GW_ID: "${ID}"
+      LOG_PREF: "${LOGS}"
+      SIP_ACCOUNT: "${ACCOUNT}" # <sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=passwd
       BARESIP_CMD_FILE: "tcpJsonCmd.py" # Baresip control via remote TCP/JSON commands
-      SIP_ACCOUNT_FILE: "accounts" # SIP account for registering
       BROWSE_FILE: "rendezvousJitsi.py" # python browsing based on Selenium
-      ROOM_NAME: "testRTCmediaGW" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
+      ROOM_NAME: "${ROOM}" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
     stop_grace_period: 20s
 

@@ -1,6 +1,6 @@
 FROM debian:9-slim
 
-RUN apt-get update && apt-get install -y htop nano netcat wget unzip pulseaudio v4l2loopback-utils socat alsa-utils xdotool libasound2-dev libavcodec-dev libx11-dev libxext-dev ffmpeg xvfb sudo python3 python3-pip libnss3 openssl libssl-dev libspandsp-dev libsdl2-dev 
+RUN apt-get update && apt-get install -y htop nano netcat wget unzip pulseaudio v4l2loopback-utils socat alsa-utils xdotool libasound2-dev libavcodec-dev libx11-dev libxext-dev ffmpeg xvfb sudo python3 python3-pip libnss3 openssl libssl-dev libspandsp-dev libsdl2-dev
 RUN pip3 install selenium requests
 
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \

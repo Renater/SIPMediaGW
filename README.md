@@ -6,10 +6,10 @@ A Docker based media gateway to be used on top of a web conferencing service, in
 
 <img src="docs/SIPMediaGW.png" width=50% height=50%>
 
-Environment 
+Environment
 --------
 
-### Virtual devices ###
+### <a name="devices">Virtual devices </a>###
 Example for 4 gateways, co-hosted on GW_server machine:
 
 - **Audio**
@@ -18,7 +18,6 @@ Example for 4 gateways, co-hosted on GW_server machine:
 		echo "options snd-aloop enable=1,1,1,1,1,1,1,1 index=0,1,2,3,4,5,6,7" | sudo tee  /etc/modprobe.d/alsa-loopback.conf
 		echo "snd-aloop" | sudo tee -a /etc/modules
 		sudo modprobe snd-aloop
-		
 
 - **Video**
 
@@ -26,7 +25,7 @@ Example for 4 gateways, co-hosted on GW_server machine:
 		echo "options v4l2loopback devices=4 exclusive_caps=1,1,1,1" | sudo tee  /etc/modprobe.d/v4l2loopback.conf
 		echo "v4l2loopback" | sudo tee -a /etc/modules
 		sudo modprobe v4l2loopback
-			
+
 ### SIP register ###
 
 To be accessible from any SIP endpoint, the gateway needs SIP registering facilities.
@@ -47,10 +46,9 @@ To overcome NAT traversal issues, a TURN server acts as a media traffic relay.
 Coturn is an open-source STUN and TURN implementation:
 
 	sudo apt-get install coturn
-		
-A minimalist configuration is provided here: [turnserver.conf](docs/turnserver.conf) 
-	
-	
+
+A minimalist configuration is provided here: [turnserver.conf](docs/turnserver.conf)
+
 Configuration
 -----------
 
@@ -72,43 +70,53 @@ Configuration
 		
 	- <a name="accounts">accounts</a>
 
-		Where to specify the  SIP parameters of the gateway (URI, register, TURN... ).
+		Where to configure SIP parameters (URI, register, TURN... ) of the gateways (one line per gateway).
 		
-		Example to be adapted:
+		Example to be adapted and duplicated:
 		
-			Displayname<sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
+			<sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
+
+  >	 **_NOTE:_** In the case of 4 gateways, this file must contain 4 different SIP accounts/lines
 			
 - **docker-compose.yml**
 
-	The docker compose file, provided here with a single gateway configuration.
-	
-	Video device id and GW_ID should be incremented when adding others gateways.
-  
-  >	 **_NOTE:_** A specific account file must be provided for each gateway.
+	The docker compose file.
 	
 - **entry_point.sh**
 
 	Docker entry point which is actually the SIP media gateway implementation.
 
+Build
+-----------
+	sudo docker-compose build
 
 Usage
 --------
-Someone already connected to the webconference, e.g: 
- 
+
+Someone already connected to the webconference, e.g:
+
 	google-chrome "https://rendez-vous.renater.fr/testRTCmediaGW"
 
-Launch a gateway:
+ SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as there are account lines in the [account file](#accounts).
 
-	sudo docker-compose up
-	
-Once the gateway is running, a SIP endpoint can join the room by calling the gateway, through the SIP URI (sip:user@domain) configurated in the [account file](#accounts).
+ Launch a gateway:
+
+	SIPMediaGW.sh -r testRTCmediaGW-g my_gateway
+  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that they are dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
+
+Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs (sip:user@domain) used by the gateway.
+
+Stop a gateway:
+
+	sudo docker-compose -p my_gateway stop
 	
 Troubleshoot
 --------
 
-Baresip logs:
+Logs:
 
-	tail -f logs/SIPWG0_baresip_xxxxxxx.log
+	tail -f logs/SIPWGXX_testRTCmediaGW_app.log
+	tail -f logs/SIPWGXX_testRTCmediaGW_err.log
 	
 Restart Audio:
 
