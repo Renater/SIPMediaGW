@@ -4,15 +4,17 @@ import socket
 import sys
 import json
 import requests
-import netstring as ns
+from netstring import Netstring
 import time
+
+ns = Netstring("localhost",4444)
 
 # ensure Baresip is launched and ready (do not remove !)
 m = {"command":"uuid"}
 while ns.sendCommand(m) == -1:
-  ns.sendCommand(m)
+    ns.sendCommand(m)
 
-# get network info 
+# get network info
 m = {"command":"netstat"}
 res = ns.sendCommand(m)
 print(res[0]['data'])
@@ -24,9 +26,9 @@ print(res[0]['data'])
 m = {"command":"uastat"}
 res = ns.sendCommand(m)
 if res[0]['data'].find('no user-agent') > -1:
-  m = {"command":"quit"}
-  res = ns.sendCommand(m)
-  sys.exit(1)
+    m = {"command":"quit"}
+    res = ns.sendCommand(m)
+    sys.exit(1)
 
 sys.exit(0)
 
