@@ -4,6 +4,7 @@ import socket
 import sys
 import json
 import time
+import signal
 
 class Netstring:
     host = "localhost"
@@ -66,7 +67,7 @@ class Netstring:
 
         return res
 
-    def getEvent(self):
+    def getEvents(self, callBack):
         res = []
         # Create a socket (SOCK_STREAM means a TCP socket)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -75,7 +76,8 @@ class Netstring:
             sock.connect((self.host, self.port))
             while True:
                 status = self.getStatus(sock)
-                print(self.decodeNetString(status))
+                if callBack(self.decodeNetString(status)):
+                    break
         except:
             return -1
         finally:

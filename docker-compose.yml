@@ -1,6 +1,7 @@
 services:
-  app:
-    build: .
+  gw:
+    image: sipmediagw
+    container_name: gw${ID}
     volumes:
             - /tmp:/tmp
             - ./logs:/var/logs
@@ -13,7 +14,6 @@ services:
       GW_ID: "${ID}"
       LOG_PREF: "${LOGS}"
       SIP_ACCOUNT: "${ACCOUNT}" # <sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=passwd
-      BARESIP_CMD_FILE: "tcpJsonCmd.py" # Baresip control via remote TCP/JSON commands
       BROWSE_FILE: "rendezvousjitsi.py" # python browsing based on Selenium
       ROOM_NAME: "${ROOM}" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
     stop_grace_period: 20s

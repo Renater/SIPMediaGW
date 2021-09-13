@@ -1,4 +1,5 @@
 #!/bin/bash
+
 cleanup() {
     echo "Cleaning up..."
     ### Quit Selenium/Chrome ### 
@@ -8,7 +9,8 @@ cleanup() {
     sleep 10
     sudo rm /tmp/.X${SERVERNUM0}-lock /tmp/.X${SERVERNUM1}-lock
 }
-trap cleanup SIGINT SIGQUIT SIGTERM
+
+trap cleanup SIGINT SIGQUIT SIGTERM EXIT
 
 if [[ -z "$LOG_PREF" ]];
 then
@@ -56,7 +58,7 @@ check_Xvfb() {
         sleep 1
     done
    if [ "$id" = 5 ]; then
-       echo "Xvfb :$1 failed to launch" >> $errLogs
+       echo "Xvfb :$1 failed to launch" | log_ts "Xvfb" >> $errLogs
        exit 1
    fi
 }
@@ -71,7 +73,23 @@ check_v4l2() {
         sleep 1
     done
     if [ "$id" = 5 ]; then
-        echo "V4l2 loopback failed to launch" >> $errLogs
+        echo "V4l2 loopback failed to launch" | log_ts "V4l2" >> $errLogs
+        exit 1
+    fi
+}
+
+check_register() {
+    # 5 seconds timeout before exit
+    id=0
+    OK="OK "
+    state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555  2>/dev/null | grep -c "$OK")"
+    while [[ ($state == "0") && ("$id" < 5) ]] ; do
+        id=$(($id + 1))
+        state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555 2>/dev/null | grep -c "$OK")"
+        sleep 1
+    done
+    if [ "$id" = 5 ]; then
+        echo "Baresip failed to register" | log_ts "Baresip" >> $errLogs
         exit 1
     fi
 }
@@ -110,25 +128,20 @@ VID_FPS="30"
 PIX_DEPTH="24"
 
 SERVERNUM0=$(find_free_serverxnum)
-echo "Server 0 Number= " $SERVERNUM0 | log_ts "Xvfb">> $appLogs
-Xvfb :$SERVERNUM0 -screen 0 $VID_SIZE_SIP"x"$PIX_DEPTH &
-check_Xvfb $SERVERNUM0
+echo "Server 0 Number= " $SERVERNUM0 | log_ts "Xvfb" >> $appLogs
+Xvfb :$SERVERNUM0 -screen 0 $VID_SIZE_SIP"x"$PIX_DEPTH | log_ts "Xvfb" >> $errLogs &
 
-SERVERNUM1=$(find_free_serverxnum)
-echo "Server 1 Number= " $SERVERNUM1 | log_ts "Xvfb">> $appLogs
-Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH &
-check_Xvfb $SERVERNUM1
+SERVERNUM1=$(( $SERVERNUM0+1 ))
+echo "Server 1 Number= " $SERVERNUM1 | log_ts "Xvfb" >> $appLogs
+Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH | log_ts "Xvfb" >> $errLogs &
 
 ### Start default video capture ###
 echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
-     log_ts "FFMPEG">> $appLogs
+     log_ts "FFMPEG" >> $appLogs
 ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
        -draw_mouse 0 -threads 0 \
        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
        -f v4l2 /dev/video0 -loglevel error | log_ts "FFMPEG" >> $errLogs &
-
-### Check if video device is ready ###
-check_v4l2
 
 ### Configure and start Baresip ###
 cp baresip/config_default .baresip/config
@@ -136,28 +149,37 @@ echo "$SIP_ACCOUNT" > .baresip/accounts
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config
-echo "DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip -v" | log_ts "SIP client">> $appLogs
+echo "DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip -v" | log_ts "SIP client" >> $appLogs
 DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip -v \
                      1> >( log_ts "Baresip" | sed -u 's/\[;m//' | sed -u 's/\[31m//' >> $appLogs ) \
                      2> >( log_ts "Baresip" | sed -u 's/\[;m//' | sed -u 's/\[31m//' >> $errLogs ) &
                      # "sed -u 's/\[..." => to remove already printed \r characters...
 
 ### Check Baresip registering ###
-python3 baresip/$BARESIP_CMD_FILE 1> >( log_ts "Baresip" >> $appLogs ) \
-                                  2> >( log_ts "Baresip" >> $errLogs )
-if [ "$?" == 1 ];
-then
-    echo "!!! A valid SIP account must be configurated !!!" | log_ts "Baresip" >> $errLogs
-    exit
-else
-    echo "###################### SIP URI ######################"
-    echo $(awk -F'<|;' '{print $2}' <<< $SIP_ACCOUNT)
-    echo "#####################################################"
-fi
+check_register
+echo "###################### SIP URI ######################"
+echo $(awk -F'<|;' '{print $2}' <<< $SIP_ACCOUNT)
+echo "#####################################################"
+
+### Check if Xvfb server is ready ###
+check_Xvfb $SERVERNUM0
+check_Xvfb $SERVERNUM1
+
+### Check if video device is ready ###
+check_v4l2
+
+python3 event_handler.py -l $appLogs 2> >( log_ts "Baresip" >> $errLogs )
+
 DISP_NAME=$(grep -v '^#' .baresip/accounts |  awk -F'<' '{print $1}')
 
+if [ "$?" == 1 ];
+then
+    echo "!!! The Gateway failed to launch !!!" | log_ts "Entrypoint" >> $errLogs
+    exit
+fi
+
 ### Start Selenium/Chrome ###
-echo "DISPLAY=:"$SERVERNUM0" python3 browsing/"$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP | log_ts "Web browser">> $appLogs
+echo "DISPLAY=:"$SERVERNUM0" python3 browsing/"$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP | log_ts "Web browser" >> $appLogs
 DISPLAY=:$SERVERNUM0 python3 browsing/$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP \
                      1> >( log_ts "Selenium" >> $appLogs ) \
                      2> >( log_ts "Selenium" >> $errLogs ) &

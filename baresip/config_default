@@ -180,7 +180,7 @@ cons_listen		0.0.0.0:5555 # cons
 
 http_listen		0.0.0.0:8000 # httpd - server
 
-ctrl_tcp_listen		0.0.0.0:4444 # ctrl_tcp
+ctrl_tcp_listen		127.0.0.1:4444 # ctrl_tcp
 
 evdev_device		/dev/input/event0
 
