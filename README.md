@@ -64,9 +64,9 @@ Configuration
 
 		Defaulf baresip configuration file used as a template configuration by the gateway.
 		
-	- tcpJsonCmd.py (+netstring.py)
+	- netstring.py
 
-		Remote controls baresip.
+		TCP control interface tools.
 		
 	- <a name="accounts">accounts</a>
 
@@ -78,6 +78,10 @@ Configuration
 
   >	 **_NOTE:_** In the case of 4 gateways, this file must contain 4 different SIP accounts/lines
 			
+- **event_handler.py**
+
+	Event handler script, based on SIP signaling.
+	
 - **docker-compose.yml**
 
 	The docker compose file.
@@ -88,7 +92,7 @@ Configuration
 
 Build
 -----------
-	sudo docker-compose build
+	docker image build -t sipmediagw .
 
 Usage
 --------
@@ -108,7 +112,7 @@ Once the gateway is running, a SIP endpoint can join the room by calling the gat
 
 Stop a gateway:
 
-	sudo docker-compose -p my_gateway stop
+	docker-compose -p my_gateway stop
 	
 Troubleshoot
 --------
