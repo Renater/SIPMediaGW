@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import time
 import traceback
 from selenium import webdriver
@@ -15,6 +16,7 @@ class Browsing:
         self.name = name
         self.width = width
         self.height= height
+        self.driver = []
         self.chromeOptions = Options()
         self.chromeOptions.add_argument('--no-sandbox')
         self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
@@ -37,24 +39,20 @@ class Browsing:
 
     def run(self):
         try:
-            driver = webdriver.Chrome('/usr/bin/chromedriver',options=self.chromeOptions, service_log_path='/dev/null')
+            self.driver = webdriver.Chrome('/usr/bin/chromedriver', options=self.chromeOptions, service_log_path='/dev/null')
             self.setUrl()
-            driver.get(self.url)
-
-            self.browse(driver)
-
-            while True:
-                time.sleep(1)
-                try:
-                    driver.title
-                except WebDriverException:
-                    break
-
-            driver.quit()
-
+            self.driver.get(self.url)
+            self.browse(self.driver)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
+            return -1
 
-        print("All done!", flush=True)
+    def stop(self):
+        try:
+            self.driver.close()
+            self.driver.quit()
+            print("Browsing stopped", flush=True)
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
 
 

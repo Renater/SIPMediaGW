@@ -53,14 +53,3 @@ class BigBlueButton (Browsing):
         except Exception as e:
             print("Camera activation failed", flush=True)
 
-args = sys.argv
-name = args[2]
-room = args[1]
-
-dispRes = args[3]
-dispWidth = dispRes.split('x')[0]
-dispHeight = dispRes.split('x')[1]
-
-bbb = BigBlueButton(room, name, dispWidth, dispHeight)
-bbb.run()
-

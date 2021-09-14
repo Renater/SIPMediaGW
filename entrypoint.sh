@@ -1,17 +1,5 @@
 #!/bin/bash
 
-cleanup() {
-    echo "Cleaning up..."
-    ### Quit Selenium/Chrome ### 
-    DISPLAY=:${SERVERNUM0} xdotool key ctrl+W
-    ### Quit Baresip ### 
-    echo "/quit" | netcat 127.0.0.1 5555
-    sleep 10
-    sudo rm /tmp/.X${SERVERNUM0}-lock /tmp/.X${SERVERNUM1}-lock
-}
-
-trap cleanup SIGINT SIGQUIT SIGTERM EXIT
-
 if [[ -z "$LOG_PREF" ]];
 then
     errLogs=/dev/null
@@ -41,6 +29,18 @@ log_ts() {
     stdbuf -oL tr -s '\n' '\n' |\
     while IFS= read -r line; do printf '[%s] %s: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" "$line"; done
 }
+
+cleanup() {
+    echo "Cleaning up..."
+    ### Quit Selenium/Chrome ###
+    DISPLAY=:${SERVERNUM0} xdotool key ctrl+W
+    ### Quit Baresip ###
+    echo "/quit" | netcat -q 1 127.0.0.1 5555
+    sleep 10
+    sudo rm /tmp/.X${SERVERNUM0}-lock /tmp/.X${SERVERNUM1}-lock
+}
+
+trap 'cleanup | log_ts "Trap" >> ${appLogs}' SIGINT SIGQUIT SIGTERM EXIT
 
 find_free_serverxnum() {
     i=$(($GW_ID"000" + 1))
@@ -168,25 +168,12 @@ check_Xvfb $SERVERNUM1
 ### Check if video device is ready ###
 check_v4l2
 
-python3 event_handler.py -l $appLogs 2> >( log_ts "Baresip" >> $errLogs )
-
-DISP_NAME=$(grep -v '^#' .baresip/accounts |  awk -F'<' '{print $1}')
-
-if [ "$?" == 1 ];
-then
-    echo "!!! The Gateway failed to launch !!!" | log_ts "Entrypoint" >> $errLogs
-    exit
-fi
-
-### Start Selenium/Chrome ###
-echo "DISPLAY=:"$SERVERNUM0" python3 browsing/"$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP | log_ts "Web browser" >> $appLogs
-DISPLAY=:$SERVERNUM0 python3 browsing/$BROWSE_FILE $ROOM_NAME $DISP_NAME $VID_SIZE_SIP \
-                     1> >( log_ts "Selenium" >> $appLogs ) \
-                     2> >( log_ts "Selenium" >> $errLogs ) &
-
-while true; do
-    sleep 1
-done
+### Event handler ###
+DISPLAY=:$SERVERNUM0 python3 event_handler.py -l $appLogs \
+                                              -b `pwd`"/browsing/"$BROWSE_FILE \
+                                              -r $ROOM_NAME \
+                                              -s $VID_SIZE_SIP \
+                     1> >( log_ts "Event" >> $appLogs ) 2> >( log_ts "Event" >> $errLogs )
 
 
 

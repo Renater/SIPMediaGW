@@ -67,6 +67,7 @@ room_name=$(echo $room | sed -u 's/\///')
 logPref="logs/SIPWG"$id"_"$room_name
 
 ### launch the gateway ###
+HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room ID=$id ACCOUNT=$sip_account LOGS=$logPref \
-sudo -E docker-compose  -p $gateway_name up --remove-orphans --force-recreate
+docker-compose -p $gateway_name up --force-recreate
 
