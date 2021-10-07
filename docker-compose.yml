@@ -1,9 +1,13 @@
+networks:
+  default:
+    external:
+      name: gw_net
+
 services:
   gw:
     image: sipmediagw
     container_name: gw${ID}
     volumes:
-            - /tmp:/tmp
             - ./logs:/var/logs
             - ./browsing:/var/browsing:ro
             - ./baresip:/var/baresip:ro
