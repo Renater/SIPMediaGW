@@ -64,9 +64,9 @@ Configuration
 
 		Defaulf baresip configuration file used as a template configuration by the gateway.
 		
-	- tcpJsonCmd.py (+netstring.py)
+	- netstring.py
 
-		Remote controls baresip.
+		TCP control interface tools.
 		
 	- <a name="accounts">accounts</a>
 
@@ -78,6 +78,10 @@ Configuration
 
   >	 **_NOTE:_** In the case of 4 gateways, this file must contain 4 different SIP accounts/lines
 			
+- **event_handler.py**
+
+	Event handler script, based on SIP signaling.
+	
 - **docker-compose.yml**
 
 	The docker compose file.
@@ -92,7 +96,7 @@ Configuration
 
 Build
 -----------
-	sudo docker-compose build
+	docker image build -t sipmediagw .
 
 Usage
 --------
@@ -105,14 +109,14 @@ Someone already connected to the webconference, e.g:
 
  Launch a gateway:
 
-	SIPMediaGW.sh -r testRTCmediaGW-g my_gateway
+	SIPMediaGW.sh -r testRTCmediaGW -g my_gateway
   >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that they are dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
 
 Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs (sip:user@domain) used by the gateway.
 
 Stop a gateway:
 
-	sudo docker-compose -p my_gateway stop
+	docker-compose -p my_gateway stop
 	
 Troubleshoot
 --------
@@ -130,5 +134,6 @@ Remove virtual devices:
 
 	sudo modprobe -r snd_aloop
 	sudo modprobe -r v4l2loopback
+
 	
 	
