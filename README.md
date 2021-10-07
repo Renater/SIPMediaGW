@@ -77,7 +77,11 @@ Configuration
 			<sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
 
   >	 **_NOTE:_** In the case of 4 gateways, this file must contain 4 different SIP accounts/lines
-			
+
+- **ivr**
+
+	This directory contains some files (audio prompt, background image, fonts..) related to Interactive Voice Response (IVR).
+
 - **event_handler.py**
 
 	Event handler script, based on SIP signaling.
@@ -113,7 +117,7 @@ Someone already connected to the webconference, e.g:
   >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that they are dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
 
 Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs (sip:user@domain) used by the gateway.
-  >    **_NOTE:_** If "-r" (room) is not passed, the SIP endpoint will connect first to an IVR. By default a 4 digits number is expected as a room name.
+  >    **_NOTE:_** If "-r" (room) option is not passed, the SIP endpoint will connect first to an IVR. By default a 4 digits number is expected as a room name by the audio prompt.
 
 The gateway will automatically stop after the call is closed.
 	
