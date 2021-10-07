@@ -113,10 +113,9 @@ Someone already connected to the webconference, e.g:
   >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that they are dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
 
 Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs (sip:user@domain) used by the gateway.
+  >    **_NOTE:_** If "-r" (room) is not passed, the SIP endpoint will connect first to an IVR. By default a 4 digits number is expected as a room name.
 
-Stop a gateway:
-
-	docker-compose -p my_gateway stop
+The gateway will automatically stop after the call is closed.
 	
 Troubleshoot
 --------

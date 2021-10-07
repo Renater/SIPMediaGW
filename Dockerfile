@@ -1,12 +1,12 @@
 FROM debian:9-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    netcat wget unzip sudo \
+    netcat wget unzip net-tools sudo psmisc \
     v4l2loopback-utils xdotool libsdl2-2.0-0 libgl1-mesa-dri \
     dbus-user-session \
     pulseaudio socat alsa-utils libspandsp2 \
     ffmpeg xvfb \
-    python3 python3-pip \
+    python3 python3-pip python3-setuptools\
     libnss3 openssl \
     libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
@@ -40,9 +40,12 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     && apt autoclean -y \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install selenium requests
+RUN pip3 install --upgrade pip
+RUN pip3 install selenium requests opencv-python pillow
 
 COPY entrypoint.sh event_handler.py /var/
+
+COPY ivr /var/ivr
 
 RUN mkdir /var/.baresip
 

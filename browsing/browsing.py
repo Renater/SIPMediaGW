@@ -9,11 +9,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
 
 class Browsing:
-
-    def __init__(self, room, name, width, height):
+    def __init__(self, width, height, room=None, name=None):
         self.url = ''
-        self.room = room
-        self.name = name
+        self.room = room if room else ''
+        self.name = name if name else ''
         self.width = width
         self.height= height
         self.driver = []
@@ -23,7 +22,7 @@ class Browsing:
         self.chromeOptions.add_argument('--disable-dev-shm-usage')
         self.chromeOptions.add_argument('--disable-gpu')
         self.chromeOptions.add_argument('--start-fullscreen')
-        self.chromeOptions.add_argument('--window-size='+width+','+height)
+        self.chromeOptions.add_argument('--window-size='+str(width)+','+str(height))
         self.chromeOptions.add_argument('--window-position=0,0')
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
@@ -49,9 +48,10 @@ class Browsing:
 
     def stop(self):
         try:
-            self.driver.close()
-            self.driver.quit()
-            print("Browsing stopped", flush=True)
+            if self.driver:
+                self.driver.close()
+                self.driver.quit()
+                print("Browsing stopped", flush=True)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
 
