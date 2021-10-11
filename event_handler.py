@@ -13,14 +13,32 @@ import threading
 from baresip.netstring import Netstring
 from ivr.ivr import Ivr
 
+
 # Default Baresip host
 baresipHost = "localhost"
 
 # Room number length
 maxDigits = 4
 
+# SIP connection timeout (seconds)
+sipTo = 60
+
 signal.signal(signal.SIGINT, lambda:sys.exit(1))
 signal.signal(signal.SIGTERM, lambda:sys.exit(1))
+
+def timeout ():
+    nsTo = Netstring(baresipHost, 4444)
+    m = {"command":"callstat"}
+    while True:
+        time.sleep (sipTo)
+        res = nsTo.sendCommand(m)
+        if not (res !=-1 and res[0]['response']==True and \
+                res[0]['data'].find("(no active calls)") == -1 ):
+           # Quit baresip if "no active calls"
+           m = {"command":"quit"}
+           res = nsTo.sendCommand(m)
+           break
+
 
 # parse arguments
 args = sys.argv
@@ -64,6 +82,9 @@ if not args['room']:
               "ivr/ivr.png", "ivr/calibrii.ttf", 50)
     ivr.show(dispWidth,dispHeight,'* * * *')
     roomName = ''
+
+toThread = threading.Thread(target=timeout)
+toThread.start()
 
 # Event handler callback
 def event_handler(data):
