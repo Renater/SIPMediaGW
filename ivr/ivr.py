@@ -41,4 +41,7 @@ class Ivr :
         cv2.imshow('IVR', cv2.resize(im, (width, height)))
         cv2.waitKey(10)
 
+    def close(self):
+        cv2.destroyAllWindows()
+
 
