@@ -88,7 +88,7 @@ toThread.start()
 
 # Event handler callback
 def event_handler(data):
-    global browsing, ivrAuProc, roomName,\
+    global browsing, ivrAuProc, roomName, ivr, \
            browseThread, dispWidth, dispHeight
 
     if data['type'] == 'CALL_ESTABLISHED':
@@ -116,7 +116,8 @@ def event_handler(data):
 
     if data['type'] == 'CALL_CLOSED':
         print(data, flush=True)
-        cv2.destroyAllWindows()
+        if ivr:
+            ivr.close()
         browsing.stop()
         subprocess.run(["xdotool", "key", "ctrl+W"])
         return 1
