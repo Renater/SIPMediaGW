@@ -1,7 +1,7 @@
 SIPMediaGW
 -----------------
 
-A Docker based media gateway to be used on top of a web conferencing service, in order to provide SIP (audio+video) access.
+A Docker based media gateway to be used on top of a web conferencing service (Jitsi Meet, BigBlueButton,...), in order to provide SIP (audio+video) access.
 
 
 <img src="docs/SIPMediaGW.png" width=50% height=50%>
