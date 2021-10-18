@@ -5,6 +5,7 @@ import sys
 import json
 import time
 import signal
+import traceback
 
 class Netstring:
     host = "localhost"
@@ -15,22 +16,31 @@ class Netstring:
         self.port = p
 
     def decodeNetString(self, inStr):
-        inStrLen = inStr[0:inStr.find(':')]
-        resp = inStr.split(inStrLen+':')[1]
-        mDict = json.loads(resp[0:len(resp)-1])
+        mDict = {}
+        if inStr and len(inStr) > 0 :
+            inStrLen = inStr[0:inStr.find(':')]
+            resp = inStr.split(inStrLen+':')[1]
+            mDict = json.loads(resp[0:len(resp)-1])
 
         return mDict
 
-    def getStatus(self, sock):
+    def getStatus(self, sock, timeOut=None):
         received = ""
-        # Receive data from baresip
+        dataLen = 0
         preRead = 8
-        received = (sock.recv(preRead)).decode("utf-8")
-        while not received[0].isdigit():
+        # Receive data from baresip
+        try:
+            received = (sock.recv(preRead)).decode("utf-8")
+        except socket.timeout:
+            # return exception message in netstring format
+            retTxt = '{"event": true, "type": "TIME_OUT"}'
+            return str(len(retTxt)) + ":" + retTxt + ","
+        while len(received) > 0 and not received[0].isdigit():
             received = received[1:]
             preRead-=1
         preLen = received.find(':')
-        dataLen = preLen+ 2 + int(received[0:preLen]) - preRead
+        if preLen >= 0:
+            dataLen = preLen+ 2 + int(received[0:preLen]) - preRead
         while dataLen > 0:
             readLen = dataLen//1024
             if readLen==0:
@@ -67,18 +77,22 @@ class Netstring:
 
         return res
 
-    def getEvents(self, callBack):
+    def getEvents(self, callBack, args, timeOut=None):
         res = []
-        # Create a socket (SOCK_STREAM means a TCP socket)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
+            # Create a socket (SOCK_STREAM means a TCP socket)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeOut)
             # Connect to server and send data
             sock.connect((self.host, self.port))
             while True:
-                status = self.getStatus(sock)
-                if callBack(self.decodeNetString(status)):
-                    break
+                status = self.getStatus(sock, timeOut)
+                if status:
+                    if callBack(self.decodeNetString(status), args):
+                        break
         except:
+            print("Get events loop abnormally stopped", file=sys.stderr, flush=True)
+            print(traceback.format_exc(), file=sys.stderr, flush=True)
             return -1
         finally:
             sock.close()

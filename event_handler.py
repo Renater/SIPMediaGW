@@ -13,32 +13,17 @@ import threading
 from baresip.netstring import Netstring
 from ivr.ivr import Ivr
 
-
 # Default Baresip host
 baresipHost = "localhost"
 
 # Room number length
-maxDigits = 4
+maxDigits = 6
 
-# SIP connection timeout (seconds)
-sipTo = 60
+# No active calls timeout (seconds)
+noCallTo = 60
 
 signal.signal(signal.SIGINT, lambda:sys.exit(1))
 signal.signal(signal.SIGTERM, lambda:sys.exit(1))
-
-def timeout ():
-    nsTo = Netstring(baresipHost, 4444)
-    m = {"command":"callstat"}
-    while True:
-        time.sleep (sipTo)
-        res = nsTo.sendCommand(m)
-        if not (res !=-1 and res[0]['response']==True and \
-                res[0]['data'].find("(no active calls)") == -1 ):
-           # Quit baresip if "no active calls"
-           m = {"command":"quit"}
-           res = nsTo.sendCommand(m)
-           break
-
 
 # parse arguments
 args = sys.argv
@@ -71,25 +56,16 @@ dispHeight = int(args['res'].split('x')[1])
 
 ivr = []
 browsing = []
-ivrAuProc = []
-browseThread = []
 
 browsing = browsingObj(dispWidth, dispHeight, args['room'])
-browseThread = threading.Thread(target=browsing.run)
 
 if not args['room']:
     ivr = Ivr("Entrez le numéro de la conférence",
               "ivr/ivr.png", "ivr/calibrii.ttf", 50)
-    ivr.show(dispWidth,dispHeight,'* * * *')
-    roomName = ''
-
-toThread = threading.Thread(target=timeout)
-toThread.start()
+    ivr.show(dispWidth,dispHeight,'* * * * * *')
 
 # Event handler callback
-def event_handler(data):
-    global browsing, ivrAuProc, roomName, ivr, \
-           browseThread, dispWidth, dispHeight
+def event_handler(data, browsing):
 
     if data['type'] == 'CALL_ESTABLISHED':
         print(data, flush=True)
@@ -100,31 +76,42 @@ def event_handler(data):
 
         browsing.name = displayName
         if browsing.room:
+            browseThread = threading.Thread(target=browsing.run)
             browseThread.start()
         else:
-            ivrAuProc = subprocess.Popen(["sh","ivr_audio.sh"],
-                                          cwd='ivr',
-                                          stdin=subprocess.PIPE)
+            subprocess.Popen(["sh","ivr_audio.sh"],
+                             cwd='ivr',
+                             stdin=subprocess.PIPE)
 
     if data['type'] == 'CALL_DTMF_START':
-        roomName = roomName + data['param']
-        ivr.show(dispWidth,dispHeight, roomName)
-        if len(roomName) == maxDigits:
-            browsing.room = roomName
-            browseThread.start()
-            roomName = ''
-
-    if data['type'] == 'CALL_CLOSED':
-        print(data, flush=True)
         if ivr:
-            ivr.close()
-        browsing.stop()
-        subprocess.run(["xdotool", "key", "ctrl+W"])
+            browsing.room = browsing.room + data['param']
+            ivr.show(browsing.width, browsing.height, browsing.room)
+            if len(browsing.room) == maxDigits:
+                browseThread = threading.Thread(target=browsing.run)
+                browseThread.start()
+
+    if data['type'] == 'CALL_CLOSED' or \
+       data['type'] == 'TIME_OUT' and not browsing.name:# Time out expires
+                                                        # before a
+                                                        # CALL_ESTABLISHED
+        print(data, flush=True)
         return 1
 
 ns = Netstring(baresipHost, 4444)
+
 # Start event handler loop
-ns.getEvents(event_handler)
+ns.getEvents(event_handler, browsing, noCallTo)
+
+# Quit baresip
+m = {"command":"quit"}
+res = ns.sendCommand(m)
+if ivr:
+    ivr.close()
+if browsing:
+    browsing.stop()
+subprocess.run(["xdotool", "key", "ctrl+W"])
+
 
 sys.exit(0)
 
