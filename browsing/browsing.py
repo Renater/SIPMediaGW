@@ -27,7 +27,7 @@ class Browsing:
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
         self.chromeOptions.add_argument('--disable-logging') 
-        self.chromeOptions.add_argument("--log-level=3")
+        self.chromeOptions.add_argument('--log-level=3')
         self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation']);
 
     def setUrl(self):

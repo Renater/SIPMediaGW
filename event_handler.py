@@ -32,6 +32,7 @@ parser.add_argument('-l','--log', help='Log file', required=False)
 parser.add_argument('-a','--addr', help='Baresip IP', required=False)
 parser.add_argument('-b','--browsing', help='Browsing file', required=True)
 parser.add_argument('-r','--room', help='Room name', required=False)
+parser.add_argument('-f','--from', help='From URI', required=False)
 parser.add_argument('-s','--res', help='Video resolution', required=True)
 args = vars(parser.parse_args())
 
@@ -42,6 +43,9 @@ else:
 
 if args['addr']:
     baresipHost = args['addr']
+
+if args['from']:
+    print("From URI: "+args['from'], flush=True)
 
 # Get a browsing object from the browsing file name
 sys.path.append(os.path.dirname(args['browsing']))
@@ -66,6 +70,12 @@ if not args['room']:
 
 # Event handler callback
 def event_handler(data, browsing):
+    if data['type'] == 'CALL_INCOMING':
+        print(data, flush=True)
+        if args['from'] and args['from'] != data['peeruri']:
+            return {"command":"hangup"}
+        else:
+            return {"command":"accept"}
 
     if data['type'] == 'CALL_ESTABLISHED':
         print(data, flush=True)
@@ -84,19 +94,24 @@ def event_handler(data, browsing):
                              stdin=subprocess.PIPE)
 
     if data['type'] == 'CALL_DTMF_START':
-        if ivr:
+        if ivr and len(browsing.room) != maxDigits:
+            print(data, flush=True)
             browsing.room = browsing.room + data['param']
             ivr.show(browsing.width, browsing.height, browsing.room)
             if len(browsing.room) == maxDigits:
                 browseThread = threading.Thread(target=browsing.run)
                 browseThread.start()
 
-    if data['type'] == 'CALL_CLOSED' or \
-       data['type'] == 'TIME_OUT' and not browsing.name:# Time out expires
-                                                        # before a
-                                                        # CALL_ESTABLISHED
+    if data['type'] == 'CALL_CLOSED':
+        if not args['from'] or \
+           args['from'] and args['from'] == data['peeruri']:
+            print(data, flush=True)
+            return {"command":"quit"}
+
+    # Time out expires before a CALL_ESTABLISHED
+    if data['type'] == 'TIME_OUT' and not browsing.name:
         print(data, flush=True)
-        return 1
+        return {"command":"quit"}
 
 ns = Netstring(baresipHost, 4444)
 
@@ -104,8 +119,8 @@ ns = Netstring(baresipHost, 4444)
 ns.getEvents(event_handler, browsing, noCallTo)
 
 # Quit baresip
-m = {"command":"quit"}
-res = ns.sendCommand(m)
+#m = {"command":"quit"}
+#res = ns.sendCommand(m)
 if ivr:
     ivr.close()
 if browsing:
