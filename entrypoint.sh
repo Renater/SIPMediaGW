@@ -57,11 +57,11 @@ check_v4l2() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
-    state=$(v4l2-ctl --device /dev/video0 --get-input | awk '{ print $1 }')
+    state=$(v4l2-ctl --device "$1" --get-input | awk '{ print $1 }')
     while [[ $state != "Video" && ("$timer" < $timeOut) ]]; do
         timer=$(($timer + 1))
         sleep 1
-        state=$(v4l2-ctl --device /dev/video0 --get-input | awk '{ print $1 }')
+        state=$(v4l2-ctl --device "$1" --get-input | awk '{ print $1 }')
     done
     if [ "$timer" = $timeOut ]; then
         echo "V4l2 loopback failed to launch" | log_ts "V4l2" >> $errLogs
@@ -119,11 +119,11 @@ VID_SIZE_WEBRTC="640x360"
 VID_FPS="30"
 PIX_DEPTH="24"
 
-SERVERNUM0=0
+SERVERNUM0=99
 echo "Server 0 Number= " $SERVERNUM0 | log_ts "Xvfb" >> $appLogs
 Xvfb :$SERVERNUM0 -screen 0 $VID_SIZE_SIP"x"$PIX_DEPTH | log_ts "Xvfb" >> $errLogs &
 
-SERVERNUM1=1
+SERVERNUM1=100
 echo "Server 1 Number= " $SERVERNUM1 | log_ts "Xvfb" >> $appLogs
 Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH | log_ts "Xvfb" >> $errLogs &
 
@@ -155,16 +155,19 @@ DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip -v \
 check_register
 
 ### Check if video device is ready ###
-check_v4l2
+check_v4l2 "/dev/video0"
 
 ### Event handler ###
 if [[ -n "$ROOM_NAME" ]]; then
     roomParam="-r "$ROOM_NAME
 fi
+if [[ -n "$FROM_URI" ]]; then
+    fromUri="-f "$FROM_URI
+fi
 DISPLAY=:$SERVERNUM0 python3 event_handler.py -l $appLogs \
                                               -b `pwd`"/browsing/"$BROWSE_FILE \
                                               -s $VID_SIZE_SIP \
-                                              $roomParam \
+                                              $roomParam $fromUri \
                      1> >( log_ts "Event" >> $appLogs ) 2> >( log_ts "Event" >> $errLogs )
 
 

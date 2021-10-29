@@ -11,7 +11,10 @@ from selenium.webdriver.support import expected_conditions as EC
 class RendezVousJitsi (Browsing):
 
     def setUrl(self):
-        self.url = 'https://rendez-vous.renater.fr/'+self.room+'#userInfo.displayName="'+self.name+'"'
+        self.url =  'https://rendez-vous.renater.fr/' + self.room
+        self.url += '#userInfo.displayName="' + self.name + '"'
+        self.url += '&config.enableNoisyMicDetection=false'
+
         print("Web browsing URL: "+self.url, flush=True)
 
     def browse(self, driver):

@@ -7,11 +7,13 @@ cleanup() {
 trap cleanup SIGINT SIGQUIT SIGTERM EXIT
 
 unset room
+unset from
 accounts_file="baresip/accounts"
 
-while getopts r:g:a: opt; do
+while getopts r:f:a: opt; do
     case $opt in
             r) room=$OPTARG ;;
+            f) from=$OPTARG ;;
             a) accounts_file=$OPTARG ;;
             *)
                 echo 'Error in command line parsing' >&2
@@ -86,10 +88,11 @@ logPref="logs/SIPWG"$id
 ### launch the gateway ###
 gwName="gw"$id
 HOST_TZ=$(cat /etc/timezone) \
-ROOM=$roomName ID=$id ACCOUNT=$sip_account LOGS=$logPref \
+ROOM=$roomName FROM=$from \
+ACCOUNT=$sip_account \
+ID=$id LOGS=$logPref \
 docker-compose -p $gwName up -d --force-recreate
 
-#docker container wait $gwName
 check_gw_status $gwName
 
 echo "{'res':'ok', 'uri':'$sip_account'}"

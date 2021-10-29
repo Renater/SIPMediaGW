@@ -21,5 +21,6 @@ services:
       SIP_ACCOUNT: "${ACCOUNT}" # <sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=passwd
       BROWSE_FILE: "rendezvousjitsi.py" # python browsing based on Selenium
       ROOM_NAME: "${ROOM}" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
+      FROM_URI: "${FROM}" # SIP URI of the caller
     stop_grace_period: 20s
 
