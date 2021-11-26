@@ -79,16 +79,12 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 
-if [ -n "$room" ] ; then
-    roomName=$(echo $room | sed -u 's/\///')
-fi
-
 logPref="logs/SIPWG"$id
 
 ### launch the gateway ###
 gwName="gw"$id
 HOST_TZ=$(cat /etc/timezone) \
-ROOM=$roomName FROM=$from \
+ROOM=$room FROM=$from \
 ACCOUNT=$sip_account \
 ID=$id LOGS=$logPref \
 docker-compose -p $gwName up -d --force-recreate

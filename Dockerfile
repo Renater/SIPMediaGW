@@ -43,9 +43,9 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
 RUN pip3 install --upgrade pip
 RUN pip3 install selenium requests opencv-python pillow
 
-COPY entrypoint.sh event_handler.py /var/
+COPY entrypoint.sh /var/
 
-COPY ivr /var/ivr
+COPY src /var/src
 
 RUN mkdir /var/.baresip
 

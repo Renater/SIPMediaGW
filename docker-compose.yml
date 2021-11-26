@@ -11,6 +11,7 @@ services:
             - ./logs:/var/logs
             - ./browsing:/var/browsing:ro
             - ./baresip:/var/baresip:ro
+            - ./ivr:/var/ivr:ro
     devices:
             - /dev/video${ID}:/dev/video0
             - /dev/snd:/dev/snd
