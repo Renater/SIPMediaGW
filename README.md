@@ -49,13 +49,24 @@ Coturn is an open-source STUN and TURN implementation:
 
 A minimalist configuration is provided here: [turnserver.conf](docs/turnserver.conf)
 
+Implementation
+-----------
+
+- **entry_point.sh**
+
+	Docker entry point (~ submodules launcher).
+
+- **/src**
+
+	Core functions implementation.
+
 Configuration
 -----------
 
 - **/browsing**
 
 	This directory contains browsing scripts (python/selenium) to enter in a room of a specific web conferencing service.
-	
+
 - **/baresip**
 
 	This directory contains  Baresip (https://github.com/baresip/baresip) related configuration files:
@@ -74,25 +85,17 @@ Configuration
 		
 		Example to be adapted and duplicated:
 		
-			<sip:user@domain;transport=tcp>;auth_pass=pass;answermode=manual;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
+			<sip:user@domain;transport=tcp>;auth_pass=pass;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
 
   >	 **_NOTE:_** In the case of 4 gateways, this file must contain 4 different SIP accounts/lines
 
-- **ivr**
+- **/ivr**
 
 	This directory contains some files (audio prompt, background image, fonts..) related to Interactive Voice Response (IVR).
 
-- **event_handler.py**
-
-	Event handler script, based on SIP signaling.
-	
 - **docker-compose.yml**
 
 	The docker compose file.
-	
-- **entry_point.sh**
-
-	Docker entry point which is actually the SIP media gateway implementation.
 
 - **Docker network**
 
@@ -128,8 +131,8 @@ Troubleshoot
 
 Logs:
 
-	tail -f logs/SIPWGXX_testRTCmediaGW_app.log
-	tail -f logs/SIPWGXX_testRTCmediaGW_err.log
+	tail -f logs/SIPWGXX_app.log
+	tail -f logs/SIPWGXX_err.log
 	
 Restart Audio:
 

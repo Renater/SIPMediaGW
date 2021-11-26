@@ -141,6 +141,7 @@ ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
 
 ### Configure and start Baresip ###
 cp baresip/config_default .baresip/config
+$SIP_ACCOUNT = $(echo $acc | sed -u 's/answermode=[^;]*;//')";answermode=manual"
 echo "$SIP_ACCOUNT" > .baresip/accounts
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
@@ -164,7 +165,8 @@ fi
 if [[ -n "$FROM_URI" ]]; then
     fromUri="-f "$FROM_URI
 fi
-DISPLAY=:$SERVERNUM0 python3 event_handler.py -l $appLogs \
+cp "./browsing/"$BROWSE_FILE src
+DISPLAY=:$SERVERNUM0 python3 src/event_handler.py -l $appLogs \
                                               -b `pwd`"/browsing/"$BROWSE_FILE \
                                               -s $VID_SIZE_SIP \
                                               $roomParam $fromUri \

@@ -10,8 +10,8 @@ import signal
 import argparse
 import json
 import threading
-from baresip.netstring import Netstring
-from ivr.ivr import Ivr
+from netstring import Netstring
+from ivr import Ivr
 
 # Default Baresip host
 baresipHost = "localhost"
@@ -118,9 +118,6 @@ ns = Netstring(baresipHost, 4444)
 # Start event handler loop
 ns.getEvents(event_handler, browsing, noCallTo)
 
-# Quit baresip
-#m = {"command":"quit"}
-#res = ns.sendCommand(m)
 if ivr:
     ivr.close()
 if browsing:
