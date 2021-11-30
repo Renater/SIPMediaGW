@@ -141,8 +141,8 @@ ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
 
 ### Configure and start Baresip ###
 cp baresip/config_default .baresip/config
-$SIP_ACCOUNT = $(echo $acc | sed -u 's/answermode=[^;]*;//')";answermode=manual"
-echo "$SIP_ACCOUNT" > .baresip/accounts
+account=$(echo $SIP_ACCOUNT | sed -u 's/answermode=[^;]*;//')";answermode=manual"
+echo $account > .baresip/accounts
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config
