@@ -90,6 +90,6 @@ ID=$id LOGS=$logPref \
 docker-compose -p $gwName up -d --force-recreate
 
 check_gw_status $gwName
-
-echo "{'res':'ok', 'uri':'$sip_account'}"
+sip_uri=$(awk -F'<|;' '{print $2}' <<< $sip_account)
+echo "{'res':'ok', 'uri':'$sip_uri'}"
 
