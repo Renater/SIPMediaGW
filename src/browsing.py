@@ -40,11 +40,16 @@ class Browsing:
         try:
             self.driver = webdriver.Chrome('/usr/bin/chromedriver', options=self.chromeOptions, service_log_path='/dev/null')
             self.setUrl()
+            if not self.url:
+                return 1
             self.driver.get(self.url)
             self.browse(self.driver)
+
+            return 0
+
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
-            return -1
+            return 1
 
     def stop(self):
         try:

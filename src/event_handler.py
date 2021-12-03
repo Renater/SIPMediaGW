@@ -17,7 +17,7 @@ from ivr import Ivr
 baresipHost = "localhost"
 
 # Room number length
-maxDigits = 6
+maxDigits = 10
 
 # No active calls timeout (seconds)
 noCallTo = 60
@@ -61,12 +61,17 @@ dispHeight = int(args['res'].split('x')[1])
 ivr = []
 browsing = []
 
+def browse(browsing):
+    if browsing.run():
+        subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
+                       shell=True)
+
 browsing = browsingObj(dispWidth, dispHeight, args['room'])
 
 if not args['room']:
     ivr = Ivr("Entrez le numéro de la conférence",
               "ivr/ivr.png", "ivr/calibrii.ttf", 50)
-    ivr.show(dispWidth,dispHeight,'* * * * * *')
+    ivr.show(dispWidth,dispHeight,' *'*maxDigits)
 
 # Event handler callback
 def event_handler(data, browsing):
@@ -86,7 +91,7 @@ def event_handler(data, browsing):
 
         browsing.name = displayName
         if browsing.room:
-            browseThread = threading.Thread(target=browsing.run)
+            browseThread = threading.Thread(target=browse, args=(browsing,))
             browseThread.start()
         else:
             subprocess.Popen(["sh","ivr_audio.sh"],
@@ -99,7 +104,7 @@ def event_handler(data, browsing):
             browsing.room = browsing.room + data['param']
             ivr.show(browsing.width, browsing.height, browsing.room)
             if len(browsing.room) == maxDigits:
-                browseThread = threading.Thread(target=browsing.run)
+                browseThread = threading.Thread(target=browse, args=(browsing,))
                 browseThread.start()
 
     if data['type'] == 'CALL_CLOSED':
