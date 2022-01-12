@@ -79,15 +79,13 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 
-logPref="logs/SIPWG"$id
-
 ### launch the gateway ###
 gwName="gw"$id
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room FROM=$from \
 ACCOUNT=$sip_account \
-ID=$id LOGS=$logPref \
-docker-compose -p $gwName up -d --force-recreate
+ID=$id \
+docker-compose -p $gwName up -d --force-recreate --remove-orphans gw
 
 check_gw_status $gwName
 sip_uri=$(awk -F'<|;' '{print $2}' <<< $sip_account)

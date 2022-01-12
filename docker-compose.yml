@@ -18,10 +18,12 @@ services:
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
-      LOG_PREF: "${LOGS}"
       SIP_ACCOUNT: "${ACCOUNT}" # <sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=passwd
       BROWSE_FILE: "rendezvousjitsi.py" # python browsing based on Selenium
       ROOM_NAME: "${ROOM}" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
       FROM_URI: "${FROM}" # SIP URI of the caller
+      BARESIP_ARGS: "" # Add Baresip arguments e.g. " -v" (=> full logs)
+      ERR_LOGS: "/dev/stderr"
+      APP_LOGS: "/dev/stdout"
     stop_grace_period: 20s
 
