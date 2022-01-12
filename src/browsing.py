@@ -7,6 +7,8 @@ import traceback
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.remote.remote_connection import LOGGER, logging
 
 class Browsing:
     def __init__(self, width, height, room=None, name=None):
@@ -16,6 +18,8 @@ class Browsing:
         self.width = width
         self.height= height
         self.driver = []
+        self.desiredCaps = DesiredCapabilities.CHROME
+        self.serviceArgs = []
         self.chromeOptions = Options()
         self.chromeOptions.add_argument('--no-sandbox')
         self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
@@ -26,9 +30,7 @@ class Browsing:
         self.chromeOptions.add_argument('--window-position=0,0')
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
-        self.chromeOptions.add_argument('--disable-logging') 
-        self.chromeOptions.add_argument('--log-level=3')
-        self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation']);
+        self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation'])
 
     def setUrl(self):
         pass
@@ -38,10 +40,13 @@ class Browsing:
 
     def run(self):
         try:
-            self.driver = webdriver.Chrome('/usr/bin/chromedriver', options=self.chromeOptions, service_log_path='/dev/null')
             self.setUrl()
             if not self.url:
                 return 1
+            self.driver = webdriver.Chrome('/usr/bin/chromedriver',
+                                           desired_capabilities=self.desiredCaps,
+                                           options=self.chromeOptions,
+                                           service_args=self.serviceArgs)
             self.driver.get(self.url)
             self.browse(self.driver)
 

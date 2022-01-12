@@ -28,18 +28,12 @@ signal.signal(signal.SIGTERM, lambda:sys.exit(1))
 # parse arguments
 args = sys.argv
 parser = argparse.ArgumentParser(description='Event handler script')
-parser.add_argument('-l','--log', help='Log file', required=False)
 parser.add_argument('-a','--addr', help='Baresip IP', required=False)
 parser.add_argument('-b','--browsing', help='Browsing file', required=True)
 parser.add_argument('-r','--room', help='Room name', required=False)
 parser.add_argument('-f','--from', help='From URI', required=False)
 parser.add_argument('-s','--res', help='Video resolution', required=True)
 args = vars(parser.parse_args())
-
-if args['log']:
-    appLogs = open(args['log'], "a")
-else:
-    appLogs = sys.stdout
 
 if args['addr']:
     baresipHost = args['addr']

@@ -131,8 +131,7 @@ Troubleshoot
 
 Logs:
 
-	tail -f logs/SIPWGXX_app.log
-	tail -f logs/SIPWGXX_err.log
+	docker logs -f -t gwXX
 	
 Restart Audio:
 
