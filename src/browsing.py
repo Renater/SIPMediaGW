@@ -56,8 +56,12 @@ class Browsing:
             traceback.print_exc(file=sys.stdout)
             return 1
 
+    def unset(self):
+        pass
+
     def stop(self):
         try:
+            self.unset()
             if self.driver:
                 self.driver.close()
                 self.driver.quit()
