@@ -1,20 +1,20 @@
 #!/bin/bash
 
 cleanup() {
-    flock -u ${lock_fd} > /dev/null 2>&1
-    rm -f ${lock_file} > /dev/null 2>&1
+    flock -u ${lockFd} > /dev/null 2>&1
+    rm -f ${lockFile} > /dev/null 2>&1
 }
 trap cleanup SIGINT SIGQUIT SIGTERM EXIT
 
 unset room
 unset from
-accounts_file="baresip/accounts"
+unset prefix
 
-while getopts r:f:a: opt; do
+while getopts r:f:p: opt; do
     case $opt in
             r) room=$OPTARG ;;
             f) from=$OPTARG ;;
-            a) accounts_file=$OPTARG ;;
+            p) prefix=$OPTARG ;;
             *)
                 echo 'Error in command line parsing' >&2
                 exit 1
@@ -23,36 +23,29 @@ done
 
 shift "$(( OPTIND - 1 ))"
 
-if [ ! -f $accounts_file ]; then
-        echo 'Accounts file: '$accounts_file' does not exist' >&2
-        exit 1
-fi
+source <(grep = sipmediagw.cfg)
 
-sip_account=''
-lock_file_prefix="sipmediagw"
+lockFilePrefix="sipmediagw"
 gwNamePrefix="gw"
 
 find_free_id() {
-    accounts_data=`cat $accounts_file`
-    accounts="$(echo "$accounts_data" | sed -e '/^\s*#.*$/d' -e '/^\s*$/d')"
+    maxGwNum=$(echo "$(nproc)/$cpuCorePerGw" | bc )
     i=0
-    while IFS= read -r line && [ -n "$accounts" ]
-    do
-        lock_file="/tmp/"${lock_file_prefix}$i".lock"
-        exec {lock_fd}>"/tmp/"${lock_file_prefix}$i".lock"
-        flock -x -n $lock_fd
+    while [[ "$i" < $maxGwNum ]] ; do
+        lockFile="/tmp/"${lockFilePrefix}$i".lock"
+        exec {lockFd}>"/tmp/"${lockFilePrefix}$i".lock"
+        flock -x -n $lockFd
         if [ "$?" == 0 ]; then
             docker container exec  $gwNamePrefix$i echo > /dev/null 2>&1
             if [ "$?" == 1 ]; then
                 id=$i
-                sip_account=$line
                 break
             else
                 cleanup # => unlock
             fi
         fi
         i=$(($i + 1))
-    done <<< "$accounts"
+    done
 }
 
 check_gw_status() {
@@ -66,7 +59,7 @@ check_gw_status() {
         sleep 1
     done
     if [ "$timer" = $timeOut ]; then
-        echo "{'res':'error','type':'The gateway failed to launch'}"
+        echo "{'res':'error','type':'The gateway failed to launch', 'data': '$sipAccount'}"
         exit 1
     fi
 }
@@ -75,19 +68,28 @@ check_gw_status() {
 find_free_id
 
 if [[ -z "$id" ]]; then
-    echo "{'res':'error','type':'No free ressources/accounts found'}"
+    echo "{'res':'error','type':'No free resources found'}"
     exit 1
 fi
+
+### set SIP account ###
+userNamePref=${sipUaNamePart}"."${id}
+if [[ "$prefix" ]]; then
+    userNamePref=${prefix}"."${userNamePref}
+fi
+sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;"
+sipAccount+="auth_user="${userNamePref}";auth_pass="${sipSecret}";"
+sipAccount+="medianat=turn;stunserver="${turnConfig}
 
 ### launch the gateway ###
 gwName="gw"$id
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room FROM=$from \
-ACCOUNT=$sip_account \
+ACCOUNT=$sipAccount \
 ID=$id \
-docker-compose -p $gwName up -d --force-recreate --remove-orphans gw
+docker compose -p $gwName up -d --force-recreate --remove-orphans gw
 
 check_gw_status $gwName
-sip_uri=$(awk -F'<|;' '{print $2}' <<< $sip_account)
-echo "{'res':'ok', 'uri':'$sip_uri'}"
+sipUri=$(awk -F'<|;' '{print $2}' <<< $sipAccount)
+echo "{'res':'ok', 'uri':'$sipUri'}"
 
