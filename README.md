@@ -78,17 +78,11 @@ Configuration
 	- netstring.py
 
 		TCP control interface tools.
-		
-	- <a name="accounts">accounts</a>
 
-		Where to configure SIP parameters (URI, register, TURN... ) of the gateways (one line per gateway).
-		
-		Example to be adapted and duplicated:
-		
-			<sip:user@domain;transport=tcp>;auth_pass=pass;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=password
+- **sipmediagw.cfg**
 
-  >	 **_NOTE:_** In the case of 4 gateways, this file must contain 4 different SIP accounts/lines
-
+	Configuration file where to set: the SIP server address, a secret used by the gateways for SIP registration, TURN server address and credentials.
+	
 - **/ivr**
 
 	This directory contains some files (audio prompt, background image, fonts..) related to Interactive Voice Response (IVR).
@@ -117,12 +111,22 @@ Someone already connected to the webconference, e.g:
  Launch a gateway:
 
 	SIPMediaGW.sh -r testRTCmediaGW -f "sip:endpoint@domain.com"
-  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that they are dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
+  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
 
 Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs used by the gateway.
   >    **_NOTE:_**  -r and -f arguments are optional:
  If "-r" (room) argument is not passed, the SIP endpoint will connect first to an IVR. By default a 6 digits number is expected as a room name by the audio prompt.
  If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
+ 
+Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request. 
+
+Start the http server:
+
+	python HTTPLauncher.py
+
+Launch a gateway:
+
+	curl -kv "http://192.168.92.1:8080/sipmediagw?room=testRTCmediaGW"
 
 The gateway will automatically stop after the call is closed.
 	
@@ -131,7 +135,7 @@ Troubleshoot
 
 Logs:
 
-	docker logs -f -t gwXX
+	tail -f /var/syslog | grep mediagw
 	
 Restart Audio:
 
