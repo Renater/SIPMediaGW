@@ -2,16 +2,45 @@
 
 import sys
 import time
-import traceback
+import requests
+import json
 from browsing import Browsing
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+jitsiFQDN = "rendez-vous.renater.fr"
+confMapperPath = "conf-api/conferenceMapper"
+
 class RendezVousJitsi (Browsing):
 
+    def getRoomName(self):
+        reqUrl = ('https://{}/{}?id={}'.
+                  format(jitsiFQDN, confMapperPath,self.room))
+        print("ConfMapper request URL: "+reqUrl, flush=True)
+        r = requests.get(reqUrl, verify=False)
+        mapping = json.loads(r.content.decode('utf-8'))
+        if 'conference' in mapping:
+            return mapping['conference']
+        elif 'error' in mapping:
+            raise Exception(mapping['error'])
+        else:
+            return
+
     def setUrl(self):
-        self.url =  'https://rendez-vous.renater.fr/' + self.room
+        urlBase = ''
+        try:
+            if confMapperPath:
+                urlConference = self.getRoomName().split('@')
+                urlDomain = urlConference[1].split('conference.')[1]
+                urlBase = 'https://{}/{}'.format(urlDomain, urlConference[0])
+            else:
+                urlBase =  'https://{}/{}'.format(jitsiFQDN, self.room)
+        except Exception as exc:
+            print("Failed to get room URL:", exc, flush=True)
+            return
+
+        self.url += urlBase
         self.url += '#userInfo.displayName="' + self.name + '"'
         self.url += '&config.enableNoisyMicDetection=false'
 
