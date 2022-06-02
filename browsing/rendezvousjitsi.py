@@ -10,7 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 jitsiFQDN = "rendez-vous.renater.fr"
-confMapperPath = "conf-api/conferenceMapper"
+confMapperPath = ""#"conf-api/conferenceMapper"
 
 class RendezVousJitsi (Browsing):
 
