@@ -104,18 +104,18 @@ Usage
 
 Someone already connected to the webconference, e.g:
 
-	google-chrome "https://rendez-vous.renater.fr/testRTCmediaGW"
+	google-chrome "https://rendez-vous.renater.fr/testmediagw"
 
  SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as there are account lines in the [account file](#accounts).
 
  Launch a gateway:
 
-	SIPMediaGW.sh -r testRTCmediaGW -f "sip:endpoint@domain.com"
+	SIPMediaGW.sh -r testmediagw -f "sip:endpoint@domain.com"
   >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
 
 Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs used by the gateway.
   >    **_NOTE:_**  -r and -f arguments are optional:
- If "-r" (room) argument is not passed, the SIP endpoint will connect first to an IVR. By default a 6 digits number is expected as a room name by the audio prompt.
+ If "-r" (room) argument is not passed, the SIP endpoint will connect first to an IVR. By default a 10 digits number is expected as a room name by the audio prompt.
  If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
  
 Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request. 
@@ -126,7 +126,13 @@ Start the http server:
 
 Launch a gateway:
 
-	curl -kv "http://192.168.92.1:8080/sipmediagw?room=testRTCmediaGW"
+	curl "http://192.168.92.1:8080/sipmediagw?room=testmediagw"
+
+Instead of manually executing a curl command, a more complete (docker based) testing environment is provided and may be simply started as follows:
+
+	docker compose -p testing up -d --force-recreate
+	
+In this way, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
 
 The gateway will automatically stop after the call is closed.
 	
