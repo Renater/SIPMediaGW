@@ -130,7 +130,7 @@ Launch a gateway:
 
 Instead of manually executing a curl command, a more complete (docker based) testing environment is provided and may be simply started as follows:
 
-	docker compose -p testing up -d --force-recreate
+	cd test && docker compose -p testing up -d --force-recreate
 	
 In this way, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
 
