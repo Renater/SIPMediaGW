@@ -14,7 +14,7 @@ services:
             ipv4_address: 192.168.92.2
     volumes:
             - ./kamailio:/etc/kamailio:ro
-            - ../sipmediagw.cfg:/etc/kamailio/sipmediagw.cfg
+            - ../sipmediagw.cfg:/etc/sipmediagw.cfg
 
   turn_server:
     image: coturn/coturn
