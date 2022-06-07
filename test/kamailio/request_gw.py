@@ -9,7 +9,7 @@ import json
 import configparser
 import os
 
-congiFile = "/etc/kamailio/sipmediagw.cfg"
+congiFile = "/etc/sipmediagw.cfg"
 
 class RequestGw:
     def __init__(self):
@@ -32,8 +32,6 @@ class RequestGw:
                 Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
                 uri = msg.RURI
                 room = (uri.split("sip:")[1]).split('@')[0]
-                if len(room) != 10 and room !='0' :
-                    return 1
                 fromUri = (msg.getHeader('from').split('<')[1]).split('>')[0]
                 Logger.LM_ERR('Room Name %s\n' % room )
                 http = httplib2.Http(disable_ssl_certificate_validation=True)
