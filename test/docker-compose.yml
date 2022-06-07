@@ -1,0 +1,29 @@
+networks:
+  default:
+    name: gw_net
+
+services:
+  sip_server:
+    image: kamailio
+    build:
+        context: ..
+        dockerfile: test/kamailio/Dockerfile
+    container_name: kamailio
+    networks:
+        default:
+            ipv4_address: 192.168.92.2
+    volumes:
+            - ./kamailio:/etc/kamailio:ro
+            - ../sipmediagw.cfg:/etc/kamailio/sipmediagw.cfg
+
+  turn_server:
+    image: coturn/coturn
+    container_name: coturn
+    networks:
+        default:
+            ipv4_address: 192.168.92.3
+    command:
+        - "--log-file=stdout"
+        - "--lt-cred-mech"
+        - "--user=dmo:1234"
+
