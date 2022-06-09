@@ -3,10 +3,9 @@ FROM debian:9-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget build-essential  ca-certificates \
     libsdl2-2.0-0 libgl1-mesa-dri xvfb \
-    dbus-user-session \
-    pulseaudio socat libspandsp2 \
+    socat libspandsp2 \
     libnss3 openssl \
-    libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
+    libavcodec57 libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev libsndfile1-dev\
     libssl-dev \
     && wget https://github.com/baresip/re/archive/v1.1.0.tar.gz && tar -xzf v1.1.0.tar.gz && rm v1.1.0.tar.gz \
     && cd re-1.1.0 && make && make install && cd .. \
@@ -21,9 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential wget \
     && apt autoremove -y \
     && apt autoclean -y 
-
-ENV XDG_RUNTIME_DIR=/tmp
-ENV PULSE_SERVER=unix:/run/user/1000/pulse/native
 
 WORKDIR /var
 
