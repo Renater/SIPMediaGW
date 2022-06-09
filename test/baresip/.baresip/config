@@ -18,12 +18,12 @@ call_max_calls		4
 
 # Audio
 #audio_path		/usr/local/share/baresip
-#audio_player		alsa,default
-#audio_source		alsa,default
-#audio_alert		alsa,default
-#ausrc_srate		48000
+#audio_player		alsa
+audio_source		ausine,400
+#audio_alert		alsa
+ausrc_srate		48000
 #auplay_srate		48000
-#ausrc_channels		0
+ausrc_channels		2
 #auplay_channels	0
 #audio_txmode		poll		# poll, thread
 audio_level		no
@@ -91,12 +91,12 @@ module			g711.so
 
 # Audio driver Modules
 #module			alsa.so
-module			pulse.so
+#module			pulse.so
 #module			jack.so
 #module			portaudio.so
 #module			aubridge.so
-#module			aufile.so
-#module			ausine.so
+module			aufile.so
+module			ausine.so
 
 # Video codec Modules (in order)
 module			avcodec.so
@@ -120,7 +120,7 @@ module			avcodec.so
 # Video display modules
 #module			directfb.so
 #module			x11.so
-module			sdl.so
+#module			sdl.so
 module			fakevideo.so
 
 # Audio/Video source modules
@@ -235,7 +235,7 @@ video_selfview		window # {window,pip}
 #mqtt_basetopic		baresip/01
 
 # sndfile
-#snd_path		/tmp
+snd_path		/tmp
 
 # EBU ACIP
 #ebuacip_jb_type	fixed	# auto,fixed
