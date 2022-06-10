@@ -79,7 +79,7 @@ Configuration
 
 		TCP control interface tools.
 
-- **sipmediagw.cfg**
+- **<a name="config">sipmediagw.cfg</a>**
 
 	Configuration file where to set: the SIP server address, a secret used by the gateways for SIP registration, TURN server address and credentials.
 	
@@ -106,7 +106,7 @@ Someone already connected to the webconference, e.g:
 
 	google-chrome "https://rendez-vous.renater.fr/testmediagw"
 
- SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as there are account lines in the [account file](#accounts).
+ SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with *cpuCorePerGw* parameter value fixed in [sipmedia.cfg](https://github.com/Renater/SIPMediaGW/blob/main/sipmediagw.cfg).
 
  Launch a gateway:
 
