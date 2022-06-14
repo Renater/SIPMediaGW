@@ -1,6 +1,6 @@
 #!/bin/bash
 
-unset dial
+dial=""
 
 while getopts d: opt; do
     case $opt in
@@ -11,5 +11,9 @@ while getopts d: opt; do
     esac
 done
 
-DIAL="-e d"${dial} \
+if [[ "$dial" ]]; then
+    dial="-e d"${dial}
+fi
+
+DIAL=$dial \
 docker compose run baresip
