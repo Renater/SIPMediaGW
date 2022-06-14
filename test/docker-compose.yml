@@ -9,6 +9,7 @@ services:
     volumes:
             - ./kamailio:/etc/kamailio:ro
             - ../sipmediagw.cfg:/etc/sipmediagw.cfg
+            - ./kamailio.sqlite:/usr/local/etc/kamailio/kamailio.sqlite
 
   turn_server:
     image: coturn/coturn
