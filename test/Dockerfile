@@ -14,10 +14,8 @@ WORKDIR /etc/kamailio/
 COPY test/kamailio/kamctlrc /etc/kamailio
 
 RUN mkdir /usr/local/etc/kamailio
-RUN touch /usr/local/etc/kamailio/kamailio.sqlite
-
-RUN kamdbctl create
 
 EXPOSE 5060
 
 ENTRYPOINT ["kamailio", "-DD", "-E"]
+
