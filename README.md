@@ -133,8 +133,6 @@ Instead of manually executing a curl command, a more complete (docker based) tes
 	cd test && docker compose -p testing up -d --force-recreate
 	
 In this way, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
-
-The gateway will automatically stop after the call is closed.
 	
 Troubleshoot
 --------
