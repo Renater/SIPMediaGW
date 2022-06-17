@@ -62,9 +62,13 @@ class Browsing:
     def stop(self):
         try:
             self.unset()
+            self.room=''
+            self.name=''
+            self.url=''
             if self.driver:
                 self.driver.close()
                 self.driver.quit()
+                self.driver = []
                 print("Browsing stopped", flush=True)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)

@@ -59,7 +59,7 @@ class IvrBis(Ivr):
         self.trial = 0
     def onTimeout(self):
         print("IVR Timeout", flush=True)
-        subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
+        subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'],
                        shell=True)
 
 def getIvr():
@@ -92,7 +92,7 @@ def browse(args):
 
         if  args['ivr']:
             if args['ivr'].trial >= 3:
-                subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
+                subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'],
                                shell=True)
             args['ivr'].trial+= 1
             auProc = subprocess.Popen(["sh","ivr_audio.sh"],
@@ -103,6 +103,13 @@ def browse(args):
             args['ivr'].close()
 
     args['browse_lock'].release()
+
+def endBrowse(args):
+    if args['ivr']:
+        args['ivr'].close()
+    if args['browsing']:
+        args['browsing'].stop()
+    subprocess.run(["xdotool", "key", "ctrl+W"])
 
 # Event handler callback
 def event_handler(data, args):
@@ -121,10 +128,11 @@ def event_handler(data, args):
     if data['type'] == 'CALL_ESTABLISHED':
         print(data, flush=True)
         if 'peerdisplayname' in data:
-            displayName = data['peerdisplayname']
+            displayName = data['peerdisplayname'].split('-')[1]
+            args['browsing'].room = data['peerdisplayname'].split('-')[0]
         else:
             displayName = data['peeruri'].split(';')[0]
-
+        print("My room: "+args['browsing'].room, flush=True)
         args['browsing'].name = displayName
         if args['browsing'].room:
             browseThread = threading.Thread(target=browse, args=(args,))
@@ -155,15 +163,16 @@ def event_handler(data, args):
                                  ' *'*maxDigits)
 
     if data['type'] == 'CALL_CLOSED':
+        endBrowse(args)
         if (not inputs['from'] or
             inputs['from'] and inputs['from'] == data['peeruri']):
             print(data, flush=True)
-            return {"command":"quit"}
+            #return {"command":"quit"}
 
     # Time out expires before a CALL_ESTABLISHED
     if data['type'] == 'TIME_OUT' and not args['browsing'].name:
         print(data, flush=True)
-        return {"command":"quit"}
+        #return {"command":"quit"}
 
 
 # Start event handler loop
@@ -174,15 +183,10 @@ argDict = {'browsing':browsingObj(dispWidth, dispHeight, inputs['room']),
            'browse_lock': threading.Lock(),
            'ivr':None}
 
-ns.getEvents(event_handler, argDict , noCallTo)
+ns.getEvents(event_handler, argDict)
 
 # Terminate
-if argDict['ivr']:
-    argDict['ivr'].close()
-if argDict['browsing']:
-    argDict['browsing'].stop()
-subprocess.run(["xdotool", "key", "ctrl+W"])
-
+endBrowse(argDict)
 
 sys.exit(0)
 
