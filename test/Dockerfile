@@ -12,8 +12,6 @@ RUN pip3 install requests httplib2 pysqlite3
 
 WORKDIR /etc/kamailio/
 
-COPY test/kamailio/kamctlrc /etc/kamailio
-
 RUN mkdir /usr/local/etc/kamailio
 
 EXPOSE 5060
