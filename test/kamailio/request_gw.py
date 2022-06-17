@@ -22,7 +22,6 @@ class RequestGw:
         self.gwNamePart = self.config['mediagw']['sipUaNamePart'].replace('"',"").replace("'", "")
         KSR.pv.sets("$var(secret)", sipSecret)
         self.con = sqlite3.connect('/usr/local/etc/kamailio/kamailio.sqlite')
-        self.lockTimeOut=10 #seconds
 
     def child_init(self, y):
         Logger.LM_ERR('RequestGwchild_init(%d)\n' % y)
@@ -31,33 +30,29 @@ class RequestGw:
     def lockGw (self):
         res=''
         with self.con as con:
-            ts = (datetime.datetime.now()).strftime("%Y-%m-%d %H:%M:%S")
             cursor = con.cursor()
             cursor.execute('''SELECT contact, username FROM location
                               WHERE
-                                  strftime("%Y-%m-%d %H:%M:%S", last_locked,'+'||?||' second') <
-                                  strftime("%Y-%m-%d %H:%M:%S", 'now') AND
+                                  locked = 0 AND
                                   username LIKE '%'||?||'%' AND
                                   NOT EXISTS (
                                      SELECT callee_contact
                                      FROM dialog
                                      WHERE callee_contact LIKE '%'||location.contact||'%'
-                                  );''',(str(self.lockTimeOut),
-                                         self.gwNamePart),)
+                                  );''',(self.gwNamePart,))
             contactList = cursor.fetchall()
             if len(contactList) == 0:
                 return
             for contact in contactList:
-                cursor.execute('''UPDATE location SET last_locked = strftime("%Y-%m-%d %H:%M:%S", 'now')
+                cursor.execute('''UPDATE location SET locked = 1
                                   WHERE
                                       location.contact = ? AND
-                                      strftime("%Y-%m-%d %H:%M:%S", last_locked,'+'||?||' second') <
-                                      strftime("%Y-%m-%d %H:%M:%S", 'now') AND
+                                      locked = 0 AND
                                       NOT EXISTS (
                                          SELECT callee_contact
                                          FROM dialog
                                          WHERE callee_contact LIKE '%'||?||'%'
-                                      );''',(contact[0], str(self.lockTimeOut), contact[0],))
+                                      );''',(contact[0], contact[0],))
                 res = con.commit()
                 if cursor.rowcount > 0:
                     return contact
