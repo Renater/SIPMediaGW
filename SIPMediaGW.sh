@@ -84,6 +84,7 @@ sipAccount+="medianat=turn;stunserver="${turnConfig}
 ### launch the gateway ###
 gwName="gw"$id
 HOST_TZ=$(cat /etc/timezone) \
+ROOM=$room FROM=$from \
 ACCOUNT=$sipAccount \
 ID=$id \
 docker compose -p $gwName up -d --force-recreate --remove-orphans gw

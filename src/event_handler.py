@@ -59,7 +59,7 @@ class IvrBis(Ivr):
         self.trial = 0
     def onTimeout(self):
         print("IVR Timeout", flush=True)
-        subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'],
+        subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
                        shell=True)
 
 def getIvr():
@@ -92,7 +92,7 @@ def browse(args):
 
         if  args['ivr']:
             if args['ivr'].trial >= 3:
-                subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'],
+                subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
                                shell=True)
             args['ivr'].trial+= 1
             auProc = subprocess.Popen(["sh","ivr_audio.sh"],
@@ -171,12 +171,12 @@ def event_handler(data, args):
         if (not inputs['from'] or
             inputs['from'] and inputs['from'] == data['peeruri']):
             print(data, flush=True)
-            #return {"command":"quit"}
+            return {"command":"quit"}
 
     # Time out expires before a CALL_ESTABLISHED
     if data['type'] == 'TIME_OUT' and not args['browsing'].name:
         print(data, flush=True)
-        #return {"command":"quit"}
+        return {"command":"quit"}
 
 
 # Start event handler loop
