@@ -128,8 +128,12 @@ def event_handler(data, args):
     if data['type'] == 'CALL_ESTABLISHED':
         print(data, flush=True)
         if 'peerdisplayname' in data:
-            displayName = data['peerdisplayname'].split('-')[1]
-            args['browsing'].room = data['peerdisplayname'].split('-')[0]
+            if '-' in data['peerdisplayname'] and not args['browsing'].room:
+            # specific case with custom kamailio callflow
+                displayName = data['peerdisplayname'].split('-')[1]
+                args['browsing'].room = data['peerdisplayname'].split('-')[0]
+            else:
+                displayName = data['peerdisplayname']
         else:
             displayName = data['peeruri'].split(';')[0]
         print("My room: "+args['browsing'].room, flush=True)
