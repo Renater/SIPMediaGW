@@ -19,9 +19,10 @@ class RequestGw:
         self.config.read(congiFile)
         sipSecret=self.config['sip']['sipSecret'].replace('"',"").replace("'", "")
         self.serverAddr=self.config['sip']['sipSrv'].replace('"',"").replace("'", "")
+        self.gwNamePart = self.config['mediagw']['sipUaNamePart'].replace('"',"").replace("'", "")
         KSR.pv.sets("$var(secret)", sipSecret)
         self.con = sqlite3.connect('/usr/local/etc/kamailio/kamailio.sqlite')
-        self.lockTimeOut=60
+        self.lockTimeOut=10 #seconds
 
     def child_init(self, y):
         Logger.LM_ERR('RequestGwchild_init(%d)\n' % y)
@@ -36,11 +37,13 @@ class RequestGw:
                               WHERE
                                   strftime("%Y-%m-%d %H:%M:%S", last_locked,'+'||?||' second') <
                                   strftime("%Y-%m-%d %H:%M:%S", 'now') AND
+                                  username LIKE '%'||?||'%' AND
                                   NOT EXISTS (
                                      SELECT callee_contact
                                      FROM dialog
                                      WHERE callee_contact LIKE '%'||location.contact||'%'
-                                  );''',(str(self.lockTimeOut),))
+                                  );''',(str(self.lockTimeOut),
+                                         self.gwNamePart),)
             contactList = cursor.fetchall()
             if len(contactList) == 0:
                 return
@@ -65,7 +68,7 @@ class RequestGw:
         Logger.LM_ERR('RequestGw.handler(%s, %s)\n' % (msg.Type, str(args)))
         launcherAPIPath = self.config['mediagw']['launcherAPIPath'].replace('"',"").replace("'", "")
         if msg.Type == 'SIP_REQUEST':
-            if msg.Method == 'INVITE' and (msg.RURI).find(self.config['mediagw']['sipUaNamePart']) == -1:
+            if msg.Method == 'INVITE' and (msg.RURI).find(self.gwNamePart) == -1:
                 Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
                 uri = msg.RURI
                 room = (uri.split("sip:")[1]).split('@')[0]
