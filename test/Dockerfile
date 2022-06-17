@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt autoclean -y 
 
 RUN pip3 install --upgrade pip
-RUN pip3 install requests httplib2
+RUN pip3 install --upgrade setuptools
+RUN pip3 install requests httplib2 pysqlite3
 
 WORKDIR /etc/kamailio/
 
