@@ -77,14 +77,13 @@ userNamePref=${sipUaNamePart}"."${id}
 if [[ "$prefix" ]]; then
     userNamePref=${prefix}"."${userNamePref}
 fi
-sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;"
+sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;regint=60;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="${sipSecret}";"
 sipAccount+="medianat=turn;stunserver="${turnConfig}
 
 ### launch the gateway ###
 gwName="gw"$id
 HOST_TZ=$(cat /etc/timezone) \
-ROOM=$room FROM=$from \
 ACCOUNT=$sipAccount \
 ID=$id \
 docker compose -p $gwName up -d --force-recreate --remove-orphans gw
