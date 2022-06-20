@@ -4,6 +4,8 @@ import web
 import json
 import subprocess
 import os
+import psutil
+import docker
 
 class Launcher:
     def GET(self, args=None):
@@ -27,11 +29,34 @@ class Launcher:
 
         return json.dumps(resJson)
 
+class Status:
+    def GET(self, args=None):
+        client = docker.from_env()
+
+        callsEnded = True
+        gwCount = 0
+        for i in range(8):
+            try:
+                gateway = client.containers.get(f"gw{i}")
+                if gateway.status == "running":
+                    gwCount += 1
+                    callsEnded = False
+            except:
+                break
+
+        inCall = 0
+        for p in psutil.process_iter():
+            inCall += (p.name() == "chrome")
+        inCall = round(inCall / 10) # For one gateway being in a call, there are 10 "chrome" processes
+
+        return {"readyToCall": gwCount - inCall, "callsEnded": callsEnded}
 
 urls = "/(.*)", "Launcher"
 application = web.application(urls, globals()).wsgifunc()
 
-urls = "/sipmediagw", "Launcher"
+urls = ("/sipmediagw", "Launcher",
+    "/status", "Status")
+
 app = web.application(urls, globals())
-if __name__ == "__main__":    
+if __name__ == "__main__":
     app.run()
