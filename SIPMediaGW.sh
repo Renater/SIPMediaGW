@@ -2,9 +2,8 @@
 
 cleanup() {
     flock -u ${lockFd} > /dev/null 2>&1
-    rm -f ${lockFile} > /dev/null 2>&1
 }
-trap cleanup SIGINT SIGQUIT SIGTERM EXIT
+trap cleanup SIGINT SIGQUIT SIGTERM
 
 unset room
 unset from
@@ -36,13 +35,8 @@ find_free_id() {
         exec {lockFd}>"/tmp/"${lockFilePrefix}$i".lock"
         flock -x -n $lockFd
         if [ "$?" == 0 ]; then
-            docker container exec  $gwNamePrefix$i echo > /dev/null 2>&1
-            if [ "$?" == 1 ]; then
-                id=$i
-                break
-            else
-                cleanup # => unlock
-            fi
+            id=$i
+            break
         fi
         i=$(($i + 1))
     done
@@ -92,4 +86,7 @@ docker compose -p $gwName up -d --force-recreate --remove-orphans gw
 check_gw_status $gwName
 sipUri=$(awk -F'<|;' '{print $2}' <<< $sipAccount)
 echo "{'res':'ok', 'uri':'$sipUri'}"
+
+# child process => lockFile locked until the container exits:
+nohup bash -c "docker wait $gwName &" &> /dev/null
 
