@@ -16,4 +16,4 @@ if [[ "$dial" ]]; then
 fi
 
 DIAL=$dial \
-docker compose run baresip
+docker compose run --name baresip --rm baresip
