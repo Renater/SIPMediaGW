@@ -4,6 +4,7 @@ import web
 import json
 import subprocess
 import os
+import docker
 
 class Launcher:
     def GET(self, args=None):
@@ -27,11 +28,34 @@ class Launcher:
 
         return json.dumps(resJson)
 
+class Status:
+    def GET(self, args=None):
+        client = docker.from_env()
+
+        callsEnded = True
+        readyToCall = 0
+        for i in range(8):
+            try:
+                gateway = client.containers.get(f"gw{i}")
+
+                if gateway.status == "running":
+                    callsEnded = False
+
+                readyToCall += "chrome" not in str(gateway.exec_run("ps -e").output)
+
+            except:
+                if i == 0:  # No gateways started yet
+                    callsEnded = False
+                break
+
+        return {"readyToCall": readyToCall, "callsEnded": callsEnded}
 
 urls = "/(.*)", "Launcher"
 application = web.application(urls, globals()).wsgifunc()
 
-urls = "/sipmediagw", "Launcher"
+urls = ("/sipmediagw", "Launcher",
+    "/status", "Status")
+
 app = web.application(urls, globals())
-if __name__ == "__main__":    
+if __name__ == "__main__":
     app.run()
