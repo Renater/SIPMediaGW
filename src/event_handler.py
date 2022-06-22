@@ -130,8 +130,8 @@ def event_handler(data, args):
         if 'peerdisplayname' in data:
             if '-' in data['peerdisplayname'] and not args['browsing'].room:
             # specific case with custom kamailio callflow
-                displayName = data['peerdisplayname'].split('-')[1]
-                args['browsing'].room = data['peerdisplayname'].split('-')[0]
+                displayName = data['peerdisplayname'].split('-', 1)[1]
+                args['browsing'].room = data['peerdisplayname'].split('-', 1)[0]
             else:
                 displayName = data['peerdisplayname']
         else:
