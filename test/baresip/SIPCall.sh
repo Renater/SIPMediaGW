@@ -1,5 +1,6 @@
 #!/bin/bash
 
+path=$(dirname "${BASH_SOURCE[0]}")
 dial=""
 
 while getopts d: opt; do
@@ -16,4 +17,4 @@ if [[ "$dial" ]]; then
 fi
 
 DIAL=$dial \
-docker compose run --name baresip --rm baresip
+docker compose -f $path"/docker-compose.yml" run --rm baresip
