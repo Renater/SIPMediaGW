@@ -128,7 +128,7 @@ Launch a gateway:
 
 	curl "http://192.168.92.1:8080/sipmediagw?room=testmediagw"
 
-Instead of manually executing a curl command, a more complete (docker based) testing environment is provided and may be simply started as follows:
+Once the gateway runs, a complete (docker based) testing environment may be simply started as follows:
 
 	cd test && docker build -t kamailio .
 	./kamailioCreateDb.sh
