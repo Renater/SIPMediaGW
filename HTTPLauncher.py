@@ -4,7 +4,6 @@ import web
 import json
 import subprocess
 import os
-import psutil
 import docker
 
 class Launcher:
@@ -34,22 +33,20 @@ class Status:
         client = docker.from_env()
 
         callsEnded = True
-        gwCount = 0
+        readyToCall = 0
         for i in range(8):
             try:
                 gateway = client.containers.get(f"gw{i}")
+
                 if gateway.status == "running":
-                    gwCount += 1
                     callsEnded = False
+
+                readyToCall += "chrome" not in str(gateway.exec_run("ps -e").output)
+
             except:
                 break
 
-        inCall = 0
-        for p in psutil.process_iter():
-            inCall += (p.name() == "chrome")
-        inCall = round(inCall / 10) # For one gateway being in a call, there are 10 "chrome" processes
-
-        return {"readyToCall": gwCount - inCall, "callsEnded": callsEnded}
+        return {"readyToCall": readyToCall, "callsEnded": callsEnded}
 
 urls = "/(.*)", "Launcher"
 application = web.application(urls, globals()).wsgifunc()
