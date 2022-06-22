@@ -5,6 +5,7 @@ networks:
 services:
   gw:
     image: sipmediagw
+    restart: ${RESTART}
     container_name: gw${ID}
     volumes:
             - ./logs:/var/logs

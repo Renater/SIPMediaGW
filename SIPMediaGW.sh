@@ -5,15 +5,14 @@ cleanup() {
 }
 trap cleanup SIGINT SIGQUIT SIGTERM
 
-unset room
-unset from
-unset prefix
+unset room from prefix loop
 
-while getopts r:f:p: opt; do
+while getopts r:f:p:l opt; do
     case $opt in
             r) room=$OPTARG ;;
             f) from=$OPTARG ;;
             p) prefix=$OPTARG ;;
+            l) loop=1 ;;
             *)
                 echo 'Error in command line parsing' >&2
                 exit 1
@@ -27,7 +26,7 @@ source <(grep = sipmediagw.cfg)
 lockFilePrefix="sipmediagw"
 gwNamePrefix="gw"
 
-find_free_id() {
+lockGw() {
     maxGwNum=$(echo "$(nproc)/$cpuCorePerGw" | bc )
     i=0
     while [[ "$i" < $maxGwNum ]] ; do
@@ -42,7 +41,7 @@ find_free_id() {
     done
 }
 
-check_gw_status() {
+checkGwStatus() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
@@ -59,7 +58,7 @@ check_gw_status() {
 }
 
 ### get an ID and lock the corresponding file ###
-find_free_id
+lockGw
 
 if [[ -z "$id" ]]; then
     echo "{'res':'error','type':'No free resources found'}"
@@ -75,18 +74,29 @@ sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;regint=60;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="${sipSecret}";"
 sipAccount+="medianat=turn;stunserver="${turnConfig}
 
+restart="no"
+if [[ "$loop" ]]; then
+    restart="unless-stopped"
+fi
+
 ### launch the gateway ###
 gwName="gw"$id
+RESTART=$restart \
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room FROM=$from \
 ACCOUNT=$sipAccount \
 ID=$id \
 docker compose -p $gwName up -d --force-recreate --remove-orphans gw
 
-check_gw_status $gwName
+checkGwStatus $gwName
 sipUri=$(awk -F'<|;' '{print $2}' <<< $sipAccount)
 echo "{'res':'ok', 'uri':'$sipUri'}"
 
 # child process => lockFile locked until the container exits:
-nohup bash -c "docker wait $gwName &" &> /dev/null
+ID=$id \
+LOOP=$loop \
+nohup bash -c 'state="$(docker wait gw$ID)"
+               while [[ "$state" == "0" && $LOOP ]] ; do
+                   state="$(docker wait gw$ID)"
+               done' &> /dev/null &
 
