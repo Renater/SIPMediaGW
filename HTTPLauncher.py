@@ -44,6 +44,8 @@ class Status:
                 readyToCall += "chrome" not in str(gateway.exec_run("ps -e").output)
 
             except:
+                if i == 0:  # No gateways started yet
+                    callsEnded = False
                 break
 
         return {"readyToCall": readyToCall, "callsEnded": callsEnded}
