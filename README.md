@@ -97,7 +97,7 @@ Configuration
 
 Build
 -----------
-	docker image build -t sipmediagw .
+	docker image build -t renater/sipmediagw:test .
 
 Usage
 --------
