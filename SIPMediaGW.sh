@@ -86,6 +86,7 @@ HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room FROM=$from \
 ACCOUNT=$sipAccount \
 ID=$id \
+IMAGE=$imageName \
 docker-compose -p $gwName up -d --force-recreate --remove-orphans gw
 
 checkGwStatus $gwName
@@ -99,4 +100,3 @@ nohup bash -c 'state="$(docker wait gw$ID)"
                while [[ "$state" == "0" && $LOOP ]] ; do
                    state="$(docker wait gw$ID)"
                done' &> /dev/null &
-

@@ -4,7 +4,7 @@ networks:
 
 services:
   gw:
-    image: sipmediagw
+    image: "${IMAGE}"
     restart: ${RESTART}
     container_name: gw${ID}
     volumes:
@@ -18,7 +18,7 @@ services:
     logging:
       driver: syslog
       options:
-          tag: "{{.ImageName}}/{{.Name}}"
+        tag: "{{.ImageName}}/{{.Name}}"
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
