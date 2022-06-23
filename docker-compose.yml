@@ -8,13 +8,13 @@ services:
     restart: ${RESTART}
     container_name: gw${ID}
     volumes:
-            - ./logs:/var/logs
-            - ./browsing:/var/browsing:ro
-            - ./baresip:/var/baresip:ro
-            - ./ivr:/var/ivr:ro
+      - ./logs:/var/logs
+      - ./browsing:/var/browsing:ro
+      - ./baresip:/var/baresip:ro
+      - ./ivr:/var/ivr:ro
     devices:
-            - /dev/video${ID}:/dev/video0
-            - /dev/snd:/dev/snd
+      - /dev/video${ID}:/dev/video0
+      - /dev/snd:/dev/snd
     logging:
       driver: syslog
       options:
@@ -30,4 +30,3 @@ services:
       ERR_LOGS: "/dev/stderr"
       APP_LOGS: "/dev/stdout"
     stop_grace_period: 20s
-

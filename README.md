@@ -39,10 +39,10 @@ The main configuration files with TLS support are provided here: [kamailio.cfg](
 
 
  >	 **_NOTE:_** Configuration lines related to domain name need to be adapted with your owns. Alternatively a public IPv4 address might be used.
- 
+
 ### TURN server ###
 
-To overcome NAT traversal issues, a TURN server acts as a media traffic relay. 
+To overcome NAT traversal issues, a TURN server acts as a media traffic relay.
 Coturn is an open-source STUN and TURN implementation:
 
 	sudo apt-get install coturn
@@ -74,7 +74,7 @@ Configuration
 	- config_default
 
 		Defaulf baresip configuration file used as a template configuration by the gateway.
-		
+
 	- netstring.py
 
 		TCP control interface tools.
@@ -82,7 +82,7 @@ Configuration
 - **<a name="config">sipmediagw.cfg</a>**
 
 	Configuration file where to set: the SIP server address, a secret used by the gateways for SIP registration, TURN server address and credentials.
-	
+
 - **/ivr**
 
 	This directory contains some files (audio prompt, background image, fonts..) related to Interactive Voice Response (IVR).
@@ -117,8 +117,8 @@ Once the gateway is running, a SIP endpoint can join the room by calling the gat
   >    **_NOTE:_**  -r and -f arguments are optional:
  If "-r" (room) argument is not passed, the SIP endpoint will connect first to an IVR. By default a 10 digits number is expected as a room name by the audio prompt.
  If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
- 
-Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request. 
+
+Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request.
 
 Start the http server:
 
@@ -133,26 +133,26 @@ Once the gateway runs, a complete (docker based) testing environment may be simp
 	cd test && docker build -t kamailio .
 	./kamailioCreateDb.sh
 	docker compose -p testing up -d --force-recreate
-	
+
 In this way, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
 
 The gateway will automatically stop after the call is closed.
-	
+
 Troubleshoot
 --------
 
 Logs:
 
 	tail -f /var/syslog | grep mediagw
-	
+
 Restart Audio:
 
 	sudo  pulseaudio -k && sudo alsa force-reload
-	
+
 Remove virtual devices:
 
 	sudo modprobe -r snd_aloop
 	sudo modprobe -r v4l2loopback
 
-	
-	
+
+

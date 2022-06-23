@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     build-essential \
     && apt autoremove -y \
-    && apt autoclean -y 
+    && apt autoclean -y
 
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt install -y ./google-chrome-stable_current_amd64.deb \
@@ -44,6 +44,8 @@ RUN pip3 install --upgrade pip
 RUN pip3 install selenium requests opencv-python pillow
 
 COPY entrypoint.sh /var/
+
+COPY baresip /var/baresip
 
 COPY src /var/src
 
