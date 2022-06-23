@@ -86,7 +86,7 @@ HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room FROM=$from \
 ACCOUNT=$sipAccount \
 ID=$id \
-docker compose -p $gwName up -d --force-recreate --remove-orphans gw
+docker-compose -p $gwName up -d --force-recreate --remove-orphans gw
 
 checkGwStatus $gwName
 sipUri=$(awk -F'<|;' '{print $2}' <<< $sipAccount)
