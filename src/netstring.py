@@ -7,6 +7,7 @@ import time
 import signal
 import traceback
 
+
 class Netstring:
     host = "localhost"
     port = 4444
@@ -14,6 +15,8 @@ class Netstring:
     def __init__(self, h, p):
         self.host = h
         self.port = p
+        signal.signal(signal.SIGTERM,
+                      lambda s,f : self.__sendCommand({"command":"quit"}))
 
     def decodeNetString(self, inStr):
         mDict = {}
@@ -24,13 +27,13 @@ class Netstring:
 
         return mDict
 
-    def __getStatus(self, sock):
+    def __getStatus(self):
         received = ""
         dataLen = 0
         preRead = 8
         # Receive data from baresip
         try:
-            received = (sock.recv(preRead)).decode("utf-8")
+            received = (self._sock.recv(preRead)).decode("utf-8")
             while len(received) > 0 and not received[0].isdigit():
                 received = received[1:]
                 preRead-=1
@@ -43,7 +46,7 @@ class Netstring:
                     readLen=dataLen%1024
                 else:
                     readLen = 1024
-                packet = sock.recv(readLen)
+                packet = self._sock.recv(readLen)
                 dataLen -= readLen
                 if not packet:
                     break
@@ -55,31 +58,31 @@ class Netstring:
 
         return received
 
-    def __sendCommand(self, sock, cmd):
+    def __sendCommand(self, cmd):
         cmdStr = json.dumps(cmd)
         data = str(len(cmdStr))+':'+cmdStr+','
-        sock.sendall(bytes(data,encoding="utf-8"))
+        self._sock.sendall(bytes(data,encoding="utf-8"))
 
 
     def getEvents(self, callBack, args, timeOut=None):
         try:
             # Create a socket (SOCK_STREAM means a TCP socket)
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # Connect to server and send data
-            sock.connect((self.host, self.port))
-            sock.settimeout(timeOut)
+            self._sock.connect((self.host, self.port))
+            self._sock.settimeout(timeOut)
             while True:
-                status = self.decodeNetString(self.__getStatus(sock))
+                status = self.decodeNetString(self.__getStatus())
                 if not status:
                     break
                 if "event" in status:
                     cmd = callBack(status, args)
                     if cmd:
-                        self.__sendCommand(sock, cmd)
+                        self.__sendCommand(cmd)
         except:
             print("Get events loop abnormally stopped", file=sys.stderr, flush=True)
             print(traceback.format_exc(), file=sys.stderr, flush=True)
         finally:
-            sock.close()
+            self._sock.close()
 
 
