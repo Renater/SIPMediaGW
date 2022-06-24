@@ -19,11 +19,10 @@ baresipHost = "localhost"
 # Room number length
 maxDigits = 10
 
-# No active calls timeout (seconds)
-noCallTo = 60
-
-signal.signal(signal.SIGINT, lambda:sys.exit(1))
-signal.signal(signal.SIGTERM, lambda:sys.exit(1))
+signal.signal(signal.SIGTERM,
+              lambda: s,f
+              subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
+                             shell=True))
 
 # parse arguments
 inputs = sys.argv
