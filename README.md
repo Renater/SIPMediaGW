@@ -141,7 +141,7 @@ Troubleshoot
 
 Logs:
 
-	tail -f /var/syslog | grep mediagw
+	tail -f /var/log/syslog | grep mediagw
 	
 Restart Audio:
 
