@@ -40,15 +40,14 @@ class Status:
 
                 if gateway.status == "running":
                     callsEnded = False
-
-                readyToCall += "chrome" not in str(gateway.exec_run("ps -e").output)
+                    readyToCall += "chrome" not in str(gateway.exec_run("ps -e").output)
 
             except:
                 if i == 0:  # No gateways started yet
                     callsEnded = False
                 break
 
-        return {"readyToCall": readyToCall, "callsEnded": callsEnded}
+        return json.dumps({"readyToCall": readyToCall, "callsEnded": callsEnded})
 
 urls = "/(.*)", "Launcher"
 application = web.application(urls, globals()).wsgifunc()
