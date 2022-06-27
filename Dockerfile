@@ -46,6 +46,8 @@ RUN pip3 install selenium requests opencv-python pillow
 COPY entrypoint.sh /var/
 
 COPY baresip /var/baresip
+COPY browsing /var/browsing
+COPY ivr /var/ivr
 
 COPY src /var/src
 
