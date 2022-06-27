@@ -20,7 +20,7 @@ baresipHost = "localhost"
 maxDigits = 10
 
 signal.signal(signal.SIGTERM,
-              lambda: s,f
+              lambda s,f:
               subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
                              shell=True))
 
