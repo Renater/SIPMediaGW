@@ -74,8 +74,8 @@ class RequestGw:
                     gwUri = gwRes[1]
                     Logger.LM_ERR('Returned Gateway: %s\n' % gwUri)
                     msg.rewrite_ruri("sip:%s@%s" % (gwUri, self.serverAddr))
-                    displayNameWRoom = "{}-{}".format(room,displayName.replace('"',''))
-                    KSR.uac.uac_replace_from(displayNameWRoom, "");
+                    displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))
+                    KSR.uac.uac_replace_from(displayNameWRoom, "")
                     Logger.LM_ERR('########## SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
 
         return 1

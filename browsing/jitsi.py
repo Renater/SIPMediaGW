@@ -2,6 +2,7 @@
 
 import sys
 import time
+import os
 import requests
 import json
 from browsing import Browsing
@@ -9,10 +10,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-jitsiFQDN = "rendez-vous.renater.fr"
+jitsiFQDN = os.environ.get('WEBRTC_DOMAIN')
+if not jitsiFQDN:
+    jitsiFQDN = "rendez-vous.renater.fr"
 confMapperPath = ""#"conf-api/conferenceMapper"
 
-class RendezVousJitsi (Browsing):
+class Jitsi (Browsing):
 
     def getRoomName(self):
         reqUrl = ('https://{}/{}?id={}'.
