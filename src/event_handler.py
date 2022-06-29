@@ -137,7 +137,7 @@ def event_handler(data, args):
                     displayName = data['peerdisplayname']
             else:
                 displayName = data['peerdisplayname']
-        else:
+        if not displayName:
             displayName = data['peeruri'].split(';')[0]
         print("My room: "+args['browsing'].room, flush=True)
         print("My name: "+displayName, flush=True)
