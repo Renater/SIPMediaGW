@@ -46,6 +46,7 @@ class Jitsi (Browsing):
         self.url += urlBase
         self.url += '#userInfo.displayName="' + self.name + '"'
         self.url += '&config.enableNoisyMicDetection=false'
+        self.url += '&config.prejoinPageEnabled=false'
 
         print("Web browsing URL: "+self.url, flush=True)
 
