@@ -138,7 +138,7 @@ def event_handler(data, args):
             else:
                 displayName = data['peerdisplayname']
         if not displayName:
-            displayName = data['peeruri'].split(';')[0]
+            displayName = data['peeruri'].split(';')[0].split(':')[1]
         print("My room: "+args['browsing'].room, flush=True)
         print("My name: "+displayName, flush=True)
         args['browsing'].name = displayName
