@@ -126,6 +126,7 @@ def event_handler(data, args):
 
     if data['type'] == 'CALL_ESTABLISHED':
         print(data, flush=True)
+        displayName = ''
         if 'peerdisplayname' in data:
             if not args['browsing'].room:
                 # specific case with custom kamailio callflow
