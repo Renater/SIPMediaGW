@@ -44,6 +44,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install selenium requests opencv-python pillow
 
 COPY entrypoint.sh /var/
+COPY pulseaudio/daemon.conf /etc/pulse/
 
 COPY baresip /var/baresip
 COPY browsing /var/browsing
