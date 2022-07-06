@@ -6,22 +6,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dbus-user-session \
     pulseaudio socat alsa-utils libspandsp2 \
     ffmpeg xvfb \
-    python3 python3-pip python3-setuptools\
+    python3 python3-pip python3-setuptools \
     libnss3 openssl \
-    libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
+    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
-    build-essential \
-    && wget https://github.com/baresip/re/archive/v1.1.0.tar.gz && tar -xzf v1.1.0.tar.gz && rm v1.1.0.tar.gz \
-    && cd re-1.1.0 && make && make install && cd .. \
-    && wget https://github.com/creytiv/rem/archive/v0.6.0.tar.gz && tar -xzf v0.6.0.tar.gz && rm v0.6.0.tar.gz \
-    && cd rem-0.6.0 && make && make install && cd .. \
-    && wget https://github.com/baresip/baresip/archive/v1.0.0.tar.gz && tar -xzf v1.0.0.tar.gz && rm v1.0.0.tar.gz \
-    && cd baresip-1.0.0 && make RELEASE=1 && make install && cd .. \
-    && rm -r baresip-1.0.0 re-1.1.0 rem-0.6.0 \
+    build-essential git \
+    && wget https://github.com/baresip/re/archive/v2.5.0.tar.gz && tar -xzf v2.5.0.tar.gz && rm v2.5.0.tar.gz \
+    && cd re-2.5.0 && make && make install && cd .. \
+    && wget https://github.com/baresip/rem/archive/v2.5.0.tar.gz && tar -xzf v2.5.0.tar.gz && rm v2.5.0.tar.gz \
+    && cd rem-2.5.0 && make && make install && cd .. \
+    && git clone --branch v2.5.0_x11grab https://github.com/Renater/baresip.git \
+    && cd baresip && make RELEASE=1 && make install && cd .. \
+    && rm -r baresip re-2.5.0 rem-2.5.0 \
     && apt-get remove --purge -y \
-    libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
+    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
-    build-essential \
+    build-essential git \
     && apt autoremove -y \
     && apt autoclean -y
 

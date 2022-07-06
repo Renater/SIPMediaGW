@@ -19,11 +19,11 @@ call_max_calls		1
 # Audio
 #audio_path		/usr/local/share/baresip
 audio_player		pulse,VirtMicSink0
-audio_source		pulse,VirtMicSrc1
+audio_source		pulse,VirtMicSrc0
 audio_alert		pulse,VirtMicSink0
 #ausrc_srate		48000
 #auplay_srate		48000
-#ausrc_channels		0
+ausrc_channels		0
 #auplay_channels	0
 #audio_txmode		poll		# poll, thread
 audio_level		no
@@ -31,7 +31,10 @@ ausrc_format		s16		# s16, float, ..
 auplay_format		s16		# s16, float, ..
 auenc_format		s16		# s16, float, ..
 audec_format		s16		# s16, float, ..
-audio_buffer		20-160		# ms
+audio_buffer		10-50		# ms
+audio_buffer_mode	fixed		# fixed, adaptive
+audio_silence		-35.0		# in [dB]
+audio_telev_pt		101		# payload type for telephone-event
 
 # Video
 video_source		x11grab,:0
@@ -44,10 +47,12 @@ videnc_format		yuv420p
 
 # AVT - Audio/Video Transport
 rtp_tos			184
+rtp_video_tos		136
 #rtp_ports		10000-20000
 rtp_bandwidth		1024-2048
 rtcp_mux		no
-jitter_buffer_delay	5-10		# frames
+jitter_buffer_type	fixed		# off, fixed, adaptive
+jitter_buffer_delay	1-5		# frames
 rtp_stats		no
 rtp_timeout		60
 
@@ -83,6 +88,8 @@ module			g711.so
 #module			isac.so
 
 # Audio filter Modules (in encoding order)
+module			auconv.so
+module			auresamp.so
 #module			vumeter.so
 #module			sndfile.so
 #module			speex_pp.so
@@ -132,6 +139,7 @@ module			sdl.so
 
 # Compatibility modules
 #module			ebuacip.so
+module			uuid.so
 
 # Media NAT modules
 module			stun.so
@@ -147,17 +155,9 @@ module			ice.so
 
 
 #------------------------------------------------------------------------------
-# Temporary Modules (loaded then unloaded)
-
-module_tmp		uuid.so
-module_tmp		account.so
-
-
-#------------------------------------------------------------------------------
 # Application Modules
 
-module_app		auloop.so
-#module_app		b2bua.so
+module_app		account.so
 module_app		contact.so
 module_app		debug_cmd.so
 #module_app		echo.so
@@ -168,19 +168,22 @@ module_app		menu.so
 #module_app		syslog.so
 #module_app		mqtt.so
 module			ctrl_tcp.so
-module_app		vidloop.so
+#module_app		vidloop.so
 
 
 #------------------------------------------------------------------------------
 # Module parameters
 
+# DTLS SRTP parameters
+#dtls_srtp_use_ec	prime256v1
+
 
 # UI Modules parameters
-cons_listen		0.0.0.0:5555 # cons
+cons_listen		0.0.0.0:5555 # cons - Console UI UDP/TCP sockets
 
-http_listen		0.0.0.0:8000 # httpd - server
+http_listen		0.0.0.0:8000 # httpd - HTTP Server
 
-ctrl_tcp_listen		127.0.0.1:4444 # ctrl_tcp
+ctrl_tcp_listen		0.0.0.0:4444 # ctrl_tcp - TCP interface JSON
 
 evdev_device		/dev/input/event0
 
@@ -227,10 +230,14 @@ video_selfview		window # {window,pip}
 #avcodec_h265dec	hevc
 #avcodec_hwaccel	vaapi
 
+# ctrl_dbus
+#ctrl_dbus_use	system		# system, session
+
 # mqtt
-#mqtt_broker_host	127.0.0.1
+#mqtt_broker_host	sollentuna.example.com
 #mqtt_broker_port	1883
-#mqtt_broker_clientid	baresip01
+#mqtt_broker_cafile	/path/to/broker-ca.crt	# set this to enforce TLS
+#mqtt_broker_clientid	baresip01	# has to be unique
 #mqtt_broker_user	user
 #mqtt_broker_password	pass
 #mqtt_basetopic		baresip/01
