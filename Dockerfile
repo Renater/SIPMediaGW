@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat wget unzip net-tools sudo psmisc \
     v4l2loopback-utils xdotool libsdl2-2.0-0 libgl1-mesa-dri \
     dbus-user-session \
-    pulseaudio socat alsa-utils libspandsp2 \
+    socat alsa-utils libspandsp2 \
     ffmpeg xvfb \
     python3 python3-pip python3-setuptools \
     libnss3 openssl \
@@ -44,7 +44,6 @@ RUN pip3 install --upgrade pip
 RUN pip3 install selenium requests opencv-python pillow
 
 COPY entrypoint.sh /var/
-COPY pulseaudio/daemon.conf /etc/pulse/
 
 COPY baresip /var/baresip
 COPY browsing /var/browsing
@@ -55,8 +54,6 @@ COPY src /var/src
 RUN mkdir /var/.baresip
 
 RUN chmod +x /var/entrypoint.sh
-
-RUN adduser root pulse-access
 
 WORKDIR /var
 

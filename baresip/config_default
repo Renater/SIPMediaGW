@@ -18,9 +18,9 @@ call_max_calls		1
 
 # Audio
 #audio_path		/usr/local/share/baresip
-audio_player		pulse,VirtMicSink0
-audio_source		pulse,VirtMicSrc1
-audio_alert		pulse,VirtMicSink0
+audio_player		alsa,hw:0,1
+audio_source		alsa,hw:1,0
+audio_alert		alsa,hw:0,1
 #ausrc_srate		48000
 #auplay_srate		48000
 #ausrc_channels		0
@@ -31,7 +31,7 @@ ausrc_format		s16		# s16, float, ..
 auplay_format		s16		# s16, float, ..
 auenc_format		s16		# s16, float, ..
 audec_format		s16		# s16, float, ..
-audio_buffer		10-50		# ms
+audio_buffer		10-40		# ms
 audio_buffer_mode	fixed		# fixed, adaptive
 audio_silence		-35.0		# in [dB]
 audio_telev_pt		101		# payload type for telephone-event
@@ -52,7 +52,7 @@ rtp_video_tos		136
 rtp_bandwidth		1024-2048
 rtcp_mux		no
 jitter_buffer_type	fixed		# off, fixed, adaptive
-jitter_buffer_delay	1-5		# frames
+jitter_buffer_delay	1-4		# frames
 rtp_stats		no
 rtp_timeout		60
 
@@ -97,8 +97,8 @@ module			auresamp.so
 #module			webrtc_aec.so
 
 # Audio driver Modules
-#module			alsa.so
-module			pulse.so
+module			alsa.so
+#module			pulse.so
 #module			jack.so
 #module			portaudio.so
 #module			aubridge.so

@@ -84,29 +84,6 @@ check_register() {
 /etc/init.d/dbus start 1> >( log_pref "Dbus" >> $appLogs ) \
                        2> >( log_pref "Dbus" >> $errLogs )
 
-# Cleanup to be "stateless" on startup (otherwise pulseaudio daemon can't start)
-rm -rf /var/run/pulse /var/lib/pulse /root/.config/pulse
-
-pulseaudio -D --verbose --exit-idle-time=-1 --system --disallow-exit 1> >( log_pref "Pulse" >> $appLogs ) \
-                                                                     2> >( log_pref "Pulse" >> $errLogs )
-
-HW0=$(( 2*$GW_ID ))
-HW1=$(( 2*$GW_ID + 1 ))
-pactl load-module module-alsa-source device=hw:${HW0},0 source_name=VirtMicSrc0  source_properties=device.description="Virtual_Microphone_Src0" \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-pactl load-module module-alsa-sink device=hw:${HW0},1 sink_name=VirtMicSink0 sink_properties=device.description="Virtual_Microphone_Sink0" \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-
-pactl load-module module-alsa-source device=hw:${HW1},0 source_name=VirtMicSrc1  source_properties=device.description="Virtual_Microphone_Src1" \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-pactl load-module module-alsa-sink device=hw:${HW1},1 sink_name=VirtMicSink1 sink_properties=device.description="Virtual_Microphone_Sink1" \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-
-pactl set-default-source VirtMicSrc0 \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-pactl set-default-sink VirtMicSink1 \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-
 ### Configure video display ###
 VID_SIZE_SIP="1280x720"
 VID_SIZE_WEBRTC="640x360"
