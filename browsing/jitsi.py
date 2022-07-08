@@ -44,7 +44,8 @@ class Jitsi (Browsing):
             return
 
         self.url += urlBase
-        self.url += '#userInfo.displayName="' + self.name + '"'
+        self.url += '#config.disableAP=true&config.disableAEC=true&config.disableAGC=true&config.disableHPF=true&config.enableLipSync=false'
+        self.url += '&userInfo.displayName="' + self.name + '"'
         self.url += '&config.enableNoisyMicDetection=false'
         self.url += '&config.prejoinPageEnabled=false'
 
