@@ -70,7 +70,7 @@ userNamePref=${sipUaNamePart}"."${id}
 if [[ "$prefix" ]]; then
     userNamePref=${prefix}"."${userNamePref}
 fi
-sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;regint=60;ptime=10;"
+sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;regint=60;ptime=20;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="${sipSecret}";"
 sipAccount+="medianat=turn;stunserver="${turnConfig}
 
