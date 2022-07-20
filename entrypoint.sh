@@ -80,10 +80,6 @@ check_register() {
     fi
 }
 
-### Configure audio devices ###
-/etc/init.d/dbus start 1> >( log_pref "Dbus" >> $appLogs ) \
-                       2> >( log_pref "Dbus" >> $errLogs )
-
 ### Configure video display ###
 VID_SIZE_SIP="1280x720"
 VID_SIZE_WEBRTC="640x360"

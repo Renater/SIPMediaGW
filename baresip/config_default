@@ -18,22 +18,22 @@ call_max_calls		1
 
 # Audio
 #audio_path		/usr/local/share/baresip
-audio_player		alsa,hw:0,1
-audio_source		alsa,hw:1,0
-audio_alert		alsa,hw:0,1
+audio_player		alsa,plug:bmix
+audio_source		alsa,plug:bsnoop
+audio_alert		alsa,plug:bmix
 #ausrc_srate		48000
 #auplay_srate		48000
 #ausrc_channels		0
 #auplay_channels	0
-#audio_txmode		poll		# poll, thread
+audio_txmode		thread		# poll, thread
 audio_level		no
 ausrc_format		s16		# s16, float, ..
 auplay_format		s16		# s16, float, ..
 auenc_format		s16		# s16, float, ..
 audec_format		s16		# s16, float, ..
 audio_buffer		10-40		# ms
-audio_buffer_mode	fixed		# fixed, adaptive
-audio_silence		-35.0		# in [dB]
+#audio_buffer_mode	adaptive	# fixed, adaptive
+#audio_silence		-35.0		# in [dB]
 audio_telev_pt		101		# payload type for telephone-event
 
 # Video
@@ -51,8 +51,8 @@ rtp_video_tos		136
 #rtp_ports		10000-20000
 rtp_bandwidth		1024-2048
 rtcp_mux		no
-jitter_buffer_type	fixed		# off, fixed, adaptive
-jitter_buffer_delay	1-4		# frames
+jitter_buffer_type	adaptive	# off, fixed, adaptive
+jitter_buffer_delay	1-5		# frames
 rtp_stats		no
 rtp_timeout		60
 
@@ -88,8 +88,8 @@ module			g711.so
 #module			isac.so
 
 # Audio filter Modules (in encoding order)
-module			auconv.so
-module			auresamp.so
+#module			auconv.so
+#module			auresamp.so
 #module			vumeter.so
 #module			sndfile.so
 #module			speex_pp.so
