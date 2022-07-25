@@ -1,4 +1,4 @@
-FROM debian:9-slim
+FROM debian:11.4-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat wget unzip net-tools sudo psmisc \
