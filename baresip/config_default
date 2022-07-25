@@ -31,9 +31,9 @@ ausrc_format		s16		# s16, float, ..
 auplay_format		s16		# s16, float, ..
 auenc_format		s16		# s16, float, ..
 audec_format		s16		# s16, float, ..
-audio_buffer		10-50		# ms
-audio_buffer_mode	fixed		# fixed, adaptive
-audio_silence		0.0		# in [dB]
+audio_buffer		10-40		# ms
+#audio_buffer_mode	adaptive	# fixed, adaptive
+#audio_silence		-35.0		# in [dB]
 audio_telev_pt		101		# payload type for telephone-event
 
 # Video
@@ -88,8 +88,8 @@ module			g711.so
 #module			isac.so
 
 # Audio filter Modules (in encoding order)
-module			auconv.so
-module			auresamp.so
+#module			auconv.so
+#module			auresamp.so
 #module			vumeter.so
 #module			sndfile.so
 #module			speex_pp.so
