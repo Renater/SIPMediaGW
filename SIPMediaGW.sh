@@ -26,6 +26,14 @@ source <(grep = sipmediagw.cfg)
 lockFilePrefix="sipmediagw"
 gwNamePrefix="gw"
 
+function docker_compose () {
+    if docker-compose version >/dev/null 2>&1; then
+        docker-compose $1
+    else
+        docker compose $1
+    fi
+}
+
 lockGw() {
     maxGwNum=$(echo "$(nproc)/$cpuCorePerGw" | bc )
     i=0
@@ -87,7 +95,7 @@ ROOM=$room FROM=$from \
 ACCOUNT=$sipAccount \
 ID=$id \
 IMAGE=$imageName \
-docker-compose -p $gwName up -d --force-recreate --remove-orphans gw
+docker_compose "-p ${gwName} up -d --force-recreate --remove-orphans gw"
 
 checkGwStatus $gwName
 sipUri=$(awk -F'<|;' '{print $2}' <<< $sipAccount)
