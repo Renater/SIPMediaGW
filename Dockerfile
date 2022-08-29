@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && git clone --branch v2.5.0_x11grab https://github.com/Renater/baresip.git \
     && cd baresip && make RELEASE=1 && make install && cd .. \
     && rm -r baresip re-2.5.0 rem-2.5.0 \
+    && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
+    && cd /var/UIHelper && git checkout e114ccdca23a38fcb65af06d308d06a07ecf3f17 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
@@ -49,7 +51,6 @@ COPY pulseaudio/daemon.conf /etc/pulse/
 COPY baresip /var/baresip
 COPY browsing /var/browsing
 COPY ivr /var/ivr
-
 COPY src /var/src
 
 RUN mkdir /var/.baresip
