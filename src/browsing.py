@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import traceback
+import queue
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
@@ -17,6 +18,8 @@ class Browsing:
         self.name = name if name else ''
         self.width = width
         self.height= height
+        self.userInputs = queue.Queue()
+        self.UIKeyMap = {}
         self.driver = []
         self.desiredCaps = DesiredCapabilities.CHROME
         self.serviceArgs = []
@@ -55,6 +58,18 @@ class Browsing:
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             return 1
+
+    def interact(self):
+        while self.url:
+            inKey = self.userInputs.get()
+            if not inKey == 'q':
+                try:
+                    self.driver.execute_script(self.UIKeyMap[inKey])
+                except Exception as e:
+                    print("User input error", flush=True)
+            else:
+                return
+            time.sleep(0.02)
 
     def unset(self):
         pass

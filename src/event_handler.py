@@ -102,8 +102,10 @@ def browse(args):
             args['ivr'].close()
 
     args['browse_lock'].release()
+    args['browsing'].interact()
 
 def endBrowse(args):
+    args['browsing'].userInputs.put('q')
     if args['ivr']:
         args['ivr'].close()
     if args['browsing']:
@@ -151,6 +153,8 @@ def event_handler(data, args):
             startIvr(args['ivr'])
 
     if data['type'] == 'CALL_DTMF_START':
+        print('Received DTMF:'+ data['param'], flush=True)
+        args['browsing'].userInputs.put(data['param'])
         if (args['ivr'] and len(args['browsing'].room) != maxDigits and
             args['browse_lock'].acquire(blocking=False)):
             print(data, flush=True)
@@ -172,7 +176,6 @@ def event_handler(data, args):
                                  ' *'*maxDigits)
 
     if data['type'] == 'CALL_CLOSED':
-        endBrowse(args)
         if (not inputs['from'] or
             inputs['from'] and inputs['from'] == data['peeruri']):
             print(data, flush=True)
