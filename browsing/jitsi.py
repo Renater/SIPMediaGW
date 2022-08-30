@@ -14,7 +14,9 @@ jitsiFQDN = os.environ.get('WEBRTC_DOMAIN')
 if not jitsiFQDN:
     jitsiFQDN = "rendez-vous.renater.fr"
 
-confMapper = ""#{'path':'conf-api','endPoint':'conferenceMapper'}
+confMapperURL = os.environ.get('CONFMAPPER')
+if not confMapperURL:
+    confMapperURL = ""#"https://rendez-vous.renater.fr/conf-api/conferenceMapper"
 
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
 
@@ -30,10 +32,9 @@ if not UIHelperPath:
     UIHelperConfig =  json.load(open('/var/UIHelper/config_sample.json'))
     UIHelperConfig['domain'] = 'https://{}'.format(jitsiFQDN)
 
-    if confMapper:
-        UIHelperConfig['ivr']['confmapper_url'] = ('https://{}/{}/'.
-                                                   format(jitsiFQDN, confMapper['path']))
-        UIHelperConfig['ivr']['confmapper_endpoint'] = confMapper['endPoint']
+    if confMapperURL:
+        UIHelperConfig['ivr']['confmapper_url'] = confMapperURL.rsplit('/',1)[0]+'/'
+        UIHelperConfig['ivr']['confmapper_endpoint'] = confMapperURL.rsplit('/',1)[1]
 
     with open('/var/UIHelper/config.json', 'w', encoding='utf-8') as f:
         json.dump(UIHelperConfig, f, ensure_ascii=False, indent=4)
@@ -41,8 +42,7 @@ if not UIHelperPath:
 class Jitsi (Browsing):
 
     def getRoomName(self):
-        reqUrl = ('https://{}/{}/{}?id={}'.
-                  format(jitsiFQDN, confMapper['path'], confMapper['endoint'], self.room))
+        reqUrl = '{}?id={}'.format(confMapperURL,self.room)
         print("ConfMapper request URL: "+reqUrl, flush=True)
         r = requests.get(reqUrl, verify=False)
         mapping = json.loads(r.content.decode('utf-8'))
@@ -60,7 +60,7 @@ class Jitsi (Browsing):
             self.UIKeyMap = UIKeyMap
         else:
             urlBase = ''
-            if confMapper:
+            if confMapperURL:
                 try:
                     urlConference = self.getRoomName().split('@')
                     urlDomain = urlConference[1].split('conference.')[1]
