@@ -21,11 +21,12 @@ if not confMapperURL:
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
 
 UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
+             "0": "window.JitsiMeetUIHelper.executeCommand('toggle-tts')",
              "1": "window.JitsiMeetUIHelper.executeCommand('toggle-audio')",
              "2": "window.JitsiMeetUIHelper.executeCommand('toggle-video')",
              "3": "window.JitsiMeetUIHelper.executeCommand('toggle-chat')",
              "4": "window.JitsiMeetUIHelper.executeCommand('toggle-tile-view')",
-             "5": "window.JitsiMeetUIHelper.executeCommand('toggle-rise-hand')",}
+             "5": "window.JitsiMeetUIHelper.executeCommand('toggle-raise-hand')",}
 
 if not UIHelperPath:
     UIHelperPath = "file:///var/UIHelper/index.html"
