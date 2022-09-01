@@ -33,7 +33,13 @@ class Browsing:
         self.chromeOptions.add_argument('--window-position=0,0')
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
-        self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation'])
+        self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation', 'test-type'])
+
+        policyFile = "/etc/opt/chrome/policies/managed/managed_policies.json"
+        os.makedirs(os.path.dirname(policyFile), exist_ok=True)
+        with open(policyFile, "w") as f:
+            f.write('{ "CommandLineFlagSecurityWarningsEnabled": false }')
+        f.close()
 
     def setUrl(self):
         pass
