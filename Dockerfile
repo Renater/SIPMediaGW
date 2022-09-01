@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd baresip && make RELEASE=1 && make install && cd .. \
     && rm -r baresip re-2.5.0 rem-2.5.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout e114ccdca23a38fcb65af06d308d06a07ecf3f17 \
+    && cd /var/UIHelper && git checkout 4a4abdde40f2479743e35675cb3b979f024772e4 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
