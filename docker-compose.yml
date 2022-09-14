@@ -14,6 +14,7 @@ services:
       - ./ivr:/var/ivr:ro
     devices:
       - /dev/video${ID}:/dev/video0
+    shm_size: '2gb'
     logging:
       driver: syslog
       options:

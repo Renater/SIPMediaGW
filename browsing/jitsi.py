@@ -8,7 +8,10 @@ import json
 from browsing import Browsing
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+
 
 jitsiFQDN = os.environ.get('WEBRTC_DOMAIN')
 if not jitsiFQDN:
@@ -29,15 +32,15 @@ UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
              "5": "window.JitsiMeetUIHelper.executeCommand('toggle-raise-hand')",}
 
 if not UIHelperPath:
-    UIHelperPath = "file:///var/UIHelper/index.html"
-    UIHelperConfig =  json.load(open('/var/UIHelper/config_sample.json'))
+    UIHelperPath = "file:///var/UIHelper/src/index.html"
+    UIHelperConfig =  json.load(open('/var/UIHelper/src/config_sample.json'))
     UIHelperConfig['domain'] = 'https://{}'.format(jitsiFQDN)
 
     if confMapperURL:
         UIHelperConfig['ivr']['confmapper_url'] = confMapperURL.rsplit('/',1)[0]+'/'
         UIHelperConfig['ivr']['confmapper_endpoint'] = confMapperURL.rsplit('/',1)[1]
 
-    with open('/var/UIHelper/config.json', 'w', encoding='utf-8') as f:
+    with open('/var/UIHelper/src/config.json', 'w', encoding='utf-8') as f:
         json.dump(UIHelperConfig, f, ensure_ascii=False, indent=4)
 
 class Jitsi (Browsing):
@@ -56,7 +59,9 @@ class Jitsi (Browsing):
 
     def setUrl(self):
         if UIHelperPath:
-            self.url = '{}?room_id={}&display_name={}'.format(UIHelperPath, self.room, self.name)
+            self.url = '{}?display_name={}'.format(UIHelperPath, self.name)
+            if self.room:
+                self.url = '{}&room_id={}'.format(self.url, self.room)
             self.chromeOptions.add_argument('--disable-web-security')
             self.UIKeyMap = UIKeyMap
         else:
@@ -79,7 +84,39 @@ class Jitsi (Browsing):
 
         print("Web browsing URL: "+self.url, flush=True)
 
+    def ivr(self, driver, ivrIn):
+        try:
+            inKey = self.userInputs.get(True, 0.02)
+        except Exception:
+            return
+
+        if inKey.isnumeric():
+            mappedKey = getattr(Keys,'NUMPAD{}'.format(inKey))
+            ivrIn.send_keys(mappedKey)
+        if inKey == '#':
+            self.driver.execute_script("window.JitsiMeetUIHelper.ivr.enterRoomBtn.click()")
+        if inKey == '*':
+            ActionChains(driver).key_down(Keys.BACKSPACE).perform()
+
     def browse(self, driver):
+
+        # IVR
+        if not self.room:
+            try:
+                ivrIn = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#input_room_id")))
+            except:
+                print("Cannot find IVR", flush=True)
+                return
+            while True:
+                #if self.toStop == True:
+                #if not self.driver:
+                #    return
+                try:
+                    if driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
+                        break
+                    self.ivr(driver, ivrIn)
+                except:
+                    return
 
         # Swith to iframe
         try:
@@ -110,6 +147,9 @@ class Jitsi (Browsing):
             driver.switch_to.default_content()
         except Exception as e:
             print("Swith back from iframe error", flush=True)
+
+        while self.url:
+            self.interact()
 
     def unset(self):
         try:
