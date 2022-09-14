@@ -1,4 +1,4 @@
-FROM debian:9-slim
+FROM debian:11.4-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat wget unzip net-tools sudo psmisc \
@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && git clone --branch v2.5.0_x11grab https://github.com/Renater/baresip.git \
     && cd baresip && make RELEASE=1 && make install && cd .. \
     && rm -r baresip re-2.5.0 rem-2.5.0 \
+    && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
+    && cd /var/UIHelper && git checkout ca952e82cee97b7a561efe34df7fc65aa4bc041e \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
@@ -49,7 +51,6 @@ COPY alsa/asound.conf /etc/asound.conf
 COPY baresip /var/baresip
 COPY browsing /var/browsing
 COPY ivr /var/ivr
-
 COPY src /var/src
 
 RUN mkdir /var/.baresip
