@@ -87,9 +87,10 @@ check_register() {
 # Cleanup to be "stateless" on startup (otherwise pulseaudio daemon can't start)
 rm -rf /var/run/pulse /var/lib/pulse /root/.config/pulse
 
-pulseaudio -D --verbose --exit-idle-time=-1 --system --disallow-exit 1> >( log_pref "Pulse" >> $appLogs ) \
-                                                                     2> >( log_pref "Pulse" >> $errLogs )
-pactl  load-module module-null-sink sink_name=VirtMicSink0
+pulseaudio --verbose --system --disallow-exit 1> >( log_pref "Pulse" >> $appLogs ) \
+                                              2> >( log_pref "Pulse" >> $errLogs )
+
+pactl load-module module-null-sink sink_name=VirtMicSink0
 pactl load-module module-remap-source source_name=VirtMicSrc0 remix=no master=VirtMicSink0.monitor
 
 pactl load-module module-null-sink sink_name=VirtMicSink1
