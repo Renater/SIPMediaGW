@@ -101,22 +101,18 @@ class Jitsi (Browsing):
     def browse(self, driver):
 
         # IVR
-        if not self.room:
+        try:
+            ivrIn = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#input_room_id")))
+        except:
+            print("Cannot find IVR", flush=True)
+            return
+        while True:
             try:
-                ivrIn = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#input_room_id")))
+                if driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
+                    break
+                self.ivr(driver, ivrIn)
             except:
-                print("Cannot find IVR", flush=True)
                 return
-            while True:
-                #if self.toStop == True:
-                #if not self.driver:
-                #    return
-                try:
-                    if driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
-                        break
-                    self.ivr(driver, ivrIn)
-                except:
-                    return
 
         # Swith to iframe
         try:
@@ -125,7 +121,10 @@ class Jitsi (Browsing):
             print("Jitsi URL: "+jitsiUrl, flush=True)
         except Exception as e:
             print("Iframe not found", flush=True)
-            jitsiUrl = self.driver.execute_script("return window.location.href;")
+            try:
+                jitsiUrl = self.driver.execute_script("return window.location.href;")
+            except:
+                return
             print("Jitsi URL: "+jitsiUrl, flush=True)
 
         # Validate MOTD
