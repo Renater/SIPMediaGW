@@ -30,6 +30,7 @@ class Browsing:
         self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.chromeOptions.add_argument('--disable-gpu')
         self.chromeOptions.add_argument('--start-fullscreen')
+        self.chromeOptions.add_argument('--kiosk')
         self.chromeOptions.add_argument('--window-size='+str(width)+','+str(height))
         self.chromeOptions.add_argument('--window-position=0,0')
         self.chromeOptions.add_argument('--hide-scrollbars')

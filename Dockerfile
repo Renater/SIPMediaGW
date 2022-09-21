@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd baresip && make RELEASE=1 && make install && cd .. \
     && rm -r baresip re-2.5.0 rem-2.5.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout ca952e82cee97b7a561efe34df7fc65aa4bc041e \
+    && cd /var/UIHelper && git checkout 8eabb03a8c72f491a6561c0373fae607ee26ac29 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
@@ -43,14 +43,17 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
-RUN pip3 install selenium requests opencv-python pillow
+RUN pip3 install selenium requests
+
+RUN pip3 install gTTS pydub \
+    && python3 /var/UIHelper/scripts/generate_tts_files.py -i /var/UIHelper/src/assets/lang/ -o /var/UIHelper/src/assets/lang/files/ \
+    && pip3 uninstall -y gTTS pydub
 
 COPY entrypoint.sh /var/
 COPY pulseaudio/daemon.conf /etc/pulse/
 
 COPY baresip /var/baresip
 COPY browsing /var/browsing
-COPY ivr /var/ivr
 COPY src /var/src
 
 RUN mkdir /var/.baresip

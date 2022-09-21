@@ -13,7 +13,6 @@ services:
       - ./logs:/var/logs
       - ./browsing:/var/browsing:ro
       - ./baresip:/var/baresip:ro
-      - ./ivr:/var/ivr:ro
     devices:
       - /dev/video${ID}:/dev/video0
     shm_size: '2gb'
