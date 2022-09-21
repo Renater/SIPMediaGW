@@ -9,22 +9,13 @@ A Docker based media gateway to be used on top of a web conferencing service (Ji
 Environment
 --------
 
-### <a name="devices">Virtual devices </a>
+### <a name="devices">Video virtual devices </a>
 Example for 4 gateways, co-hosted on GW_server machine:
 
-- **Audio**
-
-		sudo apt-get install linux-image-extra-virtual
-		echo "options snd-aloop enable=1,1,1,1,1,1,1,1 index=0,1,2,3,4,5,6,7" | sudo tee  /etc/modprobe.d/alsa-loopback.conf
-		echo "snd-aloop" | sudo tee -a /etc/modules
-		sudo modprobe snd-aloop
-
-- **Video**
-
-		sudo apt-get install v4l2loopback-utils
-		echo "options v4l2loopback devices=4 exclusive_caps=1,1,1,1" | sudo tee  /etc/modprobe.d/v4l2loopback.conf
-		echo "v4l2loopback" | sudo tee -a /etc/modules
-		sudo modprobe v4l2loopback
+	sudo apt-get install v4l2loopback-utils
+	echo "options v4l2loopback devices=4 exclusive_caps=1,1,1,1" | sudo tee  /etc/modprobe.d/v4l2loopback.conf
+	echo "v4l2loopback" | sudo tee -a /etc/modules
+	sudo modprobe v4l2loopback
 
 ### SIP register ###
 
@@ -83,10 +74,6 @@ Configuration
 
 	Configuration file where to set: the SIP server address, a secret used by the gateways for SIP registration, TURN server address and credentials.
 
-- **/ivr**
-
-	This directory contains some files (audio prompt, background image, fonts..) related to Interactive Voice Response (IVR).
-
 - **docker-compose.yml**
 
 	The docker compose file.
@@ -115,7 +102,7 @@ Someone already connected to the webconference, e.g:
 
 Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs used by the gateway.
   >    **_NOTE:_**  -r and -f arguments are optional:
- If "-r" (room) argument is not passed, the SIP endpoint will connect first to an IVR. By default a 10 digits number is expected as a room name by the audio prompt.
+ If "-r" (room) argument is not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
  If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
 
 Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request.
@@ -147,11 +134,10 @@ Logs:
 	
 Restart Audio:
 
-	sudo  pulseaudio -k && sudo alsa force-reload
+	sudo  pulseaudio -k
 
 Remove virtual devices:
 
-	sudo modprobe -r snd_aloop
 	sudo modprobe -r v4l2loopback
 
 
