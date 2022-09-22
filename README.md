@@ -9,7 +9,7 @@ A Docker based media gateway to be used on top of a web conferencing service (Ji
 Environment
 --------
 
-### <a name="devices">Video virtual devices </a>
+### <a name="devices">Virtual video devices </a>
 Example for 4 gateways, co-hosted on GW_server machine:
 
 	sudo apt-get install v4l2loopback-utils
@@ -17,28 +17,51 @@ Example for 4 gateways, co-hosted on GW_server machine:
 	echo "v4l2loopback" | sudo tee -a /etc/modules
 	sudo modprobe v4l2loopback
 
-### SIP register ###
+### SIP register and TURN server ###
 
 To be accessible from any SIP endpoint, the gateway needs SIP registering facilities.
-Kamailio is an open-source SIP server which can be easily installed (https://kamailio.org/docs/tutorials/devel/kamailio-install-guide-deb/).
+Kamailio is an open-source SIP server which can be easily installed.
 
-Briefly, it can be installed as follows:
+To overcome NAT traversal issues, a TURN server acts as a media traffic relay. Coturn is an open-source STUN and TURN implementation.
 
-	sudo apt-get install kamailio kamailio-mysql-modules kamailio-tls-modules
+Before starting the gateway, a local (docker based) testing environment (Kamailio and Coturn) may be simply started as follows:
 
-The main configuration files with TLS support are provided here: [kamailio.cfg](docs/kamailio.cfg) , [tls.cfg](docs/tls.cfg)
+	cd test && docker build -t kamailio .
+	./kamailioCreateDb.sh
+	docker compose -p testing up -d --force-recreate
 
+Usage
+--------
 
- >	 **_NOTE:_** Configuration lines related to domain name need to be adapted with your owns. Alternatively a public IPv4 address might be used.
+Someone already connected to the webconference, e.g:
 
-### TURN server ###
+	google-chrome "https://rendez-vous.renater.fr/testmediagw"	
 
-To overcome NAT traversal issues, a TURN server acts as a media traffic relay.
-Coturn is an open-source STUN and TURN implementation:
+SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with *cpuCorePerGw* parameter value fixed in [sipmedia.cfg](https://github.com/Renater/SIPMediaGW/blob/main/sipmediagw.cfg).
 
-	sudo apt-get install coturn
+Launch a gateway:
 
-A minimalist configuration is provided here: [turnserver.conf](docs/turnserver.conf)
+	SIPMediaGW.sh -r testmediagw -f "sip:endpoint@domain.com"
+  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual video devices provisionning](#devices).
+
+Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs used by the gateway.
+  >    **_NOTE:_**  -r and -f arguments are optional:
+ If "-r" (room) argument is not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
+ If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
+
+Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request.
+
+Start the http server:
+
+	python HTTPLauncher.py
+
+Launch a gateway:
+
+	curl "http://192.168.92.1:8080/sipmediagw?room=testmediagw"
+
+Then, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
+
+The gateway will automatically stop after the call is closed.
 
 Implementation
 -----------
@@ -85,45 +108,6 @@ Configuration
 Build
 -----------
 	docker image build -t renater/sipmediagw:test .
-
-Usage
---------
-
-Someone already connected to the webconference, e.g:
-
-	google-chrome "https://rendez-vous.renater.fr/testmediagw"
-
- SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with *cpuCorePerGw* parameter value fixed in [sipmedia.cfg](https://github.com/Renater/SIPMediaGW/blob/main/sipmediagw.cfg).
-
- Launch a gateway:
-
-	SIPMediaGW.sh -r testmediagw -f "sip:endpoint@domain.com"
-  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual devices provisionning](#devices).
-
-Once the gateway is running, a SIP endpoint can join the room by calling the gateway via the SIP URIs used by the gateway.
-  >    **_NOTE:_**  -r and -f arguments are optional:
- If "-r" (room) argument is not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
- If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
-
-Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request.
-
-Start the http server:
-
-	python HTTPLauncher.py
-
-Launch a gateway:
-
-	curl "http://192.168.92.1:8080/sipmediagw?room=testmediagw"
-
-Once the gateway runs, a complete (docker based) testing environment may be simply started as follows:
-
-	cd test && docker build -t kamailio .
-	./kamailioCreateDb.sh
-	docker compose -p testing up -d --force-recreate
-
-In this way, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
-
-The gateway will automatically stop after the call is closed.
 
 Troubleshoot
 --------
