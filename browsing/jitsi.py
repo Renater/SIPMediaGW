@@ -127,6 +127,13 @@ class Jitsi (Browsing):
                 return
             print("Jitsi URL: "+jitsiUrl, flush=True)
 
+        # Join conference
+        try:
+            element = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#videoconference_page > div.premeeting-screen > div:nth-child(1) > div > div > div.prejoin-input-area > div")))
+            element.click()
+        except Exception as e:
+            print("Prejoin not found", flush=True)
+
         # Validate MOTD
         try:
             element = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#motd_do_not_show_again")))
