@@ -1,7 +1,7 @@
 FROM debian:11.4-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    netcat wget unzip net-tools sudo psmisc \
+    netcat wget unzip net-tools sudo psmisc procps \
     v4l2loopback-utils xdotool libsdl2-2.0-0 libgl1-mesa-dri \
     dbus-user-session \
     pulseaudio socat alsa-utils libspandsp2 \
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd baresip && make RELEASE=1 && make install && cd .. \
     && rm -r baresip re-2.5.0 rem-2.5.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout 8eabb03a8c72f491a6561c0373fae607ee26ac29 \
+    && cd /var/UIHelper && git checkout 3e2d4a8ec1e9a3061f6e2bd364f528defe7287cd \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
