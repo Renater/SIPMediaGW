@@ -10,11 +10,19 @@ services:
             - ./kamailio:/etc/kamailio:ro
             - ../sipmediagw.cfg:/etc/sipmediagw.cfg
             - ./kamailio.sqlite:/usr/local/etc/kamailio/kamailio.sqlite
+    logging:
+      driver: syslog
+      options:
+        tag: "{{.ImageName}}/{{.Name}}"
 
   turn_server:
     image: coturn/coturn
     container_name: coturn
     network_mode: host
+    logging:
+      driver: syslog
+      options:
+        tag: "{{.ImageName}}/{{.Name}}"
     command:
         - "--log-file=stdout"
         - "--external-ip=192.168.92.1"
