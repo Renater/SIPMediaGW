@@ -14,6 +14,13 @@ Example for 4 gateways, co-hosted on GW_server machine:
 	echo "v4l2loopback" | sudo tee -a /etc/modules
 	sudo modprobe v4l2loopback
 
+
+### Docker network ### 
+
+A user-defined bridge network to connect the gateways:
+
+	docker network create  --subnet=192.168.92.0/29 gw_net
+
 ### SIP register and TURN server ###
 
 To be accessible from any SIP endpoint, the gateway needs SIP registering facilities.
@@ -78,15 +85,7 @@ Configuration
 
 - **/baresip**
 
-	This directory contains  Baresip (https://github.com/baresip/baresip) related configuration files:
-
-	- config_default
-
-		Defaulf baresip configuration file used as a template configuration by the gateway.
-
-	- netstring.py
-
-		TCP control interface tools.
+	Defaulf baresip configuration file used as a template configuration by the gateway.
 
 - **<a name="config">sipmediagw.cfg</a>**
 
@@ -95,10 +94,6 @@ Configuration
 - **docker-compose.yml**
 
 	The docker compose file.
-
-- **Docker network**
-
-		docker network create  --subnet=192.168.92.0/29 gw_net
 
 Build
 -----------
