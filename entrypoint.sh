@@ -80,26 +80,12 @@ check_register() {
     fi
 }
 
-### Configure audio devices ###
-/etc/init.d/dbus start 1> >( log_pref "Dbus" >> $appLogs ) \
-                       2> >( log_pref "Dbus" >> $errLogs )
-
-# Cleanup to be "stateless" on startup (otherwise pulseaudio daemon can't start)
-rm -rf /var/run/pulse /var/lib/pulse /root/.config/pulse
-
-pulseaudio --verbose --system --disallow-exit 1> >( log_pref "Pulse" >> $appLogs ) \
-                                              2> >( log_pref "Pulse" >> $errLogs )
-
-pactl load-module module-null-sink sink_name=VirtMicSink0
-pactl load-module module-remap-source source_name=VirtMicSrc0 remix=no master=VirtMicSink0.monitor
-
-pactl load-module module-null-sink sink_name=VirtMicSink1
-pactl load-module module-remap-source source_name=VirtMicSrc1 remix=no master=VirtMicSink1.monitor
-
-pactl set-default-source VirtMicSrc0 \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
-pactl set-default-sink VirtMicSink1 \
-1> >( log_pref "Pulse" >> $appLogs ) 2> >( log_pref "Pulse" >> $errLogs )
+if [ "$WITH_ALSA" == "true" ]; then
+    ALSA_DEV='plug:baresip'
+else
+    ./pulseaudio_init.sh  1> >( log_pref "Pulse" >> $appLogs ) \
+                          2> >( log_pref "Pulse" >> $errLogs )
+fi
 
 ### Configure video display ###
 VID_SIZE_SIP="1280x720"
@@ -131,6 +117,11 @@ ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
 cp baresip/config_default .baresip/config
 account=$(echo $SIP_ACCOUNT | sed -u 's/answermode=[^;]*;//')";answermode=manual"
 echo $account > .baresip/accounts
+if [ "$WITH_ALSA" == "true" ]; then
+    sed -i 's/.*audio_player.*/audio_player\t\talsa,'$ALSA_DEV'/' .baresip/config
+    sed -i 's/.*audio_source.*/audio_source\t\talsa,'$ALSA_DEV'/' .baresip/config
+    sed -i 's/.*audio_alert.*/audio_alert\t\talsa,'$ALSA_DEV'/' .baresip/config
+fi
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config

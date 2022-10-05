@@ -50,7 +50,10 @@ RUN pip3 install gTTS pydub \
     && pip3 uninstall -y gTTS pydub
 
 COPY entrypoint.sh /var/
+COPY pulseaudio/init.sh /var/pulseaudio_init.sh
+
 COPY pulseaudio/daemon.conf /etc/pulse/
+COPY alsa/asound.conf /etc/asound.conf
 
 COPY baresip /var/baresip
 COPY browsing /var/browsing

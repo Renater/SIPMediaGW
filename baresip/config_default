@@ -97,7 +97,7 @@ module			g711.so
 #module			webrtc_aec.so
 
 # Audio driver Modules
-#module			alsa.so
+module			alsa.so
 module			pulse.so
 #module			jack.so
 #module			portaudio.so

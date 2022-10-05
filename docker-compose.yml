@@ -15,6 +15,7 @@ services:
       - ./baresip:/var/baresip:ro
     devices:
       - /dev/video${ID}:/dev/video0
+      - /dev/snd:/dev/snd
     shm_size: '2gb'
     logging:
       driver: syslog
@@ -23,6 +24,7 @@ services:
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
+      WITH_ALSA: "false"
       SIP_ACCOUNT: "${ACCOUNT}" # <sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=passwd
       BROWSE_FILE: "jitsi.py" # python browsing based on Selenium
       WEBRTC_DOMAIN: "rendez-vous.renater.fr" # WebRTC domain name (only for Jitsi web conferences)
