@@ -1,14 +1,13 @@
 services:
   sip_server:
-    image: kamailio
+    image: kamailio4sipmediagw
     build:
-        context: ..
-        dockerfile: test/Dockerfile
-    container_name: kamailio
+        dockerfile: ./Dockerfile
+    container_name: kamailio4sipmediagw
     network_mode: host
     volumes:
             - ./kamailio:/etc/kamailio:ro
-            - ../sipmediagw.cfg:/etc/sipmediagw.cfg
+            - ${CONFIG_FILE_PATH}:/etc/sipmediagw.cfg:ro
             - ./kamailio.sqlite:/usr/local/etc/kamailio/kamailio.sqlite
     logging:
       driver: syslog

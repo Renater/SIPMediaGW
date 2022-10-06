@@ -32,7 +32,7 @@ Before starting the gateway, a local (docker based) testing environment (Kamaili
 
 	cd test && docker build -t kamailio .
 	./kamailioCreateDb.sh
-	docker compose -p testing up -d --force-recreate
+	docker compose -f test/docker-compose.yml -p testing up -d --force-recreate
 
 Usage
 --------
