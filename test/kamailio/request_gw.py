@@ -66,8 +66,9 @@ class RequestGw:
                 Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
                 uri = msg.RURI
                 room = (uri.split("sip:")[1]).split('@')[0]
-                displayName = (msg.getHeader('from').split('<')[0])
-                fromUri = (msg.getHeader('from').split('<')[1]).split('>')[0]
+                displayName = ""
+                if "<" in msg.getHeader('from'):
+                    displayName = (msg.getHeader('from').split('<')[0])
                 Logger.LM_ERR('Room Name %s\n' % room )
                 gwRes = self.lockGw()
                 if gwRes:
