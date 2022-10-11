@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import socket
 import sys
+import atexit
 import time
 import os
 import inspect
@@ -15,10 +16,13 @@ from netstring import Netstring
 # Default Baresip host
 baresipHost = "localhost"
 
-signal.signal(signal.SIGTERM,
-              lambda s,f:
-              subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
-                             shell=True))
+def exit_handler():
+    subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
+             shell=True)
+
+atexit.register(exit_handler)
+signal.signal(signal.SIGTERM, exit_handler)
+signal.signal(signal.SIGINT, exit_handler)
 
 # parse arguments
 inputs = sys.argv
