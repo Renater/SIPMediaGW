@@ -3,7 +3,7 @@ services:
     image: kamailio4sipmediagw
     build:
         dockerfile: ./Dockerfile
-    container_name: kamailio4sipmediagw
+    container_name: kamailio
     network_mode: host
     volumes:
             - ./kamailio:/etc/kamailio:ro
@@ -16,7 +16,7 @@ services:
     entrypoint :
         - "/bin/sh"
         - "-c"
-        - "cron && kamailio -DD -E"
+        - "cron && python /var/kamailioRun.py"
 
   turn_server:
     image: coturn/coturn

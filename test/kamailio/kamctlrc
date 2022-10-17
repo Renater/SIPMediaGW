@@ -102,13 +102,13 @@ DB_PATH="/usr/local/etc/kamailio/kamailio.sqlite"
 #
 
 # If to install tables for the modules in the EXTRA_MODULES variable.
-# INSTALL_EXTRA_TABLES=ask
+INSTALL_EXTRA_TABLES=yes
 
 # If to install presence related tables.
-# INSTALL_PRESENCE_TABLES=ask
+INSTALL_PRESENCE_TABLES=yes
 
 # If to install uid modules related tables.
-# INSTALL_DBUID_TABLES=ask
+INSTALL_DBUID_TABLES=ask
 
 # Define what module tables should be installed.
 # If you use the postgres database and want to change the installed tables, then you
