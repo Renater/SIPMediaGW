@@ -16,7 +16,7 @@ services:
     entrypoint :
         - "/bin/sh"
         - "-c"
-        - "cron && python /var/kamailioRun.py"
+        - "cron && kamailioRun"
 
   turn_server:
     image: coturn/coturn
