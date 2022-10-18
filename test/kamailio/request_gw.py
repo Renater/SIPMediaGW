@@ -9,8 +9,10 @@ import configparser
 import os
 import sqlite3
 import datetime
+from contextlib import closing
 
 congiFile = "/etc/sipmediagw.cfg"
+dbPath = '/usr/local/etc/kamailio/kamailio.sqlite'
 
 class RequestGw:
     def __init__(self):
@@ -21,7 +23,6 @@ class RequestGw:
         self.serverAddr=self.config['sip']['sipSrv'].replace('"',"").replace("'", "")
         self.gwNamePart = self.config['mediagw']['sipUaNamePart'].replace('"',"").replace("'", "")
         KSR.pv.sets("$var(secret)", sipSecret)
-        self.con = sqlite3.connect('/usr/local/etc/kamailio/kamailio.sqlite')
 
     def child_init(self, y):
         Logger.LM_ERR('RequestGwchild_init(%d)\n' % y)
@@ -29,33 +30,33 @@ class RequestGw:
 
     def lockGw (self):
         res=''
-        with self.con as con:
-            cursor = con.cursor()
-            cursor.execute('''SELECT contact, username FROM location
-                              WHERE
-                                  locked = 0 AND
-                                  username LIKE '%'||?||'%' AND
-                                  NOT EXISTS (
-                                     SELECT callee_contact
-                                     FROM dialog
-                                     WHERE callee_contact LIKE '%'||location.contact||'%'
-                                  );''',(self.gwNamePart,))
-            contactList = cursor.fetchall()
-            if len(contactList) == 0:
-                return
-            for contact in contactList:
-                cursor.execute('''UPDATE location SET locked = 1
+        with closing(sqlite3.connect(dbPath)) as con:
+            with closing(con.cursor()) as cursor:
+                cursor.execute('''SELECT contact, username FROM location
                                   WHERE
-                                      location.contact = ? AND
                                       locked = 0 AND
+                                      username LIKE '%'||?||'%' AND
                                       NOT EXISTS (
                                          SELECT callee_contact
                                          FROM dialog
-                                         WHERE callee_contact LIKE '%'||?||'%'
-                                      );''',(contact[0], contact[0],))
-                res = con.commit()
-                if cursor.rowcount > 0:
-                    return contact
+                                         WHERE callee_contact LIKE '%'||location.contact||'%'
+                                      );''',(self.gwNamePart,))
+                contactList = cursor.fetchall()
+                if len(contactList) == 0:
+                    return
+                for contact in contactList:
+                    cursor.execute('''UPDATE location SET locked = 1
+                                      WHERE
+                                          location.contact = ? AND
+                                          locked = 0 AND
+                                          NOT EXISTS (
+                                             SELECT callee_contact
+                                             FROM dialog
+                                             WHERE callee_contact LIKE '%'||?||'%'
+                                          );''',(contact[0], contact[0],))
+                    res = con.commit()
+                    if cursor.rowcount > 0:
+                        return contact
         return
 
     def handler(self, msg, args):
