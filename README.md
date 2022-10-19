@@ -30,8 +30,6 @@ To overcome NAT traversal issues, a TURN server acts as a media traffic relay. C
 
 Before starting the gateway, a local (docker based) testing environment (Kamailio and Coturn) may be simply started as follows:
 
-	cd test && docker build -t kamailio .
-	./kamailioCreateDb.sh
 	docker compose -f test/docker-compose.yml -p testing up -d --force-recreate
 
 Usage
@@ -46,11 +44,10 @@ SIPMediaGW.sh is a helper script to automate gateway launching, is able to launc
 
 Launch a gateway:
 
-	SIPMediaGW.sh -r testmediagw -f "sip:endpoint@domain.com"
- >    **_NOTE:_**  -r and -f arguments are optional:
- If "-r" (room) argument is not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
- If "-f" (SIP URI of the caller) argument is passed, the gateway will reject calls from any other endpoints.
-
+	SIPMediaGW.sh -r testmediagw
+ >    **_NOTE:_** "-r" (room) arguments is optional:
+ if not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
+ 
 Once the gateway is running, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
 
 Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request.
