@@ -34,6 +34,5 @@ services:
         - "--min-port=40000"
         - "--max-port=49999"
 
-
 volumes:
   kamailio-db:
