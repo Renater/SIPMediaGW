@@ -8,7 +8,7 @@ services:
     volumes:
             - ./kamailio:/etc/kamailio:ro
             - ${CONFIG_FILE_PATH}:/etc/sipmediagw.cfg:ro
-            - ./kamailio.sqlite:/usr/local/etc/kamailio/kamailio.sqlite
+            - ./kamailio_db:/usr/local/etc/kamailio/
     logging:
       driver: syslog
       options:
