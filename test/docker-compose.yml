@@ -2,13 +2,13 @@ services:
   sip_server:
     image: kamailio4sipmediagw
     build:
-        dockerfile: ./Dockerfile
+        context: ..
+        dockerfile: ./test/kamailio/Dockerfile
     container_name: kamailio
     network_mode: host
     volumes:
-            - ./kamailio:/etc/kamailio:ro
-            - ${CONFIG_FILE_PATH}:/etc/sipmediagw.cfg:ro
-            - ./kamailio_db:/usr/local/etc/kamailio/
+            - kamailio-db:/usr/local/etc/kamailio
+            #- ./kamailio/kamailio_db:/usr/local/etc/kamailio
     logging:
       driver: syslog
       options:
@@ -34,3 +34,6 @@ services:
         - "--min-port=40000"
         - "--max-port=49999"
 
+
+volumes:
+  kamailio-db:
