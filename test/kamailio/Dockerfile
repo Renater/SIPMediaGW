@@ -21,7 +21,7 @@ EXPOSE 5060
 COPY sipmediagw.cfg /etc/sipmediagw.cfg
 
 VOLUME /etc/kamailio
-COPY test/kamailio/config /etc/kamailio
+COPY test/kamailio/config/* /etc/kamailio/
 RUN kamdbctl create
 
 COPY test/kamailio/kamailioRun.py /usr/local/bin/kamailioRun

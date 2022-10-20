@@ -5,7 +5,7 @@
 # will use their internal default values.
 
 ## your SIP domain
-SIP_DOMAIN=192.168.92.1
+# SIP_DOMAIN=kamailio.org
 
 ## chrooted directory
 # $CHROOT_DIR="/path/to/chrooted/directory"

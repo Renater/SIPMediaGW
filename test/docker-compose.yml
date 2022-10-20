@@ -13,6 +13,8 @@ services:
       driver: syslog
       options:
         tag: "{{.ImageName}}/{{.Name}}"
+    environment:
+        SIP_DOMAIN: 192.168.92.1
     entrypoint :
         - "/bin/sh"
         - "-c"
