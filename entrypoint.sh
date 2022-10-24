@@ -145,11 +145,9 @@ if [[ -n "$FROM_URI" ]]; then
     fromUri="-f "$FROM_URI
 fi
 cp "./browsing/"$BROWSE_FILE src
-DISPLAY=:$SERVERNUM0 python3 src/event_handler.py -b `pwd`"/browsing/"$BROWSE_FILE \
-                                                  -s $VID_SIZE_SIP \
-                                                  $roomParam $fromUri \
-                     1> >( log_pref "Event" >> $appLogs ) 
-
-
+DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -b `pwd`"/browsing/"$BROWSE_FILE \
+                                                       -s $VID_SIZE_SIP \
+                                                       $roomParam $fromUri \
+                          1> >( log_pref "Event" >> $appLogs )
 
 
