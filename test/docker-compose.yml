@@ -12,7 +12,7 @@ services:
     logging:
       driver: syslog
       options:
-        tag: "{{.ImageName}}/{{.Name}}"
+        tag: "kamailio"
     environment:
         SIP_DOMAIN: 192.168.92.1
     entrypoint :
@@ -27,7 +27,7 @@ services:
     logging:
       driver: syslog
       options:
-        tag: "{{.ImageName}}/{{.Name}}"
+        tag: "coturn"
     command:
         - "--log-file=stdout"
         - "--external-ip=192.168.92.1"
