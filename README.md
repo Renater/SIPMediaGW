@@ -47,18 +47,6 @@ Launch a gateway:
 	SIPMediaGW.sh -r testmediagw
  >    **_NOTE:_** "-r" (room) arguments is optional:
  if not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
- 
-Once the gateway is running, the webconference can be joined by pushing a call directly to **sip:testmediagw@192.168.92.1**
-
-Alternatively, HTTPLauncher.py provides a way to launch a gateway by sending an http request.
-
-Start the http server:
-
-	python HTTPLauncher.py
-
-Launch a gateway:
-
-	curl "http://192.168.92.1:8080/sipmediagw?room=testmediagw"
 
 The gateway will automatically stop after the call is closed.
 
