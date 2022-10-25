@@ -35,10 +35,6 @@ Before starting the gateway, a local (docker based) testing environment (Kamaili
 Usage
 --------
 
-Someone already connected to the webconference, e.g:
-
-	google-chrome "https://rendez-vous.renater.fr/testmediagw"	
-
 SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with *cpuCorePerGw* parameter value fixed in [sipmedia.cfg](https://github.com/Renater/SIPMediaGW/blob/main/sipmediagw.cfg).
  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual video devices provisionning](#devices).
 
@@ -49,17 +45,6 @@ Launch a gateway:
  if not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
 
 The gateway will automatically stop after the call is closed.
-
-Implementation
------------
-
-- **entry_point.sh**
-
-	Docker entry point (~ submodules launcher).
-
-- **/src**
-
-	Core functions implementation.
 
 Configuration
 -----------
