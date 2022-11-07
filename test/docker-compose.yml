@@ -15,6 +15,8 @@ services:
         tag: "kamailio"
     environment:
         SIP_DOMAIN: 192.168.92.1
+        LOCAL_IP: 192.168.92.1
+        PUBLIC_IP: 192.168.92.1
     entrypoint :
         - "/bin/sh"
         - "-c"

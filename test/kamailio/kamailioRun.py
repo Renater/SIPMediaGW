@@ -25,7 +25,12 @@ with open(dbPath, 'a'):
     except:
         pass
 
-cmd = subprocess.Popen('kamailio -DD -E', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+#cmd = subprocess.Popen('kamailio -DD -E', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+cmd = subprocess.Popen('kamailio -DD -E --alias {} -l {}:5060/{}:5060'.
+                        format(os.getenv("SIP_DOMAIN"),
+                               os.getenv("LOCAL_IP"),
+                               os.getenv("PUBLIC_IP")),
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 while True:
     try:
