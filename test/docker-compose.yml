@@ -2,8 +2,7 @@ services:
   sip_server:
     image: kamailio4sipmediagw
     build:
-        context: ..
-        dockerfile: ./test/kamailio/Dockerfile
+        context: kamailio
     container_name: kamailio
     network_mode: host
     volumes:
@@ -13,10 +12,8 @@ services:
       driver: syslog
       options:
         tag: "kamailio"
-    environment:
-        SIP_DOMAIN: 192.168.92.1
-        LOCAL_IP: 192.168.92.1
-        PUBLIC_IP: 192.168.92.1
+    env_file:
+      - .env
     entrypoint :
         - "/bin/sh"
         - "-c"
@@ -30,11 +27,13 @@ services:
       driver: syslog
       options:
         tag: "coturn"
+    env_file:
+      - .env
     command:
         - "--log-file=stdout"
-        - "--external-ip=192.168.92.1"
+        - "--external-ip=${PUBLIC_IP}"
         - "--lt-cred-mech"
-        - "--user=dmo:1234"
+        - "--user=${STUN_USER}:${STUN_PASS}"
         - "--min-port=40000"
         - "--max-port=49999"
 

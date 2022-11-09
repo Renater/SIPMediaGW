@@ -4,7 +4,7 @@ networks:
 
 services:
   gw:
-    image: "${IMAGE}"
+    image: "${DOCKER_IMAGE}"
     restart: ${RESTART}
     container_name: gw${ID}
     tmpfs:
@@ -21,16 +21,12 @@ services:
       driver: syslog
       options:
         tag: "{{.ImageName}}/{{.Name}}"
+    env_file:
+      - .env
+      - test/.env
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
-      WITH_ALSA: "false"
-      SIP_ACCOUNT: "${ACCOUNT}" # <sip:user@domain;transport=tcp>;auth_pass=pass;answermode=auto;medianat=turn;stunserver=turn:turnserver.org:3478;stunuser=username;stunpass=passwd
-      BROWSE_FILE: "jitsi.py" # python browsing based on Selenium
-      WEBRTC_DOMAIN: "meet.jit.si" # WebRTC domain name (only for Jitsi web conferences)
+      SIP_NAME_PREFIX: "${PREFIX}"
       ROOM_NAME: "${ROOM}" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
-      FROM_URI: "${FROM}" # SIP URI of the caller
-      BARESIP_ARGS: "" # Add Baresip arguments e.g. " -v" (=> full logs)
-      ERR_LOGS: "/dev/stderr"
-      APP_LOGS: "/dev/stdout"
     stop_grace_period: 20s

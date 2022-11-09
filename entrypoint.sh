@@ -8,11 +8,6 @@ if [[ -z "$GW_ID" ]]; then
     exit 1
 fi
 
-if [[ -z "$SIP_ACCOUNT" ]]; then
-    echo "Must provide SIP_ACCOUNT in environment" >> $errLogs
-    exit 1
-fi
-
 log_pref() {
     stdbuf -oL tr -cd '\11\12\15\40-\176' | stdbuf -oL tr '\r' '\n' | \
     stdbuf -oL tr -s '\n' '\n' |\
@@ -88,8 +83,6 @@ else
 fi
 
 ### Configure video display ###
-VID_SIZE_SIP="1280x720"
-VID_SIZE_WEBRTC="640x360"
 VID_FPS="30"
 PIX_DEPTH="24"
 
@@ -113,10 +106,19 @@ ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
        -f v4l2 /dev/video0 -loglevel error | log_pref "FFMPEG" >> $errLogs &
 
+### set SIP account ###
+userNamePref=$GW_NAME_PREFIX"."$GW_ID
+if [[ "$SIP_NAME_PREFIX" ]]; then
+    userNamePref=${SIP_NAME_PREFIX}"."${userNamePref}
+fi
+sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=tcp>;regint=60;"
+sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
+sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
+sipAccount+=";answermode=manual"
+
 ### Configure and start Baresip ###
 cp baresip/config_default .baresip/config
-account=$(echo $SIP_ACCOUNT | sed -u 's/answermode=[^;]*;//')";answermode=manual"
-echo $account > .baresip/accounts
+echo $sipAccount > .baresip/accounts
 if [ "$WITH_ALSA" == "true" ]; then
     sed -i 's/.*audio_player.*/audio_player\t\talsa,'$ALSA_DEV'/' .baresip/config
     sed -i 's/.*audio_source.*/audio_source\t\talsa,'$ALSA_DEV'/' .baresip/config
@@ -140,9 +142,6 @@ check_v4l2 "/dev/video0"
 ### Event handler ###
 if [[ -n "$ROOM_NAME" ]]; then
     roomParam="-r "$ROOM_NAME
-fi
-if [[ -n "$FROM_URI" ]]; then
-    fromUri="-f "$FROM_URI
 fi
 cp "./browsing/"$BROWSE_FILE src
 DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -b `pwd`"/browsing/"$BROWSE_FILE \

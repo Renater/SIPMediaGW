@@ -11,17 +11,14 @@ import sqlite3
 import datetime
 from contextlib import closing
 
-congiFile = "/etc/sipmediagw.cfg"
 dbPath = '/usr/local/etc/kamailio/kamailio.sqlite'
 
 class RequestGw:
     def __init__(self):
         Logger.LM_ERR('RequestGw.__init__\n')
-        self.config = configparser.ConfigParser()
-        self.config.read(congiFile)
-        sipSecret=self.config['sip']['sipSecret'].replace('"',"").replace("'", "")
-        self.serverAddr=self.config['sip']['sipSrv'].replace('"',"").replace("'", "")
-        self.gwNamePart = self.config['mediagw']['sipUaNamePart'].replace('"',"").replace("'", "")
+        sipSecret=os.environ.get('SIP_SECRET').replace('"',"").replace("'", "")
+        self.sipDomain=os.environ.get('SIP_DOMAIN').replace('"',"").replace("'", "")
+        self.gwNamePart = os.environ.get('GW_NAME_PREFIX').replace('"',"").replace("'", "")
         KSR.pv.sets("$var(secret)", sipSecret)
 
     def child_init(self, y):
@@ -75,7 +72,7 @@ class RequestGw:
                 if gwRes:
                     gwUri = gwRes[1]
                     Logger.LM_ERR('Returned Gateway: %s\n' % gwUri)
-                    msg.rewrite_ruri("sip:%s@%s" % (gwUri, self.serverAddr))
+                    msg.rewrite_ruri("sip:%s@%s" % (gwUri, self.sipDomain))
                     displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))
                     KSR.uac.uac_replace_from(displayNameWRoom, "")
                     Logger.LM_ERR('########## SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))

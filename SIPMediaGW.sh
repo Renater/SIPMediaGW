@@ -5,12 +5,11 @@ cleanup() {
 }
 trap cleanup SIGINT SIGQUIT SIGTERM
 
-unset room from prefix loop
+unset room prefix loop
 
 while getopts r:f:p:l opt; do
     case $opt in
             r) room=$OPTARG ;;
-            f) from=$OPTARG ;;
             p) prefix=$OPTARG ;;
             l) loop=1 ;;
             *)
@@ -21,7 +20,7 @@ done
 
 shift "$(( OPTIND - 1 ))"
 
-source <(grep = sipmediagw.cfg)
+source <(grep = .env)
 
 lockFilePrefix="sipmediagw"
 gwNamePrefix="gw"
@@ -35,7 +34,7 @@ function docker_compose () {
 }
 
 lockGw() {
-    maxGwNum=$(echo "$(nproc)/$cpuCorePerGw" | bc )
+    maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
     i=0
     while [[ "$i" < $maxGwNum ]] ; do
         lockFile="/tmp/"${lockFilePrefix}$i".lock"
@@ -60,7 +59,7 @@ checkGwStatus() {
         sleep 1
     done
     if [ "$timer" = $timeOut ]; then
-        echo "{'res':'error','type':'The gateway failed to launch', 'data': '$sipAccount'}"
+        echo "{'res':'error','type':'The gateway failed to launch'}"
         exit 1
     fi
 }
@@ -73,15 +72,6 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 
-### set SIP account ###
-userNamePref=${sipUaNamePart}"."${id}
-if [[ "$prefix" ]]; then
-    userNamePref=${prefix}"."${userNamePref}
-fi
-sipAccount="<sip:"${userNamePref}"@"${sipSrv}";transport=tcp>;regint=60;"
-sipAccount+="auth_user="${userNamePref}";auth_pass="${sipSecret}";"
-sipAccount+="medianat=turn;stunserver="${turnConfig}
-
 restart="no"
 if [[ "$loop" ]]; then
     restart="unless-stopped"
@@ -91,14 +81,14 @@ fi
 gwName="gw"$id
 RESTART=$restart \
 HOST_TZ=$(cat /etc/timezone) \
-ROOM=$room FROM=$from \
-ACCOUNT=$sipAccount \
+ROOM=$room \
+PREFIX=$prefix \
 ID=$id \
-IMAGE=$imageName \
 docker_compose "-p ${gwName} up -d --force-recreate --remove-orphans gw"
 
 checkGwStatus $gwName
-sipUri=$(awk -F'<|;' '{print $2}' <<< $sipAccount)
+sipUri=$(docker container exec gw0  sh -c "cat /var/.baresip/accounts |
+                                           sed 's/.*<//; s/;.*//'")
 echo "{'res':'ok', 'uri':'$sipUri'}"
 
 # child process => lockFile locked until the container exits:
