@@ -35,7 +35,7 @@ Before starting the gateway, a local (docker based) testing environment (Kamaili
 Usage
 --------
 
-SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with *cpuCorePerGw* parameter value fixed in [sipmedia.cfg](https://github.com/Renater/SIPMediaGW/blob/main/sipmediagw.cfg).
+SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with [CPU_PER_GW](https://github.com/Renater/SIPMediaGW/blob/8540ea14ccfd88321c0c8c2b5754412613cc109d/.env#L3) parameter.
  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual video devices provisionning](#devices).
 
 Launch a gateway:
@@ -56,14 +56,6 @@ Configuration
 - **/baresip**
 
 	Defaulf baresip configuration file used as a template configuration by the gateway.
-
-- **<a name="config">sipmediagw.cfg</a>**
-
-	Configuration file where to set: the SIP server address, a secret used by the gateways for SIP registration, TURN server address and credentials.
-
-- **docker-compose.yml**
-
-	The docker compose file.
 
 Build
 -----------
