@@ -25,11 +25,19 @@ with open(dbPath, 'a'):
     except:
         pass
 
-#cmd = subprocess.Popen('kamailio -DD -E', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-cmd = subprocess.Popen('kamailio -DD -E --alias {} -l {}:5060/{}:5060'.
-                        format(os.getenv("SIP_DOMAIN"),
-                               os.getenv("LOCAL_IP"),
-                               os.getenv("PUBLIC_IP")),
+kamRunCmd='kamailio -DD -E --alias {} -l {}:5060/{}:5060'.format(os.getenv("SIP_DOMAIN"),
+                                                                 os.getenv("LOCAL_IP"),
+                                                                 os.getenv("PUBLIC_IP"))
+
+if os.getenv('DEBUG', 'False').lower() == 'true':
+    kamRunCmd+= " -A WITH_DEBUG"
+
+if os.getenv('ANTIFLOOD', 'False').lower() == 'true':
+    kamRunCmd+= " -A WITH_ANTIFLOOD"
+
+print("Kamailio run command: {}".format(kamRunCmd), flush=True)
+
+cmd = subprocess.Popen(kamRunCmd,
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 while True:
