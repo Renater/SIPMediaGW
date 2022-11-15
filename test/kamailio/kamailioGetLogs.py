@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 import sqlite3
-import configparser
+import os
 from contextlib import closing
 
 dbPath = '/usr/local/etc/kamailio/kamailio.sqlite'
-congiFile = "/etc/sipmediagw.cfg"
 
-config = configparser.ConfigParser()
-config.read(congiFile)
-gwNamePart = config['mediagw']['sipUaNamePart'].replace('"',"").replace("'", "")
+gwNamePart = os.environ.get('GW_NAME_PREFIX').replace('"',"").replace("'", "")
 
 with closing(sqlite3.connect(dbPath)) as con:
     with closing(con.cursor()) as cursor:

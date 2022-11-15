@@ -17,7 +17,8 @@ services:
     entrypoint :
         - "/bin/sh"
         - "-c"
-        - "cron && kamailioRun"
+        - "printenv > /etc/environment &&
+           cron && kamailioRun"
 
   turn_server:
     image: coturn/coturn
