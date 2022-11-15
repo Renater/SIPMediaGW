@@ -25,15 +25,21 @@ with open(dbPath, 'a'):
     except:
         pass
 
-kamRunCmd='kamailio -DD -E --alias {} -l {}:5060/{}:5060'.format(os.getenv("SIP_DOMAIN"),
-                                                                 os.getenv("LOCAL_IP"),
-                                                                 os.getenv("PUBLIC_IP"))
+kamRunCmd='kamailio -DD -E'
+
+if os.getenv("SIP_DOMAIN"):
+    kamRunCmd+= ' --alias {}'.format(os.getenv("SIP_DOMAIN"))
+
+if os.getenv("LOCAL_IP"):
+    kamRunCmd+= ' -l {}:5060'.format(os.getenv("LOCAL_IP"))
+    if os.getenv("PUBLIC_IP"):
+        kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP"))
 
 if os.getenv('DEBUG', 'False').lower() == 'true':
-    kamRunCmd+= " -A WITH_DEBUG"
+    kamRunCmd+= ' -A WITH_DEBUG'
 
 if os.getenv('ANTIFLOOD', 'False').lower() == 'true':
-    kamRunCmd+= " -A WITH_ANTIFLOOD"
+    kamRunCmd+= ' -A WITH_ANTIFLOOD'
 
 print("Kamailio run command: {}".format(kamRunCmd), flush=True)
 
