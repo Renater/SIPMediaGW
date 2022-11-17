@@ -1,0 +1,19 @@
+[Unit]
+Description=kamailio_docker
+After=docker.service
+Requires=docker.service
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+RemainAfterExit=true
+Restart=always
+RestartSec=1
+WorkingDirectory=/sipmediagw/test
+EnvironmentFile=/etc/environment
+ExecStart=/usr/bin/docker compose -p kamailio up -d --force-recreate
+ExecStop=/usr/bin/docker compose -p kamailio down
+
+[Install]
+WantedBy=multi-user.target

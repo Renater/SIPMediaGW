@@ -32,7 +32,7 @@ services:
       - .env
     command:
         - "--log-file=stdout"
-        - "--external-ip=${PUBLIC_IP}"
+        - "${STUN_SRV:+'--external-ip='$STUN_SRV}"
         - "--lt-cred-mech"
         - "--user=${STUN_USER}:${STUN_PASS}"
         - "--min-port=40000"

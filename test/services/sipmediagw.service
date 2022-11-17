@@ -1,0 +1,25 @@
+[Unit]
+Description=sipmediagw
+After=docker.service
+Requires=docker.service
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=forking
+Restart=always
+RestartSec=1
+EnvironmentFile=/etc/environment
+ExecStart=/bin/bash -c \
+          'pref=$(hostname -I | awk "{print $1}" | cut -d" "  -f1) \n\
+           until [ "$?" == 1 ]; do \n\
+              cd /sipmediagw && \
+              /bin/bash ./SIPMediaGW.sh -p $pref -l \n\
+          done \n\
+          exit 0'
+
+ExecStop=/bin/bash -c 'docker container stop $(docker container ls -q --filter name=gw*)'
+
+[Install]
+WantedBy=multi-user.target
+
