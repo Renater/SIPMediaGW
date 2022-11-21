@@ -77,6 +77,13 @@ check_register() {
 
 if [ "$WITH_ALSA" == "true" ]; then
     ALSA_DEV='plug:baresip'
+    HW0=$(( 2*$GW_ID ))
+    (($HW0)) || HW0=""
+    HW1=$(( 2*$GW_ID + 1 ))
+    ALSA_CARD0="Loopback"${HW0:+'_'$HW0}
+    ALSA_CARD1="Loopback"${HW1:+'_'$HW1}
+    sed -i 's/Loopback,/'$ALSA_CARD0',/g' /etc/asound.conf
+    sed -i 's/Loopback_1,/'$ALSA_CARD1',/g' /etc/asound.conf
 else
     ./pulseaudio_init.sh  1> >( log_pref "Pulse" >> $appLogs ) \
                           2> >( log_pref "Pulse" >> $errLogs )
