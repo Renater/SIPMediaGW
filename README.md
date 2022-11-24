@@ -3,16 +3,20 @@
 
 <img src="docs/architecture.png" width=80% height=80%>
 
-All-in-one (for **testing**) deployement of the "Room Connector" (requires vagrant+virtualbox):
+The Room Connector can be easily deployed thanks to the "All-in-one" [vagrant file](https://github.com/Renater/SIPMediaGW/blob/main/Vagrantfile) (requires Vagrant and VirtualBox).\
+To do so, simply run:
 
 	vagrant up
 
-Once the virtual machin is up, join a conference from your preferred SIP softphone:
+> **Warning**\
+> This is only for testing purposes
+
+Once the virtual machin is up, you can join a conference from your preferred SIP softphone:
 
 - **sip:0@192.168.75.13** (IVR access)
 - **sip:your_conference_name@192.168.75.13** (Direct access)
 
-Environment
+SIPMediaGW in-depth
 --------
 
 ### Docker network ### 
@@ -36,13 +40,12 @@ Usage
 --------
 
 SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with CPU_PER_GW environment variable value.
- >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual video devices provisionning](#devices).
+ > **Note**\
+ > When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual video devices provisionning](#devices).
 
 Launch a gateway:
 
-	SIPMediaGW.sh -r testmediagw
- >    **_NOTE:_** "-r" (room) arguments is optional:
- if not passed, the SIP endpoint will connect first to an Interactive Voice Response (IVR). By default a 10 digits number is expected as a room name.
+	SIPMediaGW.sh
 
 The gateway will automatically stop after the call is closed.
 
