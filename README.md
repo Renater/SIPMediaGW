@@ -3,17 +3,17 @@
 
 <img src="docs/architecture.png" width=80% height=80%>
 
+All-in-one (for **testing**) deployement of the "Room Connector" (requires vagrant+virtualbox):
+
+	vagrant up
+
+Once the virtual machin is up, join a conference from your preferred SIP softphone:
+
+- **sip:0@192.168.75.13** (IVR access)
+- **sip:your_conference_name@192.168.75.13** (Direct access)
+
 Environment
 --------
-
-### <a name="devices">Virtual video devices </a>
-Example for 4 gateways, co-hosted on GW_server machine:
-
-	sudo apt-get install v4l2loopback-utils
-	echo "options v4l2loopback devices=4 exclusive_caps=1,1,1,1" | sudo tee  /etc/modprobe.d/v4l2loopback.conf
-	echo "v4l2loopback" | sudo tee -a /etc/modules
-	sudo modprobe v4l2loopback
-
 
 ### Docker network ### 
 
@@ -35,7 +35,7 @@ Before starting the gateway, a local (docker based) testing environment (Kamaili
 Usage
 --------
 
-SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with [CPU_PER_GW](https://github.com/Renater/SIPMediaGW/blob/8540ea14ccfd88321c0c8c2b5754412613cc109d/.env#L3) parameter.
+SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with CPU_PER_GW environment variable value.
  >	 **_NOTE:_** When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any [virtual video devices provisionning](#devices).
 
 Launch a gateway:
@@ -46,20 +46,6 @@ Launch a gateway:
 
 The gateway will automatically stop after the call is closed.
 
-Configuration
------------
-
-- **/browsing**
-
-	This directory contains browsing scripts (python/selenium) to enter in a room of a specific web conferencing service.
-
-- **/baresip**
-
-	Defaulf baresip configuration file used as a template configuration by the gateway.
-
-Build
------------
-	docker image build -t renater/sipmediagw:test .
 
 Troubleshoot
 --------
