@@ -10,6 +10,9 @@ To do so, simply run:
 
 > **Warning**\
 > This is only for testing purposes
+>
+> **Note**\
+> In this case, the provisioning is managed by a simple [shell script](https://github.com/Renater/SIPMediaGW/blob/main/test/provision.sh)
 
 Once the virtual machin is up, you can join a conference from your preferred SIP softphone:
 
