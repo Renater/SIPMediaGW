@@ -1,6 +1,6 @@
 SIPMediaGW in-depth
 --------
-<img src="docs/SIPMediaGW.png" width=50% height=50%>
+<img src="SIPMediaGW.png" width=50% height=50%>
 
 Environment
 --------
