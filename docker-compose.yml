@@ -21,10 +21,10 @@ services:
         tag: "{{.ImageName}}/{{.Name}}"
     env_file:
       - .env
-      - test/.env
+      - test/.env_kamailio
+      - test/.env_turn
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
-      SIP_NAME_PREFIX: "${PREFIX}"
-      ROOM_NAME: "${ROOM}" # for a BBB webconference, something like "gl/tiz-bel-zkk-qh3" is expected
+      ROOM_NAME: "${ROOM}"
     stop_grace_period: 20s

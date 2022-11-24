@@ -20,18 +20,10 @@ done
 
 shift "$(( OPTIND - 1 ))"
 
-source <(grep = .env)
+CPU_PER_GW=${CPU_PER_GW:-2.5}
 
 lockFilePrefix="sipmediagw"
 gwNamePrefix="gw"
-
-function docker_compose () {
-    if docker-compose version >/dev/null 2>&1; then
-        docker-compose $1
-    else
-        docker compose $1
-    fi
-}
 
 lockGw() {
     maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
@@ -84,7 +76,7 @@ HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room \
 PREFIX=$prefix \
 ID=$id \
-docker_compose "-p ${gwName} up -d --force-recreate --remove-orphans gw"
+docker compose -p ${gwName} up -d --force-recreate --remove-orphans gw
 
 checkGwStatus $gwName
 sipUri=$(docker container exec gw0  sh -c "cat /var/.baresip/accounts |

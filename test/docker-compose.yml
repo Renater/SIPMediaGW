@@ -2,26 +2,33 @@ services:
   sip_server:
     image: kamailio4sipmediagw
     build:
-        context: kamailio
+      context: kamailio
     container_name: kamailio
     network_mode: host
     volumes:
-            - kamailio-db:/usr/local/etc/kamailio
-            #- ./kamailio/kamailio_db:/usr/local/etc/kamailio
+      - kamailio-db:/usr/local/etc/kamailio
+      #- ./kamailio/kamailio_db:/usr/local/etc/kamailio
     logging:
       driver: syslog
       options:
         tag: "kamailio"
     env_file:
-      - .env
-    entrypoint :
-        - "/bin/sh"
-        - "-c"
-        - "printenv > /etc/environment &&
-           cron && kamailioRun"
+      - .env_kamailio
+    environment:
+      LOCAL_IP: ${LOCAL_IP}
+      PUBLIC_IP: ${PUBLIC_IP}
+      DEBUG: ${DEBUG}
+      ANTIFLOOD: ${ANTIFLOOD}
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "printenv > /etc/environment &&
+         cron && kamailioRun"
 
   turn_server:
-    image: coturn/coturn
+    image: coturn4sipmediagw
+    build:
+      context: coturn
     container_name: coturn
     network_mode: host
     logging:
@@ -29,14 +36,10 @@ services:
       options:
         tag: "coturn"
     env_file:
-      - .env
-    command:
-        - "--log-file=stdout"
-        - "${STUN_SRV:+'--external-ip='$STUN_SRV}"
-        - "--lt-cred-mech"
-        - "--user=${STUN_USER}:${STUN_PASS}"
-        - "--min-port=40000"
-        - "--max-port=49999"
-
+      - .env_turn
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "coturnRun"
 volumes:
   kamailio-db:
