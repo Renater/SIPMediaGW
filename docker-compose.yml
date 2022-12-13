@@ -26,5 +26,6 @@ services:
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
+      SIP_NAME_PREFIX: "${PREFIX}"
       ROOM_NAME: "${ROOM}"
     stop_grace_period: 20s
