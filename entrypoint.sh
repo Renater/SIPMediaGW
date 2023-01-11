@@ -120,7 +120,9 @@ if [[ "$SIP_NAME_PREFIX" ]]; then
 fi
 sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=tcp>;regint=60;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
-sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
+if [[ "$STUN_SRV" ]]; then
+    sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
+fi
 sipAccount+=";answermode=manual"
 
 ### Configure and start Baresip ###
