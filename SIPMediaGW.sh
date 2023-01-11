@@ -79,7 +79,7 @@ ID=$id \
 docker compose -p ${gwName} up -d --force-recreate --remove-orphans gw
 
 checkGwStatus $gwName
-sipUri=$(docker container exec gw0  sh -c "cat /var/.baresip/accounts |
+sipUri=$(docker container exec gw$id  sh -c "cat /var/.baresip/accounts |
                                            sed 's/.*<//; s/;.*//'")
 echo "{'res':'ok', 'uri':'$sipUri'}"
 
