@@ -133,6 +133,9 @@ if [ "$WITH_ALSA" == "true" ]; then
     sed -i 's/.*audio_source.*/audio_source\t\talsa,'$ALSA_DEV'/' .baresip/config
     sed -i 's/.*audio_alert.*/audio_alert\t\talsa,'$ALSA_DEV'/' .baresip/config
 fi
+if [[ "$PUBLIC_IP" ]]; then
+    sed -i 's/.*public_address.*/public_address\t\t'$PUBLIC_IP'/' .baresip/config
+fi
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config
