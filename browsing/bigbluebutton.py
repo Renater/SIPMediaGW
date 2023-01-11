@@ -2,54 +2,59 @@
 
 import sys
 import time
-import traceback
+import os
+import requests
+import json
 from browsing import Browsing
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+
+bbbFQDN = os.environ.get('WEBRTC_DOMAIN')
+if not bbbFQDN:
+    bbbFQDN = "demo.bigbluebutton.org/rooms"
+
+captureVideoQuality="high" # low, medium, high, hd
 
 class BigBlueButton (Browsing):
 
     def setUrl(self):
-        self.url = 'https://demo.bigbluebutton.org/'+self.room
+        self.url = 'https://{}/{}/join'.format(bbbFQDN, self.room)
         print("Web browsing URL: "+self.url, flush=True)
 
     def browse(self, driver):
-        # Accept Cookies
-        try:
-            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#cookies-agree-button")))
-            element.click()
-        except Exception as e:
-            print("Cookies banner not found", flush=True)
-
         # Enter name
-        roomParts = self.room.split('/')
-        selector = '#_'+roomParts[0]+'_'+roomParts[1]+'_join_name'
         try:
-              element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,selector)))
-              all_options = element.find_elements_by_tag_name("option")
-              element.send_keys(self.name)
-              element.submit()
+            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#joinFormName')))
+            element.send_keys(self.name)
+            element.submit()
         except Exception as e:
-              print("Name submit failed", flush=True)
+            print("Name submit failed", flush=True)
 
         # Activate microphone
         try:
-            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"button.jumbo--Z12Rgj4:nth-child(1)")))
+            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"[aria-label=Microphone]")))
             element.click()
-            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"button.jumbo--Z12Rgj4:nth-child(1)")))
+
+            test=WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "option[value='default']")))
+
+            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"[data-test=joinEchoTestButton]")))
             element.click()
         except Exception as e:
             print("Microphone activation failed", flush=True)
 
         # Activate camera
-        time.sleep(10)
         try:
             element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,".icon-bbb-video_off")))
             element.click()
-            time.sleep(2)
-            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,".actions--15NFtQ")))
-            element.click()
+            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#setQuality")))
+            select = Select(element)
+            select.select_by_value(captureVideoQuality)
+            time.sleep(1)
+            self.driver.execute_script("document.querySelectorAll('[data-test=\"startSharingWebcam\"]')[0].click();")
         except Exception as e:
             print("Camera activation failed", flush=True)
 
