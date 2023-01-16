@@ -42,7 +42,7 @@ def getLogsData (log, key, history):
         f = open(history, 'a')
         f.write('{}:{}'.format(key, log))
         f.close()
-        if key == 'end':
+        if key == 'end' and postURL:
             pushHistory(history)
     except Exception as exc:
         print("Failed to get logs data: ", exc)
