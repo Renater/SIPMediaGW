@@ -53,6 +53,7 @@ RUN pip3 install gTTS pydub \
 
 COPY entrypoint.sh /var/
 COPY pulseaudio/init.sh /var/pulseaudio_init.sh
+COPY src/logParse.py /usr/local/bin/logParse
 
 COPY pulseaudio/daemon.conf /etc/pulse/
 COPY alsa/asound.conf /etc/asound.conf
