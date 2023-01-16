@@ -20,7 +20,7 @@ done
 
 shift "$(( OPTIND - 1 ))"
 
-CPU_PER_GW=${CPU_PER_GW:-2.5}
+source <(grep = .env)
 
 lockFilePrefix="sipmediagw"
 gwNamePrefix="gw"
