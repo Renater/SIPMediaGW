@@ -8,22 +8,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg xvfb \
     python3 python3-pip python3-setuptools \
     libnss3 openssl \
-    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
+    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
+    libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
-    build-essential git \
-    && wget https://github.com/baresip/re/archive/v2.5.0.tar.gz && tar -xzf v2.5.0.tar.gz && rm v2.5.0.tar.gz \
-    && cd re-2.5.0 && make && make install && cd .. \
-    && wget https://github.com/baresip/rem/archive/v2.5.0.tar.gz && tar -xzf v2.5.0.tar.gz && rm v2.5.0.tar.gz \
-    && cd rem-2.5.0 && make && make install && cd .. \
-    && git clone --branch v2.5.0_x11grab https://github.com/Renater/baresip.git \
-    && cd baresip && make RELEASE=1 && make install && cd .. \
-    && rm -r baresip re-2.5.0 rem-2.5.0 \
+    build-essential cmake git \
+    && git clone --branch v2.10.0_patch https://github.com/Renater/re.git \
+    && cd re && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && wget https://github.com/baresip/rem/archive/v2.10.0.tar.gz && tar -xzf v2.10.0.tar.gz && rm v2.10.0.tar.gz \
+    && cd rem-2.10.0 && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && git clone --branch v2.10.0_patch https://github.com/Renater/baresip.git \
+    && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && rm -r baresip re rem-2.10.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
     && cd /var/UIHelper && git checkout 45c98af02c369a0c1ad3649506236efef74ac0f3 \
     && apt-get remove --purge -y \
-    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
+    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
+    libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
-    build-essential git \
+    build-essential cmake git \
     && apt autoremove -y \
     && apt autoclean -y
 
