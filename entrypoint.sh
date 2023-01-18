@@ -6,8 +6,6 @@ if [[ -z "$GW_ID" ]]; then
 fi
 
 ### Init logging ###
-errLogs=$ERR_LOGS
-appLogs=$APP_LOGS
 HISTORY="/var/logs/gw"$GW_ID"_history"
 echo "start:$(date +'%b %d %H:%M:%S')"> $HISTORY
 
@@ -21,7 +19,7 @@ cleanup() {
     killall ffmpeg Xvfb
 }
 
-trap 'cleanup | logParse -p "Trap" >> ${appLogs}' SIGINT SIGQUIT SIGTERM EXIT
+trap 'cleanup | logParse -p "Trap"' SIGINT SIGQUIT SIGTERM EXIT
 
 check_Xvfb() {
     # 5 seconds timeout before exit
@@ -34,7 +32,7 @@ check_Xvfb() {
         state=$(xdpyinfo -display ":$1" >/dev/null 2>&1; echo $?)
     done
     if [ "$timer" = $timeOut ]; then
-        echo "Xvfb :$1 failed to launch" | logParse -p "Xvfb" >> $errLogs
+        echo "Xvfb :$1 failed to launch" | logParse -p "Xvfb"
         exit 1
     fi
 }
@@ -50,7 +48,7 @@ check_v4l2() {
         state=$(v4l2-ctl --device "$1" --get-input | awk '{ print $1 }')
     done
     if [ "$timer" = $timeOut ]; then
-        echo "V4l2 loopback failed to launch" | logParse -p "V4l2" >> $errLogs
+        echo "V4l2 loopback failed to launch" | logParse -p "V4l2"
         exit 1
     fi
 }
@@ -67,7 +65,7 @@ check_register() {
         state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555 2>/dev/null | grep -c "$OK")"
     done
     if [ "$timer" = $timeOut ]; then
-        echo "Baresip failed to register" | logParse -p "Baresip" >> $errLogs
+        echo "Baresip failed to register" | logParse -p "Baresip"
         exit 1
     fi
 }
@@ -83,8 +81,8 @@ if [ "$WITH_ALSA" == "true" ]; then
     sed -i 's/Loopback,/'$ALSA_CARD0',/g' /etc/asound.conf
     sed -i 's/Loopback_1,/'$ALSA_CARD1',/g' /etc/asound.conf
 else
-    ./pulseaudio_init.sh  1> >( logParse -p "Pulse" >> $appLogs ) \
-                          2> >( logParse -p "Pulse" >> $errLogs )
+    ./pulseaudio_init.sh  1> >( logParse -p "Pulse") \
+                          2> >( logParse -p "Pulse")
 fi
 
 ### Configure video display ###
@@ -92,12 +90,12 @@ VID_FPS="30"
 PIX_DEPTH="24"
 
 SERVERNUM0=99
-echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb" >> $appLogs
-Xvfb :$SERVERNUM0 -screen 0 $VID_SIZE_SIP"x"$PIX_DEPTH | logParse -p "Xvfb" >> $errLogs &
+echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb"
+Xvfb :$SERVERNUM0 -screen 0 $VID_SIZE_SIP"x"$PIX_DEPTH | logParse -p "Xvfb" &
 
 SERVERNUM1=100
-echo "Server 1 Number= " $SERVERNUM1 | logParse -p "Xvfb" >> $appLogs
-Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH | logParse -p "Xvfb" >> $errLogs &
+echo "Server 1 Number= " $SERVERNUM1 | logParse -p "Xvfb"
+Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH | logParse -p "Xvfb" &
 
 ### Check if Xvfb server is ready ###
 check_Xvfb $SERVERNUM0
@@ -105,11 +103,11 @@ check_Xvfb $SERVERNUM1
 
 ### Start default video capture ###
 echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
-     logParse -p "FFMPEG" >> $appLogs
+     logParse -p "FFMPEG"
 ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
        -draw_mouse 0 -threads 0 \
        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
-       -f v4l2 /dev/video0 -loglevel error | logParse -p "Event" >> $errLogs &
+       -f v4l2 /dev/video0 -loglevel error | logParse -p "Event" &
 
 ### set SIP account ###
 userNamePref=$GW_NAME_PREFIX"."$GW_ID
@@ -137,10 +135,10 @@ fi
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config
-echo "DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip" | logParse -p "SIP client" >> $appLogs
+echo "DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip" | logParse -p "SIP client"
 DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESIP_ARGS \
-                     1> >( logParse -p "Baresip" -i $HISTORY >> $appLogs ) \
-                     2> >( logParse -p "Baresip" -i $HISTORY >> $errLogs ) &
+                     1> >( logParse -p "Baresip" -i $HISTORY ) \
+                     2> >( logParse -p "Baresip" -i $HISTORY ) &
                      # "sed -u 's/\[..." => to remove already printed \r characters...
 
 ### Check Baresip registering ###
@@ -157,6 +155,6 @@ cp "./browsing/"$BROWSE_FILE src
 DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -b `pwd`"/browsing/"$BROWSE_FILE \
                                                        -s $VID_SIZE_SIP \
                                                        $roomParam $fromUri \
-                          1> >( logParse -p "Event" -i $HISTORY >> $appLogs )
+                          1> >( logParse -p "Event" -i $HISTORY )
 
 
