@@ -59,7 +59,7 @@ class RequestGw:
     def handler(self, msg, args):
         Logger.LM_ERR("Loggers.py:      LM_ERR: msg: %s" % str(args))
         Logger.LM_ERR('RequestGw.handler(%s, %s)\n' % (msg.Type, str(args)))
-        if msg.Type == 'SIP_REQUEST':
+        if msg.Type == 'SIP_REQUEST'and (msg.RURI).find(self.sipDomain) != -1:
             if msg.Method == 'INVITE' and (msg.RURI).find(self.gwNamePart) == -1:
                 Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
                 uri = msg.RURI
