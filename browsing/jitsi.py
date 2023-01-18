@@ -23,6 +23,8 @@ if not confMapperURL:
 
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
 
+IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
+
 UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
              "0": "window.JitsiMeetUIHelper.executeCommand('toggle-tts')",
              "1": "window.JitsiMeetUIHelper.executeCommand('toggle-audio')",
@@ -106,7 +108,11 @@ class Jitsi (Browsing):
         except:
             print("Cannot find IVR", flush=True)
             return
+        startTime = time.time()
         while True:
+            if IVRTimeout and time.time() > ( startTime + IVRTimeout ):
+                print("IVR Timeout", flush=True)
+                return
             try:
                 if driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
                     break

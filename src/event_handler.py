@@ -54,6 +54,7 @@ dispHeight = int(inputs['res'].split('x')[1])
 # Browsing
 def browse(args):
     err = args['browsing'].run()
+    exit_handler()
 
 def endBrowse(args):
     if args['browsing']:
