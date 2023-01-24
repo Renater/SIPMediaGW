@@ -69,6 +69,8 @@ def main():
 
             try:
                 if 'Web browsing URL:' in line:
+                    getLogsData (datetime.now().strftime("%b %d %H:%M:%S"),
+                                 'start_call', historyFile)
                     getLogsData ('{}\n'.format(line.split('URL: ',1)[1]),
                                  'url', historyFile)
 
