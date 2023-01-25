@@ -17,7 +17,7 @@ services:
     environment:
       LOCAL_IP: ${LOCAL_IP}
       PUBLIC_IP: ${PUBLIC_IP}
-      DEBUG: ${DEBUG}
+      DEBUG_LEVEL: ${DEBUG_LEVEL}
       ANTIFLOOD: ${ANTIFLOOD}
     entrypoint:
       - "/bin/sh"

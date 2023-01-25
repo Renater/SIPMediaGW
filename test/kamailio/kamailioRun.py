@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import subprocess
 import sqlite3
@@ -28,15 +28,17 @@ with open(dbPath, 'a'):
 kamRunCmd='kamailio -DD -E'
 
 if os.getenv("SIP_DOMAIN"):
-    kamRunCmd+= ' --alias {}'.format(os.getenv("SIP_DOMAIN"))
+    aliases = os.getenv("SIP_DOMAIN").replace(' ', '').split(',')
+    for alias in aliases:
+        kamRunCmd+= ' --alias {}'.format(alias)
 
 if os.getenv("LOCAL_IP"):
     kamRunCmd+= ' -l {}:5060'.format(os.getenv("LOCAL_IP"))
     if os.getenv("PUBLIC_IP"):
         kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP"))
 
-if os.getenv('DEBUG', 'False').lower() == 'true':
-    kamRunCmd+= ' -A WITH_DEBUG'
+if os.getenv('DEBUG_LEVEL') and os.getenv('DEBUG_LEVEL').isdigit():
+        kamRunCmd+= ' -A \'DBGLEVEL={}\''.format(os.getenv("DEBUG_LEVEL"))
 
 if os.getenv('ANTIFLOOD', 'False').lower() == 'true':
     kamRunCmd+= ' -A WITH_ANTIFLOOD'
