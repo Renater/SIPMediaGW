@@ -6,6 +6,7 @@ services:
     container_name: kamailio
     network_mode: host
     volumes:
+      - ./kamailio/config/tls:/etc/kamailio/tls:ro
       - kamailio-db:/usr/local/etc/kamailio
       #- ./kamailio/kamailio_db:/usr/local/etc/kamailio
     logging:
@@ -19,6 +20,7 @@ services:
       PUBLIC_IP: ${PUBLIC_IP}
       DEBUG_LEVEL: ${DEBUG_LEVEL}
       ANTIFLOOD: ${ANTIFLOOD}
+      TLS: ${TLS}
     entrypoint:
       - "/bin/sh"
       - "-c"

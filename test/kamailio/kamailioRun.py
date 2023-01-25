@@ -33,9 +33,16 @@ if os.getenv("SIP_DOMAIN"):
         kamRunCmd+= ' --alias {}'.format(alias)
 
 if os.getenv("LOCAL_IP"):
-    kamRunCmd+= ' -l {}:5060'.format(os.getenv("LOCAL_IP"))
-    if os.getenv("PUBLIC_IP"):
-        kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP"))
+    kamRunCmd+= ' -l tcp:{}:5060'.format(os.getenv("LOCAL_IP"))
+    kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP", os.getenv("LOCAL_IP")))
+    kamRunCmd+= ' -l udp:{}:5060'.format(os.getenv("LOCAL_IP"))
+    kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP", os.getenv("LOCAL_IP")))
+
+if os.getenv('TLS', 'False').lower() == 'true':
+    kamRunCmd+= ' -A WITH_TLS'
+    if os.getenv("LOCAL_IP"):
+        kamRunCmd+= ' -l tls:{}:5061'.format(os.getenv("LOCAL_IP"))
+        kamRunCmd+= '/{}:5061'.format(os.getenv("PUBLIC_IP", os.getenv("LOCAL_IP")))
 
 if os.getenv('DEBUG_LEVEL') and os.getenv('DEBUG_LEVEL').isdigit():
         kamRunCmd+= ' -A \'DBGLEVEL={}\''.format(os.getenv("DEBUG_LEVEL"))
