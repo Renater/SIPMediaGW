@@ -1,9 +1,8 @@
-FROM kamailio/kamailio:5.5.0-stretch
+FROM kamailio/kamailio:5.6.3-bullseye
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip cron \
-    kamailio-sqlite-modules \
-    && rm /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python \
+    python3 python3-dev python3-pip cron \
+    sqlite3 libsqlite3-dev kamailio-sqlite-modules \
     && apt autoremove -y \
     && apt autoclean -y 
 
