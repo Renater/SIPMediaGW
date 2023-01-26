@@ -14,13 +14,8 @@ services:
       options:
         tag: "kamailio"
     env_file:
+      - .env
       - .env_kamailio
-    environment:
-      LOCAL_IP: ${LOCAL_IP}
-      PUBLIC_IP: ${PUBLIC_IP}
-      DEBUG_LEVEL: ${DEBUG_LEVEL}
-      ANTIFLOOD: ${ANTIFLOOD}
-      TLS: ${TLS}
     entrypoint:
       - "/bin/sh"
       - "-c"
@@ -38,6 +33,7 @@ services:
       options:
         tag: "coturn"
     env_file:
+      - .env
       - .env_turn
     entrypoint:
       - "/bin/sh"
