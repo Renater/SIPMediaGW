@@ -33,6 +33,9 @@ if [ ! "$(docker network ls | grep gw_net)" ]; then
   sudo docker network create --subnet=192.168.92.0/29 gw_net
 fi
 #
+docker build -f /sipmediagw/test/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/test/kamailio
+docker build -f /sipmediagw/test/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/test/coturn
+#
 echo "SIP_DOMAIN=$HOST_IP" >> /etc/environment
 echo "PUBLIC_IP=$HOST_IP" >> /etc/environment
 echo "LOCAL_IP=$HOST_IP" >> /etc/environment
