@@ -29,7 +29,7 @@ class RequestGw:
         res=''
         with closing(sqlite3.connect(dbPath)) as con:
             with closing(con.cursor()) as cursor:
-                cursor.execute('''SELECT contact, username FROM location
+                cursor.execute('''SELECT contact, username, socket FROM location
                                   WHERE
                                       locked = 0 AND
                                       username LIKE '%'||?||'%' AND
@@ -71,8 +71,9 @@ class RequestGw:
                 gwRes = self.lockGw()
                 if gwRes:
                     gwUri = gwRes[1]
+                    gwSocket = gwRes[2].split(':')[1]
                     Logger.LM_ERR('Returned Gateway: %s\n' % gwUri)
-                    msg.rewrite_ruri("sip:%s@%s" % (gwUri, self.sipDomain))
+                    msg.rewrite_ruri("sip:%s@%s" % (gwUri, gwSocket))
                     displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))
                     KSR.uac.uac_replace_from(displayNameWRoom, "")
                     Logger.LM_ERR('########## SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))

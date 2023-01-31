@@ -28,9 +28,10 @@ with open(dbPath, 'a'):
 kamRunCmd='kamailio -DD -E'
 
 if os.getenv("SIP_DOMAIN"):
-    aliases = os.getenv("SIP_DOMAIN").replace(' ', '').split(',')
-    for alias in aliases:
-        kamRunCmd+= ' --alias {}'.format(alias)
+    kamRunCmd+= ' --alias {}'.format(os.getenv("SIP_DOMAIN"))
+
+if os.getenv("PUBLIC_IP"):
+    kamRunCmd+= ' --alias {}'.format(os.getenv("PUBLIC_IP"))
 
 if os.getenv("LOCAL_IP"):
     kamRunCmd+= ' -l tcp:{}:5060'.format(os.getenv("LOCAL_IP"))

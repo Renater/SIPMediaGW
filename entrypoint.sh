@@ -70,6 +70,11 @@ check_register() {
     fi
 }
 
+### Hosts/IP adresses ###
+export HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
+export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
+export STUN_SRV=${STUN_SRV:-$HOST_IP}
+
 ### Configure audio devices ###
 if [ "$WITH_ALSA" == "true" ]; then
     ALSA_DEV='plug:baresip'
@@ -116,7 +121,7 @@ if [[ "$SIP_NAME_PREFIX" ]]; then
 fi
 sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=tcp>;regint=60;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
-if [[ "$STUN_SRV" ]]; then
+if [[ "$STUN_SRV" ]] && [[ "$STUN_USER" ]]  ; then
     sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
 fi
 sipAccount+=";answermode=manual"
