@@ -12,7 +12,7 @@ TimeoutStartSec=0
 RestartSec=1
 WorkingDirectory=/sipmediagw/test
 EnvironmentFile=/etc/environment
-ExecStart=/usr/bin/docker compose -p coturn up --force-recreate
+ExecStart=/usr/bin/docker compose -p coturn up --force-recreate turn_server
 ExecStop=/usr/bin/docker compose -p coturn down
 
 [Install]
