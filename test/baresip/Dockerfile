@@ -3,17 +3,20 @@ FROM debian:9-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget build-essential  ca-certificates \
     libsdl2-2.0-0 libgl1-mesa-dri xvfb \
+    ffmpeg \
     socat libspandsp2 \
     libnss3 openssl \
-    libavcodec57 libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev libsndfile1-dev\
+    libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
+    libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
-    && wget https://github.com/baresip/re/archive/v1.1.0.tar.gz && tar -xzf v1.1.0.tar.gz && rm v1.1.0.tar.gz \
-    && cd re-1.1.0 && make && make install && cd .. \
-    && wget https://github.com/creytiv/rem/archive/v0.6.0.tar.gz && tar -xzf v0.6.0.tar.gz && rm v0.6.0.tar.gz \
-    && cd rem-0.6.0 && make && make install && cd .. \
-    && wget https://github.com/baresip/baresip/archive/v1.0.0.tar.gz && tar -xzf v1.0.0.tar.gz && rm v1.0.0.tar.gz \
-    && cd baresip-1.0.0 && make RELEASE=1 && make install && cd .. \
-    && rm -r baresip-1.0.0 re-1.1.0 rem-0.6.0 \
+    build-essential cmake git \
+    && git clone --branch v2.10.0_patch https://github.com/Renater/re.git \
+    && cd re && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && wget https://github.com/baresip/rem/archive/v2.10.0.tar.gz && tar -xzf v2.10.0.tar.gz && rm v2.10.0.tar.gz \
+    && cd rem-2.10.0 && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && git clone --branch v2.10.0_patch https://github.com/Renater/baresip.git \
+    && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && rm -r baresip re rem-2.10.0 \
     && apt-get remove --purge -y \
     libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \

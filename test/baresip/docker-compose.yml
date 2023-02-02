@@ -1,3 +1,6 @@
+networks:
+  default:
+    name: gw_net
 services:
   baresip:
     image: baresip

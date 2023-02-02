@@ -20,6 +20,7 @@ call_max_calls		4
 #audio_path		/usr/local/share/baresip
 #audio_player		alsa
 audio_source		ausine,400
+#audio_source		avformat,/var/file_in
 #audio_alert		alsa
 ausrc_srate		48000
 #auplay_srate		48000
@@ -32,21 +33,26 @@ auplay_format		s16		# s16, float, ..
 auenc_format		s16		# s16, float, ..
 audec_format		s16		# s16, float, ..
 audio_buffer		20-160		# ms
+audio_buffer_mode	fixed		# fixed, adaptive
+audio_silence		-35.0		# in [dB]
+audio_telev_pt		101		# payload type for telephone-event
 
 # Video
-#video_source		v4l2,/dev/video0
+#video_source		avformat,/var/file_in
 video_display		sdl
-video_size		352x288
-video_bitrate		500000
-video_fps		25.00
+video_size		640x480
+video_bitrate		1000000
+video_fps		30.00
 video_fullscreen	no
 videnc_format		yuv420p
 
 # AVT - Audio/Video Transport
 rtp_tos			184
+rtp_video_tos		136
 #rtp_ports		10000-20000
 #rtp_bandwidth		512-1024 # [kbit/s]
 rtcp_mux		no
+jitter_buffer_type	fixed		# off, fixed, adaptive
 jitter_buffer_delay	5-10		# frames
 rtp_stats		no
 #rtp_timeout		60
@@ -75,14 +81,13 @@ module			stdio.so
 module			g722.so
 #module			g726.so
 module			g711.so
-#module			gsm.so
 #module			l16.so
 #module			mpa.so
 #module			codec2.so
-#module			ilbc.so
-#module			isac.so
 
 # Audio filter Modules (in encoding order)
+module			auconv.so
+module			auresamp.so
 #module			vumeter.so
 #module			sndfile.so
 #module			speex_pp.so
@@ -112,9 +117,6 @@ module			avcodec.so
 
 # Video source modules
 #module			v4l2.so
-#module			v4l2_codec.so
-#module			x11grab.so
-#module			cairo.so
 #module			vidbridge.so
 
 # Video display modules
@@ -124,13 +126,12 @@ module			avcodec.so
 module			fakevideo.so
 
 # Audio/Video source modules
-#module			avformat.so
-#module			rst.so
+module			avformat.so
 #module			gst.so
-#module			gst_video.so
 
 # Compatibility modules
 #module			ebuacip.so
+module			uuid.so
 
 # Media NAT modules
 module			stun.so
@@ -146,17 +147,9 @@ module			ice.so
 
 
 #------------------------------------------------------------------------------
-# Temporary Modules (loaded then unloaded)
-
-module_tmp		uuid.so
-module_tmp		account.so
-
-
-#------------------------------------------------------------------------------
 # Application Modules
 
-module_app		auloop.so
-#module_app		b2bua.so
+module_app		account.so
 module_app		contact.so
 module_app		debug_cmd.so
 #module_app		echo.so
@@ -164,22 +157,30 @@ module_app		debug_cmd.so
 module_app		menu.so
 #module_app		mwi.so
 #module_app		presence.so
+#module_app		serreg.so
 #module_app		syslog.so
 #module_app		mqtt.so
 #module_app		ctrl_tcp.so
-module_app		vidloop.so
+#module_app		ctrl_dbus.so
+#module_app		httpreq.so
+#module_app		multicast.so
+module_app		netroam.so
+#module_app		vidloop.so
 
 
 #------------------------------------------------------------------------------
 # Module parameters
 
+# DTLS SRTP parameters
+#dtls_srtp_use_ec	prime256v1
+
 
 # UI Modules parameters
-cons_listen		0.0.0.0:5555 # cons
+cons_listen		0.0.0.0:5555 # cons - Console UI UDP/TCP sockets
 
-http_listen		0.0.0.0:8000 # httpd - server
+http_listen		0.0.0.0:8000 # httpd - HTTP Server
 
-ctrl_tcp_listen		0.0.0.0:4444 # ctrl_tcp
+ctrl_tcp_listen		0.0.0.0:4444 # ctrl_tcp - TCP interface JSON
 
 evdev_device		/dev/input/event0
 
@@ -194,11 +195,11 @@ opus_bitrate		28000 # 6000-510000
 #opus_complexity	10
 #opus_application	audio	# {voip,audio}
 #opus_samplerate	48000
-#opus_packet_loss	10	# 0-100 percent
+#opus_packet_loss	10	# 0-100 percent (expected packet loss)
 
 # Opus Multistream codec parameters
 #opus_ms_channels	2	#total channels (2 or 4)
-#opus_ms_streams		2	#number of streams
+#opus_ms_streams	2	#number of streams
 #opus_ms_c_streams	2	#number of coupled streams
 
 vumeter_stderr		yes
@@ -213,11 +214,22 @@ video_selfview		window # {window,pip}
 #zrtp_hash		no  # Disable SDP zrtp-hash (not recommended)
 
 # Menu
-#menu_bell		yes
 #redial_attempts	0 # Num or <inf>
 #redial_delay		5 # Delay in seconds
 #ringback_disabled	no
 #statmode_default	off
+#menu_clean_number	no
+#sip_autoanswer_method	rfc5373 # {rfc5373,call-info,alert-info}
+#ring_aufile		ring.wav
+#callwaiting_aufile	callwaiting.wav
+#ringback_aufile	ringback.wav
+#notfound_aufile	notfound.wav
+#busy_aufile		busy.wav
+#error_aufile		error.wav
+#sip_autoanswer_aufile	autoanswer.wav
+
+# GTK
+#gtk_clean_number	no
 
 # avcodec
 #avcodec_h264enc	libx264
@@ -226,10 +238,14 @@ video_selfview		window # {window,pip}
 #avcodec_h265dec	hevc
 #avcodec_hwaccel	vaapi
 
+# ctrl_dbus
+#ctrl_dbus_use	system		# system, session
+
 # mqtt
-#mqtt_broker_host	127.0.0.1
+#mqtt_broker_host	sollentuna.example.com
 #mqtt_broker_port	1883
-#mqtt_broker_clientid	baresip01
+#mqtt_broker_cafile	/path/to/broker-ca.crt	# set this to enforce TLS
+#mqtt_broker_clientid	baresip01	# has to be unique
 #mqtt_broker_user	user
 #mqtt_broker_password	pass
 #mqtt_basetopic		baresip/01
@@ -239,3 +255,27 @@ snd_path		/tmp
 
 # EBU ACIP
 #ebuacip_jb_type	fixed	# auto,fixed
+
+# HTTP request module
+#httpreq_ca		trusted1.pem
+#httpreq_ca		trusted2.pem
+#httpreq_dns		1.1.1.1
+#httpreq_dns		8.8.8.8
+#httpreq_hostname	myserver
+#httpreq_cert		cert.pem
+#httpreq_key		key.pem
+
+# multicast receivers (in priority order)- port number must be even
+#multicast_call_prio	0
+#multicast_ttl	1
+#multicast_jbuf_type	fixed		# off, fixed, adaptive
+#multicast_jbuf_delay	5-10		# frames
+#multicast_listener	224.0.2.21:50000
+#multicast_listener	224.0.2.21:50002
+
+# avformat
+#avformat_hwaccel	vaapi
+#avformat_inputformat	mjpeg
+#avformat_decoder	mjpeg
+#avformat_pass_through	yes
+#avformat_rtsp_transport	udp
