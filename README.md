@@ -14,12 +14,16 @@ To do so, simply run:
 > **Note**\
 > In this case, the provisioning is managed by a simple [shell script](https://github.com/Renater/SIPMediaGW/blob/main/test/provision.sh)
 
-Once the virtual machin is up, you can join a conference from your preferred SIP softphone:
+Once the virtual machin is up, you can join a conference (replace "your_conference_name" with yours) from your preferred SIP softphone:
 
-- **sip:0@192.168.75.13** (IVR access)
 - **sip:your_conference_name@192.168.75.13** (Direct access)
+- **sip:0@192.168.75.13** (IVR access => available only with Jitsi Meet)
 
-A more detailed description of this installation is available here: [SIPMediaGW in-depth](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw-in-depth.md)
+Depending on [BROWSE_FILE](https://github.com/Renater/SIPMediaGW/blob/main/.env#L9) and [WEBRTC_DOMAIN](https://github.com/Renater/SIPMediaGW/blob/main/.env#L10) variables, the corresponding webconference is one of these:
+- jitsi: https://meet.jit.si/your_conference_name
+- bigbluebutton: https://demo.bigbluebutton.org/rooms/your_conference_name/join
+
+A more detailed description of this project is available here: [SIPMediaGW in-depth](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw-in-depth.md)
 
 
 
