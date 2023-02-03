@@ -42,7 +42,7 @@ Before starting the gateway, a local (docker based) testing environment (Kamaili
 Usage
 --------
 
-SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with CPU_PER_GW environment variable value.
+SIPMediaGW.sh is a helper script to automate gateway launching, is able to launch as many gateways (running in the same time) as possible, in accordance with [CPU_PER_GW](https://github.com/Renater/SIPMediaGW/blob/main/.env#L3) environment variable value.
  > **Note**\
  > When running multiple gateways simultaneously, this script automatically check ressources availlability (assuming that all the CPU is dedicated to SIPMediaGW instances) but does not perform any virtual video devices provisionning.
 
