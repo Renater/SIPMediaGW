@@ -127,6 +127,7 @@ fi
 sipAccount+=";answermode=manual"
 
 ### Configure and start Baresip ###
+rm .baresip/*
 cp baresip/config_default .baresip/config
 echo $sipAccount > .baresip/accounts
 if [ "$WITH_ALSA" == "true" ]; then
