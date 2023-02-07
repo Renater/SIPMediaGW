@@ -16,8 +16,7 @@ RUN mkdir /usr/local/etc/kamailio
 
 EXPOSE 5060
 
-VOLUME /etc/kamailio
-COPY config/* /etc/kamailio/
+COPY config/ /etc/kamailio/
 RUN kamdbctl create
 
 COPY kamailioRun.py /usr/local/bin/kamailioRun
