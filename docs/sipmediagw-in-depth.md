@@ -17,7 +17,7 @@ Example for 4 gateways, co-hosted on GW_server machine:
 
 - **Video**
 
-		sudo apt-get install -y v4l2loopback-utils
+		sudo apt-get install -y v4l2loopback-dkms
 		echo "options v4l2loopback devices=4 exclusive_caps=1,1,1,1" | sudo tee  /etc/modprobe.d/v4l2loopback.conf
 		echo "v4l2loopback" | sudo tee -a /etc/modules
 		sudo modprobe v4l2loopback
