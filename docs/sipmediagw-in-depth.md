@@ -60,10 +60,6 @@ Logs:
 
 	tail -f /var/log/syslog | grep mediagw
 	
-Restart Audio:
+Inspect Kamailio database:
 
-	sudo  pulseaudio -k
-
-Remove virtual devices:
-
-	sudo modprobe -r v4l2loopback
+	sqlite3  test/kamailio/kamailio_db/kamailio.sqlite "SELECT * FROM location"
