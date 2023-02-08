@@ -1,3 +1,6 @@
+Overview
+--------
+
 **SIPMediaGW** is a Docker based media gateway to be used on top of a web conferencing service (Jitsi Meet, BigBlueButton,...), in order to provide SIP (audio+video) access.
 
 
@@ -21,7 +24,10 @@ Depending on [BROWSE_FILE](https://github.com/Renater/SIPMediaGW/blob/114ee4be29
 or
 - bigbluebutton: https://demo.bigbluebutton.org/rooms/your_conference_name/join
 
-A more detailed description of this project is available here: [SIPMediaGW in-depth](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw-in-depth.md)
+Technical insights
+--------
+- Architecture: [SIPMediaGW in-depth](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw-in-depth.md)
+- Call flow: [SIPMediaGW call flow](https://github.com/Renater/SIPMediaGW/blob/main/docs/call_flow.md)
 
 
 
