@@ -6,8 +6,6 @@ services:
     container_name: kamailio
     network_mode: host
     volumes:
-      #- ./kamailio/config/tls:/etc/kamailio/tls:ro
-      - kamailio-db:/usr/local/etc/kamailio
       - ./kamailio/kamailio_db:/usr/local/etc/kamailio
     logging:
       driver: syslog
@@ -39,5 +37,4 @@ services:
       - "/bin/sh"
       - "-c"
       - "coturnRun"
-volumes:
-  kamailio-db:
+

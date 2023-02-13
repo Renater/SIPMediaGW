@@ -18,6 +18,7 @@ with open(dbPath, 'a'):
     try:
         subprocess.run(['kamdbctl create'], shell=True)
         with closing(sqlite3.connect(dbPath)) as con:
+            con.execute('pragma journal_mode=wal')
             with closing(con.cursor()) as cursor:
                 cursor.execute('''ALTER TABLE location
                                   ADD COLUMN locked INTEGER NOT NULL DEFAULT 0''')
