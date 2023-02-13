@@ -37,7 +37,7 @@ class RequestGw:
                                       NOT EXISTS (
                                          SELECT callee_contact
                                          FROM dialog
-                                         WHERE callee_contact LIKE '%'||location.contact||'%'
+                                         WHERE callee_contact LIKE '%'||location.username||'%'
                                       );''',(self.gwNamePart,))
                 contactList = cursor.fetchall()
                 if len(contactList) == 0:
@@ -51,7 +51,7 @@ class RequestGw:
                                              SELECT callee_contact
                                              FROM dialog
                                              WHERE callee_contact LIKE '%'||?||'%'
-                                          );''',(contact[0], contact[0],))
+                                          );''',(contact[0], contact[1],))
                     res = con.commit()
                     if cursor.rowcount > 0:
                         return contact

@@ -18,10 +18,9 @@ with closing(sqlite3.connect(dbPath)) as con:
         contactList = cursor.fetchall()
         print('Number of registered SIPMediaGWs: {}'.format(len(contactList)), flush=True)
 
-        cursor.execute('''SELECT contact, username FROM location
+        cursor.execute('''SELECT callee_contact FROM dialog
                           WHERE
-                              locked = 1 AND
-                              username LIKE '%'||?||'%'
+                              callee_contact LIKE '%'||?||'%'
                               ;''',(gwNamePart,))
         contactList = cursor.fetchall()
         print('Number of busy SIPMediaGWs: {}'.format(len(contactList)), flush=True)
@@ -33,7 +32,7 @@ with closing(sqlite3.connect(dbPath)) as con:
                               NOT EXISTS (
                                  SELECT callee_contact
                                  FROM dialog
-                                 WHERE callee_contact LIKE '%'||location.contact||'%'
+                                 WHERE callee_contact LIKE '%'||location.username||'%'
                               );''',(gwNamePart,))
         contactList = cursor.fetchall()
         print('Number of available SIPMediaGWs: {}'.format(len(contactList)), flush=True)
