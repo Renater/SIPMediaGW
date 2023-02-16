@@ -17,12 +17,8 @@ jitsiFQDN = os.environ.get('WEBRTC_DOMAIN')
 if not jitsiFQDN:
     jitsiFQDN = "rendez-vous.renater.fr"
 
-confMapperURL = os.environ.get('CONFMAPPER')
-if not confMapperURL:
-    confMapperURL = ""#"https://rendez-vous.renater.fr/conf-api/conferenceMapper"
-
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
-
+confMapperURL = os.environ.get('CONFMAPPER')
 IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
 
 UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
