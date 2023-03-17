@@ -27,7 +27,9 @@ class Browsing:
         self.serviceArgs = []
         self.chromeOptions = Options()
         self.chromeOptions.add_argument('--no-sandbox')
-        self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
+        #self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
+        self.chromeOptions.add_argument('--auto-select-desktop-capture-source=Screen 2')
+        self.chromeOptions.add_argument('--enable-usermedia-screen-capturing')
         self.chromeOptions.add_argument('--disable-gpu')
         self.chromeOptions.add_argument('--start-fullscreen')
         self.chromeOptions.add_argument('--kiosk')
@@ -37,6 +39,8 @@ class Browsing:
         self.chromeOptions.add_argument('--disable-notifications')
         self.chromeOptions.add_argument('--autoplay-policy=no-user-gesture-required')
         self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation', 'test-type'])
+        self.chromeOptions.add_experimental_option('prefs',{'profile.default_content_setting_values.media_stream_mic':1,
+                                                            'profile.default_content_setting_values.media_stream_camera':1})
 
         policyFile = "/etc/opt/chrome/policies/managed/managed_policies.json"
         os.makedirs(os.path.dirname(policyFile), exist_ok=True)

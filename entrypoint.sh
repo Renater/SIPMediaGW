@@ -94,17 +94,31 @@ fi
 VID_FPS="30"
 PIX_DEPTH="24"
 
+IFS="x" read -r VID_W_SIP VID_H_SIP <<<$VID_SIZE_SIP
+VID_WX2_SIP=$(( 2*$VID_W_SIP ))
+
 SERVERNUM0=99
 echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb"
-Xvfb :$SERVERNUM0 -screen 0 $VID_SIZE_SIP"x"$PIX_DEPTH | logParse -p "Xvfb" &
+Xvfb :$SERVERNUM0 -screen 0 \
+      $VID_WX2_SIP"x"$VID_H_SIP"x"$PIX_DEPTH \
+     +extension RANDR -noreset | logParse -p "Xvfb" &
 
 SERVERNUM1=100
 echo "Server 1 Number= " $SERVERNUM1 | logParse -p "Xvfb"
-Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH | logParse -p "Xvfb" &
+Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH \
+     +extension RANDR -noreset| logParse -p "Xvfb" &
 
 ### Check if Xvfb server is ready ###
 check_Xvfb $SERVERNUM0
 check_Xvfb $SERVERNUM1
+
+DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen0 \
+        $VID_W_SIP"/640x"$VID_H_SIP"/360+0+0" screen | logParse -p "xrandr"
+DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen1 \
+        $VID_W_SIP"/640x"$VID_H_SIP"/360+"$VID_W_SIP"+0" none | logParse -p "xrandr"
+
+DISPLAY=:$SERVERNUM0 fluxbox | logParse -p "fluxbox" &
+DISPLAY=:$SERVERNUM0 unclutter -idle 0 &
 
 ### Start default video capture ###
 echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
@@ -141,6 +155,8 @@ fi
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_SIP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config
+sed -i 's/.*x11_main.*/x11_main\t\t:'$SERVERNUM1','$VID_SIZE_WEBRTC'+0+0/' .baresip/config
+sed -i 's/.*x11_slides.*/x11_slides\t\t:'$SERVERNUM0','$VID_SIZE_SIP'+'$VID_W_SIP'+0/' .baresip/config
 echo "DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip" | logParse -p "SIP client"
 DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESIP_ARGS \
                      1> >( logParse -p "Baresip" -i $HISTORY ) \
