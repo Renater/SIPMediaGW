@@ -65,7 +65,9 @@ rtp_timeout		60
 #public_address		127.0.0.1
 
 # BFCP
-bfcp_proto             udp
+bfcp_proto		udp
+bfcp_floorctrl	s-only
+
 #------------------------------------------------------------------------------
 # Modules
 

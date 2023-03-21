@@ -20,6 +20,7 @@ class Browsing:
         self.name = name if name else ''
         self.width = width
         self.height = height
+        self.screenShared = False
         self.userInputs = queue.Queue()
         self.UIKeyMap = {}
         self.driver = []
