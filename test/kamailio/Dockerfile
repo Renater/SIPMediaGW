@@ -1,4 +1,4 @@
-FROM kamailio/kamailio:5.6.3-bullseye
+FROM ghcr.io/kamailio/kamailio:5.6.3-bullseye
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-dev python3-pip cron \
