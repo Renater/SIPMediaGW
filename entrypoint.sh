@@ -118,7 +118,7 @@ DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen1 \
         $VID_W_SIP"/640x"$VID_H_SIP"/360+"$VID_W_SIP"+0" none | logParse -p "xrandr"
 
 DISPLAY=:$SERVERNUM0 fluxbox | logParse -p "fluxbox" &
-DISPLAY=:$SERVERNUM0 unclutter -idle 0 &
+DISPLAY=:$SERVERNUM0 unclutter -idle 1 &
 
 ### Start default video capture ###
 echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
