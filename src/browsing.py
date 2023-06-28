@@ -12,6 +12,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.remote_connection import LOGGER, logging
+from selenium.webdriver.chrome.service import Service
 
 class Browsing:
     def __init__(self, width, height, room=None, name=None):
@@ -24,9 +25,8 @@ class Browsing:
         self.userInputs = queue.Queue()
         self.UIKeyMap = {}
         self.driver = []
-        self.desiredCaps = DesiredCapabilities.CHROME
-        self.serviceArgs = []
-        self.chromeOptions = Options()
+        self.service = []
+        self.chromeOptions = webdriver.ChromeOptions()
         self.chromeOptions.add_argument('--no-sandbox')
         #self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.chromeOptions.add_argument('--auto-select-desktop-capture-source=Screen 2')
@@ -60,10 +60,9 @@ class Browsing:
             self.setUrl()
             if not self.url:
                 return 1
-            self.driver = webdriver.Chrome('/usr/bin/chromedriver',
-                                           desired_capabilities=self.desiredCaps,
-                                           options=self.chromeOptions,
-                                           service_args=self.serviceArgs)
+            self.service = Service(executable_path='/usr/bin/chromedriver')
+            self.driver = webdriver.Chrome(service=self.service,
+                                           options=self.chromeOptions)
             self.driver.get(self.url)
             self.browse(self.driver)
 
