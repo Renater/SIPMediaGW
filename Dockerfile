@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && rm -r baresip re rem-2.10.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout 6d58f7045407846cb29b01c0315dffd239700bef \
+    && cd /var/UIHelper && git checkout c4fc83aae0ffb6b84a73200acf1de9fd4e852e95 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
@@ -30,9 +30,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt autoremove -y \
     && apt autoclean -y
 
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt install -y ./google-chrome-stable_current_amd64.deb \
-    && rm google-chrome-stable_current_amd64.deb \
+RUN wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_110.0.5481.77-1_amd64.deb \
+    && apt install -y ./google-chrome-stable_110.0.5481.77-1_amd64.deb \
+    && rm google-chrome-stable_110.0.5481.77-1_amd64.deb \
     && CHROME_STRING=$(google-chrome --version) \
     && CHROME_VERSION_STRING=$(echo "${CHROME_STRING}" | grep -oP "\d+\.\d+\.\d+\.\d+") \
     && CHROME_MAJOR_VERSION=$(echo "${CHROME_VERSION_STRING%%.*}") \
