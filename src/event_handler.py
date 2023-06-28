@@ -96,14 +96,6 @@ def event_handler(data, args):
         print('Received DTMF:'+ data['param'], flush=True)
         args['browsing'].userInputs.put(data['param'])
 
-    if "BFCP" in data['type']:
-        if data['param'] == 'BFCP_FLOOR_REQUEST':
-            args['browsing'].userInputs.put('s')
-            args['browsing'].screenShared = True
-        if (data['param'] == 'BFCP_FLOOR_RELEASE' and
-            args['browsing'].screenShared == True):
-            args['browsing'].userInputs.put('s')
-            args['browsing'].screenShared = False
     if data['type'] == 'CALL_CLOSED':
         if (not inputs['from'] or
             inputs['from'] and inputs['from'] == data['peeruri']):
@@ -115,6 +107,15 @@ def event_handler(data, args):
         print(data, flush=True)
         return {"command":"quit"}
 
+    if data['type'] == 'VIDEO_DISP':
+        print(data, flush=True)
+        if data['param'] == 'VIDEO_SLIDES_START':
+            args['browsing'].userInputs.put('s')
+            args['browsing'].screenShared = True
+        if (data['param'] == 'VIDEO_SLIDES_STOP' and
+            args['browsing'].screenShared == True):
+            args['browsing'].userInputs.put('s')
+            args['browsing'].screenShared = False
 
 # Start event handler loop
 ns = Netstring(baresipHost, 4444)

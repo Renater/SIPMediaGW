@@ -45,6 +45,17 @@ video_bitrate		1500000
 video_fps		30
 video_fullscreen		yes
 videnc_format		yuv420p
+video_fmtp_append	";max-mbps=108000;max-fs=3600;max-br=2048"
+
+# Slides
+slides_source		fakevideo,nil
+slides_display		x11
+slides_size		2x2
+slides_bitrate		1000
+slides_fps		0.10
+slides_fullscreen	no
+slidenc_format		yuv420p
+slides_fmtp_append	";max-mbps=108000;max-fs=3600;max-br=2048"
 
 # AVT - Audio/Video Transport
 rtp_tos			184
@@ -66,7 +77,7 @@ rtp_timeout		60
 
 # BFCP
 bfcp_proto		udp
-bfcp_floorctrl	s-only
+bfcp_floorctrl	c-s
 
 #------------------------------------------------------------------------------
 # Modules
@@ -124,7 +135,7 @@ module			avcodec.so
 #module			avfilter.so
 
 # Video source modules
-module			v4l2.so
+#module			v4l2.so
 #module			v4l2_codec.so
 #module			avcodec.so
 module			x11grab.so
@@ -135,7 +146,7 @@ module			x11grab.so
 #module			directfb.so
 module			x11.so
 #module			sdl.so
-#module			fakevideo.so
+module			fakevideo.so
 
 # Audio/Video source modules
 #module			avformat.so
