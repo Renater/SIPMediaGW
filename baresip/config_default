@@ -39,12 +39,23 @@ audio_telev_pt		101		# payload type for telephone-event
 
 # Video
 video_source		x11grab,:0
-video_display		sdl
+video_display		x11
 video_size		1280x720
 video_bitrate		1500000
 video_fps		30
 video_fullscreen		yes
 videnc_format		yuv420p
+video_fmtp_append	";max-mbps=108000;max-fs=3600;max-br=2048"
+
+# Slides
+slides_source		fakevideo,nil
+slides_display		x11
+slides_size		2x2
+slides_bitrate		1000
+slides_fps		0.10
+slides_fullscreen	no
+slidenc_format		yuv420p
+slides_fmtp_append	";max-mbps=108000;max-fs=3600;max-br=2048"
 
 # AVT - Audio/Video Transport
 rtp_tos			184
@@ -62,7 +73,11 @@ rtp_timeout		60
 #dns_server		1.0.0.1:53
 #dns_fallback		8.8.8.8:53
 #net_interface		eth0
-#public_address         127.0.0.1
+#public_address		127.0.0.1
+
+# BFCP
+bfcp_proto		udp
+bfcp_floorctrl	c-s
 
 #------------------------------------------------------------------------------
 # Modules
@@ -120,7 +135,7 @@ module			avcodec.so
 #module			avfilter.so
 
 # Video source modules
-module			v4l2.so
+#module			v4l2.so
 #module			v4l2_codec.so
 #module			avcodec.so
 module			x11grab.so
@@ -129,9 +144,9 @@ module			x11grab.so
 
 # Video display modules
 #module			directfb.so
-#module			x11.so
-module			sdl.so
-#module			fakevideo.so
+module			x11.so
+#module			sdl.so
+module			fakevideo.so
 
 # Audio/Video source modules
 #module			avformat.so
@@ -231,6 +246,10 @@ video_selfview		window # {window,pip}
 #avcodec_h265enc	libx265
 #avcodec_h265dec	hevc
 #avcodec_hwaccel	vaapi
+
+# x11
+x11_main	:100,1280x720+0+0
+x11_slides	:99,1280x720+1280+0
 
 # ctrl_dbus
 #ctrl_dbus_use	system		# system, session
