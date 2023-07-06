@@ -107,6 +107,15 @@ def event_handler(data, args):
         print(data, flush=True)
         return {"command":"quit"}
 
+    if data['type'] == 'VIDEO_DISP':
+        print(data, flush=True)
+        if data['param'] == 'VIDEO_SLIDES_START':
+            args['browsing'].userInputs.put('s')
+            args['browsing'].screenShared = True
+        if (data['param'] == 'VIDEO_SLIDES_STOP' and
+            args['browsing'].screenShared == True):
+            args['browsing'].userInputs.put('s')
+            args['browsing'].screenShared = False
 
 # Start event handler loop
 ns = Netstring(baresipHost, 4444)

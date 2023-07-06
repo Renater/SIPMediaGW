@@ -20,6 +20,7 @@ statFields = {'packets', 'errors', 'pkt.report', 'avg. bitrate', 'lost', 'jitter
 def pushHistory(history):
     try:
         data = {}
+        data['room'] = 'IVR'
         with open(history, 'r') as f:
             for line in f:
                 key, log = line.split(':',1)
@@ -69,7 +70,7 @@ def main():
 
             try:
                 if 'Web browsing URL:' in line:
-                    getLogsData (datetime.now().strftime("%b %d %H:%M:%S"),
+                    getLogsData ('{}\n'.format(datetime.now().strftime("%b %d %H:%M:%S")),
                                  'start_call', historyFile)
                     getLogsData ('{}\n'.format(line.split('URL: ',1)[1]),
                                  'url', historyFile)
@@ -85,8 +86,8 @@ def main():
                         getLogsData ('{}\n'.format(line),
                                      'stats', historyFile)
 
-                if 'Browsing stopped' in line:
-                    getLogsData (datetime.now().strftime("%b %d %H:%M:%S"),
+                if 'ua: stop all' in line:
+                    getLogsData ('{}\n'.format(datetime.now().strftime("%b %d %H:%M:%S")),
                                  'end', historyFile)
 
             except Exception as exc:
