@@ -97,6 +97,10 @@ PIX_DEPTH="24"
 IFS="x" read -r VID_W_SIP VID_H_SIP <<<$VID_SIZE_SIP
 VID_WX2_SIP=$(( 2*$VID_W_SIP ))
 
+mkdir -p /tmp/.X11-unix
+sudo chmod 1777 /tmp/.X11-unix
+sudo chown root /tmp/.X11-unix/
+
 SERVERNUM0=99
 echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb"
 Xvfb :$SERVERNUM0 -screen 0 \

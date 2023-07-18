@@ -18,7 +18,13 @@ ExecStart=/bin/bash -c \
           done \n\
           exit 0'
 
-ExecStop=/bin/bash -c 'docker container stop $(docker container ls -q --filter name=gw*)'
+ExecStop=/bin/bash -c \
+         'i=0 \n\
+         until [ "$?" == 1 ]; do \n\
+             docker container stop gw$i && \
+             i=$(($i + 1)) \n\
+         done \n\
+         exit 0'
 
 [Install]
 WantedBy=multi-user.target
