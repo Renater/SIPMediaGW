@@ -30,15 +30,18 @@ class RequestGw:
         res=''
         with closing(sqlite3.connect(dbPath)) as con:
             with closing(con.cursor()) as cursor:
-                cursor.execute('''SELECT contact, username, socket FROM location
+                cursor.execute('''SELECT contact, username, socket,
+                                         SUBSTR("username", 0,15) AS vm, COUNT(username) as count FROM location
                                   WHERE
                                       locked = 0 AND
                                       username LIKE '%'||?||'%' AND
                                       NOT EXISTS (
-                                         SELECT callee_contact
-                                         FROM dialog
-                                         WHERE callee_contact LIKE '%'||location.username||'%'
-                                      );''',(self.gwNamePart,))
+                                          SELECT callee_contact
+                                          FROM dialog
+                                          WHERE callee_contact LIKE '%'||location.username||'%'
+                                      )
+                                  GROUP BY vm
+                                  ORDER BY count ASC;''',(self.gwNamePart,))
                 contactList = cursor.fetchall()
                 if len(contactList) == 0:
                     return
