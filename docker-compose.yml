@@ -1,6 +1,7 @@
 networks:
   default:
     name: gw_net
+    external: true
 
 services:
   gw:
