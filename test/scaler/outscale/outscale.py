@@ -7,6 +7,7 @@ from json2html import *
 import importlib
 import inspect
 import base64
+from manageInstance import ManageInstance
 
 
 class Outscale(ManageInstance):
@@ -67,13 +68,13 @@ class Outscale(ManageInstance):
                             BlockDeviceMapping=bdm,
                             MinCount=1, MaxCount=1,
                             DryRun=False,
-                            ImageId=self.imgId,
+                            ImageId=self.ami,
                             KeyName="Visio-DEV",
                             InstanceInitiatedShutdownBehavior="stop",
                             InstanceType=self.instType,
-                            SubnetId=self.subNetId,
-                            SecurityGroupId=self.securityGroupId,
-                            UserData=base64.b64encode(self.userData).decode("utf-8"))
+                            SubnetId=self.subNet,
+                            SecurityGroupId=self.secuGrp,
+                            UserData=base64.b64encode(self.userData.encode('ascii')).decode("utf-8"))
             return self.fcu.response
 
     def createInstance(self, name=None, ip=None):
@@ -91,7 +92,9 @@ class Outscale(ManageInstance):
         res = self.fcu.make_request("CreateTags", Profile=self.profile, Version=self.version,
                             ResourceId=instanceId,
                             Tag=[{"Key": "name", "Value":"{}".format(instName)}])
-        print('Created Instance: {:<16}{:<10}'.format(instanceId, pubIP))
+        print('Created Instance: {:<16}{:<10}'.format(instanceId, pubIP), flush=True)
+
+        return { "id":instanceId, "ip":pubIP}
 
     def destroyInstances(self, pubIPs):
         for ip in pubIPs:
