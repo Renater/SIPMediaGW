@@ -1,30 +1,53 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-import sqlite3
 from contextlib import closing
+import mysql.connector as mysqlcon
 
-dbPath = '/usr/local/etc/kamailio/kamailio.sqlite'
+db = {
+  'host': os.environ.get('DBHOST'),
+  'user': os.environ.get('DBRWUSER'),
+  'pwd': os.environ.get('DBRWPW'),
+  'root_pwd' : os.environ.get('DBROOTPW'),
+  'name': os.environ.get('DBNAME')}
 
 def unlock(dstUser):
-    with closing(sqlite3.connect(dbPath)) as con:
+    with closing(mysqlcon.connect(host=db['host'],
+                                  user=db['user'],
+                                  password=db['pwd'],
+                                  database=db['name'])) as con:
         with closing(con.cursor()) as cursor:
             cursor.execute('''UPDATE location SET locked = 0
-                              WHERE  contact LIKE '%'||?||'%';''',
+                              WHERE  contact LIKE CONCAT('%',%s,'%');''',
                            (dstUser,))
             res = con.commit()
 
-with open(dbPath, 'a'):
-    try:
-        subprocess.run(['kamdbctl create'], shell=True)
-        with closing(sqlite3.connect(dbPath)) as con:
-            con.execute('pragma journal_mode=wal')
-            with closing(con.cursor()) as cursor:
-                cursor.execute('''ALTER TABLE location
-                                  ADD COLUMN locked INTEGER NOT NULL DEFAULT 0''')
-                res = con.commit()
-    except:
-        pass
+try:
+    with closing(mysqlcon.connect(host=db['host'],
+                                  user='root',
+                                  password=db['root_pwd'])) as con:
+        with closing(con.cursor()) as cursor:
+            cursor.execute('''SET PERSIST sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
+                              CREATE USER IF NOT EXISTS %(user)s@'%' IDENTIFIED BY %(pwd)s;
+                              GRANT ALL PRIVILEGES ON *.* TO %(name)s@'%';
+                              FLUSH PRIVILEGES;''', db)
+            res = con.commit()
+except:
+    pass
+
+    subprocess.run(['kamdbctl create'], shell=True)
+
+try:
+    with closing(mysqlcon.connect(host=db['host'],
+                                  user=db['user'],
+                                  password=db['pwd'],
+                                  database=db['name'])) as con:
+        with closing(con.cursor()) as cursor:
+            cursor.execute('''ALTER TABLE location
+                              ADD COLUMN locked INTEGER NOT NULL DEFAULT 0''')
+            res = con.commit()
+except:
+    pass
 
 kamRunCmd='kamailio -DD -E'
 
@@ -39,6 +62,11 @@ if os.getenv("LOCAL_IP"):
     kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP", os.getenv("LOCAL_IP")))
     kamRunCmd+= ' -l udp:{}:5060'.format(os.getenv("LOCAL_IP"))
     kamRunCmd+= '/{}:5060'.format(os.getenv("PUBLIC_IP", os.getenv("LOCAL_IP")))
+
+
+kamRunCmd+= ' -A \'DBURL="mysql://{}:{}@{}/{}"\''.format(
+                os.getenv("DBRWUSER"), os.getenv("DBRWPW"),
+                os.getenv("DBHOST"), os.getenv("DBNAME"))
 
 if os.getenv('TLS', 'False').lower() == 'true':
     kamRunCmd+= ' -A WITH_TLS'

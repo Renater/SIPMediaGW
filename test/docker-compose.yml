@@ -1,3 +1,6 @@
+volumes:
+  kamailio_db:
+
 services:
   sip_server:
     image: kamailio4sipmediagw
@@ -5,20 +8,43 @@ services:
       context: kamailio
     container_name: kamailio
     network_mode: host
-    volumes:
-      - ./kamailio/kamailio_db:/usr/local/etc/kamailio
     logging:
       driver: syslog
       options:
         tag: "kamailio"
     env_file:
       - .env
+      - kamailio/config/kamctlrc
       - .env_kamailio
+    depends_on:
+      sip_db:
+        condition: service_healthy
     entrypoint:
       - "/bin/sh"
       - "-c"
       - "printenv > /etc/environment &&
          cron && kamailioRun"
+
+  sip_db:
+    container_name: kamailioDB
+    image: mysql
+    volumes:
+      - kamailio_db:/var/lib/mysql
+      - ./kamailio/db_healthcheck.sh:/usr/local/bin/db_healtcheck
+    env_file:
+      - kamailio/config/kamctlrc
+      - .env_mysql
+    ports:
+      - "3306:3306"
+    logging:
+      driver: syslog
+      options:
+        tag: "kamailioDB"
+    healthcheck:
+      test: "db_healtcheck"
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   turn_server:
     image: coturn4sipmediagw

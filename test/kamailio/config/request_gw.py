@@ -7,11 +7,16 @@ import httplib2
 import json
 import configparser
 import os
-import sqlite3
+import mysql.connector as mysqlcon
 import datetime
 from contextlib import closing
 
-dbPath = '/usr/local/etc/kamailio/kamailio.sqlite'
+db = {
+  'host': os.environ.get('DBHOST'),
+  'user': os.environ.get('DBRWUSER'),
+  'pwd': os.environ.get('DBRWPW'),
+  'name': os.environ.get('DBNAME')}
+
 
 class RequestGw:
     def __init__(self):
@@ -28,17 +33,20 @@ class RequestGw:
 
     def lockGw (self):
         res=''
-        with closing(sqlite3.connect(dbPath)) as con:
+        with closing(mysqlcon.connect(host=db['host'],
+                                      user=db['user'],
+                                      password=db['pwd'],
+                                      database=db['name'])) as con:
             with closing(con.cursor()) as cursor:
                 cursor.execute('''SELECT contact, username, socket,
                                          SUBSTR("username", 0,15) AS vm, COUNT(username) as count FROM location
                                   WHERE
                                       locked = 0 AND
-                                      username LIKE '%'||?||'%' AND
+                                      username LIKE CONCAT('%',%s,'%') AND
                                       NOT EXISTS (
                                           SELECT callee_contact
                                           FROM dialog
-                                          WHERE callee_contact LIKE '%'||location.username||'%'
+                                          WHERE callee_contact LIKE CONCAT('%',location.username,'%')
                                       )
                                   GROUP BY vm
                                   ORDER BY count ASC;''',(self.gwNamePart,))
@@ -48,12 +56,12 @@ class RequestGw:
                 for contact in contactList:
                     cursor.execute('''UPDATE location SET locked = 1
                                       WHERE
-                                          location.contact = ? AND
+                                          location.contact = %s AND
                                           locked = 0 AND
                                           NOT EXISTS (
                                              SELECT callee_contact
                                              FROM dialog
-                                             WHERE callee_contact LIKE '%'||?||'%'
+                                             WHERE callee_contact LIKE CONCAT('%',%s,'%')
                                           );''',(contact[0], contact[1],))
                     res = con.commit()
                     if cursor.rowcount > 0:
