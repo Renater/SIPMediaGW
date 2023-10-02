@@ -10,12 +10,13 @@ import os
 import mysql.connector as mysqlcon
 import datetime
 from contextlib import closing
+from configparser import ConfigParser
 
-db = {
-  'host': os.environ.get('DBHOST'),
-  'user': os.environ.get('DBRWUSER'),
-  'pwd': os.environ.get('DBRWPW'),
-  'name': os.environ.get('DBNAME')}
+parser = ConfigParser()
+parser.optionxform = str
+with open("/etc/kamailio/kamctlrc") as stream:
+    parser.read_string("[kamctlrc]\n" + stream.read())
+kamctlrc = dict(parser.items("kamctlrc"))
 
 
 class RequestGw:
@@ -33,10 +34,10 @@ class RequestGw:
 
     def lockGw (self):
         res=''
-        with closing(mysqlcon.connect(host=db['host'],
-                                      user=db['user'],
-                                      password=db['pwd'],
-                                      database=db['name'])) as con:
+        with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
+                                      user=kamctlrc['DBRWUSER'],
+                                      password=kamctlrc['DBRWPW'],
+                                      database=kamctlrc['DBNAME'])) as con:
             with closing(con.cursor()) as cursor:
                 cursor.execute('''SELECT contact, username, socket,
                                          SUBSTR("username", 0,15) AS vm, COUNT(username) as count FROM location

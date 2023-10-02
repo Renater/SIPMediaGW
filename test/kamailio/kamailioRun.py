@@ -3,19 +3,25 @@ import os
 import subprocess
 from contextlib import closing
 import mysql.connector as mysqlcon
+from configparser import ConfigParser
 
-db = {
-  'host': os.environ.get('DBHOST'),
-  'user': os.environ.get('DBRWUSER'),
-  'pwd': os.environ.get('DBRWPW'),
-  'root_pwd' : os.environ.get('DBROOTPW'),
-  'name': os.environ.get('DBNAME')}
+parser = ConfigParser()
+parser.optionxform = str
+with open("/etc/kamailio/kamctlrc") as stream:
+    parser.read_string("[kamctlrc]\n" + stream.read())
+kamctlrc = dict(parser.items("kamctlrc"))
+kamctlrc['DBHOST'] = os.getenv('MYSQL_HOST') or kamctlrc['DBHOST']
+kamctlrc['DBROOTPW'] = os.getenv('MYSQL_ROOT_PASSWORD') or kamctlrc['DBROOTPW']
+with open("/etc/kamailio/kamctlrc", 'w') as f:
+    for key, value in kamctlrc.items():
+        f.write('%s=%s\n' % (key, value.strip('"')))
+        kamctlrc[key] = value.strip('"')
 
 def unlock(dstUser):
-    with closing(mysqlcon.connect(host=db['host'],
-                                  user=db['user'],
-                                  password=db['pwd'],
-                                  database=db['name'])) as con:
+    with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
+                                  user=kamctlrc['DBRWUSER'],
+                                  password=kamctlrc['DBRWPW'],
+                                  database=kamctlrc['DBNAME'])) as con:
         with closing(con.cursor()) as cursor:
             cursor.execute('''UPDATE location SET locked = 0
                               WHERE  contact LIKE CONCAT('%',%s,'%');''',
@@ -23,14 +29,14 @@ def unlock(dstUser):
             res = con.commit()
 
 try:
-    with closing(mysqlcon.connect(host=db['host'],
+    with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
                                   user='root',
-                                  password=db['root_pwd'])) as con:
+                                  password=kamctlrc['DBROOTPW'])) as con:
         with closing(con.cursor()) as cursor:
             cursor.execute('''SET PERSIST sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
-                              CREATE USER IF NOT EXISTS %(user)s@'%' IDENTIFIED BY %(pwd)s;
-                              GRANT ALL PRIVILEGES ON *.* TO %(name)s@'%';
-                              FLUSH PRIVILEGES;''', db)
+                              CREATE USER IF NOT EXISTS %(DBRWUSER)s@'%' IDENTIFIED BY %(DBRWPW)s;
+                              GRANT ALL PRIVILEGES ON *.* TO %(DBNAME)s@'%';
+                              FLUSH PRIVILEGES;''', kamctlrc)
             res = con.commit()
 except:
     pass
@@ -38,10 +44,10 @@ except:
     subprocess.run(['kamdbctl create'], shell=True)
 
 try:
-    with closing(mysqlcon.connect(host=db['host'],
-                                  user=db['user'],
-                                  password=db['pwd'],
-                                  database=db['name'])) as con:
+    with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
+                                  user=kamctlrc['DBRWUSER'],
+                                  password=kamctlrc['DBRWPW'],
+                                  database=kamctlrc['DBNAME'])) as con:
         with closing(con.cursor()) as cursor:
             cursor.execute('''ALTER TABLE location
                               ADD COLUMN locked INTEGER NOT NULL DEFAULT 0''')
@@ -65,8 +71,8 @@ if os.getenv("LOCAL_IP"):
 
 
 kamRunCmd+= ' -A \'DBURL="mysql://{}:{}@{}/{}"\''.format(
-                os.getenv("DBRWUSER"), os.getenv("DBRWPW"),
-                os.getenv("DBHOST"), os.getenv("DBNAME"))
+                kamctlrc['DBRWUSER'], kamctlrc['DBRWPW'],
+                kamctlrc['DBHOST'], kamctlrc['DBNAME'])
 
 if os.getenv('TLS', 'False').lower() == 'true':
     kamRunCmd+= ' -A WITH_TLS'

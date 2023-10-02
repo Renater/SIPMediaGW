@@ -24,7 +24,7 @@ DBHOST=127.0.0.1
 # DBPORT=3306
 
 ## database name (for ORACLE this is TNS name)
-DBNAME=kamailio
+DBNAME="kamailio"
 
 # database path used by dbtext, db_berkeley or sqlite
 #DB_PATH="/usr/local/etc/kamailio/kamailio.sqlite"
@@ -45,12 +45,12 @@ DBROPW="kamailioro"
 # DBACCESSHOST=192.168.0.1
 
 ## database super user (for ORACLE this is 'scheme-creator' user)
-DBROOTUSER="root"
+#DBROOTUSER="root"
 
 ## password for database super user
 ## - important: this is insecure, targeting the use only for automatic testing
 ## - known to work for: mysql
-DBROOTPW="dbrootpw"
+#DBROOTPW="dbrootpw"
 
 ## database character set (used by MySQL when creating database)
 CHARSET="latin1"
