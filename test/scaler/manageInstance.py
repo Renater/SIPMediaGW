@@ -9,15 +9,15 @@ import queue
 class ManageInstance:
 
     def __init__(self):
-        pass
+        self.numCpuPerInstance = []
 
     def configureInstance(self, configFile):
         pass
 
-    def createInstance(self):
+    def createInstance(self, numCPU, name=None, ip=None):
         pass
 
-    def destroyInstances(self, pubIPs):
+    def destroyInstances(self, ipList):
         pass
 
 

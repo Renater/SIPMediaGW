@@ -7,6 +7,7 @@ from json2html import *
 import importlib
 import inspect
 import base64
+from ipaddress import ip_address
 from manageInstance import ManageInstance
 
 
@@ -35,7 +36,7 @@ class Outscale(ManageInstance):
 
         # Image configuration
         self.instName = instConfig['name']
-        self.instType = instConfig['instance_type']
+        self.instType = instConfig['instance_type_by_cpu_num']
         self.ami = instConfig['instance_image']
         self.subNet = instConfig['subnet']
         self.secuGrp = instConfig['security_group']
@@ -60,7 +61,7 @@ class Outscale(ManageInstance):
         dockerImg = instConfig['user_data']['docker_image']
         self.userData = "\n".join(instConfig['user_data']['script']).format(docker=dockerImg, sip=sipDomain, stun=stunSrv, pub=pubIp )
 
-    def runInstance(self):
+    def runInstance(self, numCPU):
             bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 10, "VolumeType": "gp2"},
                     "DeviceName": "/dev/sda1" }]
             self.fcu.make_request("RunInstances", 
@@ -71,16 +72,18 @@ class Outscale(ManageInstance):
                             ImageId=self.ami,
                             KeyName="Visio-DEV",
                             InstanceInitiatedShutdownBehavior="stop",
-                            InstanceType=self.instType,
+                            InstanceType=self.instType[numCPU],
                             SubnetId=self.subNet,
                             SecurityGroupId=self.secuGrp,
                             UserData=base64.b64encode(self.userData.encode('ascii')).decode("utf-8"))
             return self.fcu.response
 
-    def createInstance(self, name=None, ip=None):
-        res = self.runInstance()
+    def createInstance(self, numCPU, name=None, ip=None):
+        res = self.runInstance(numCPU)
         instanceId = self.fcu.response['RunInstancesResponse']['instancesSet']['item']['instanceId']
-        instName = name if name else self.fcu.response['RunInstancesResponse']['instancesSet']['item']['privateDnsName']
+        instName = self.fcu.response['RunInstancesResponse']['instancesSet']['item']['privateDnsName']
+        if name:
+            instName = "{}.{}".format(instName.split('.')[0], name)
         if not ip:
             res = self.fcu.make_request("AllocateAddress", Profile=self.profile, Version=self.version)
             pubIP = self.fcu.response['AllocateAddressResponse']['publicIp']
@@ -96,13 +99,27 @@ class Outscale(ManageInstance):
 
         return { "id":instanceId, "ip":pubIP}
 
-    def destroyInstances(self, pubIPs):
-        for ip in pubIPs:
-            res = self.fcu.make_request("DescribeAddresses", Profile=self.profile, Version=self.version,
-                                        PublicIp=ip)
-            if 'instanceId' in self.fcu.response['DescribeAddressesResponse']['addressesSet']['item']:
-                instanceId = self.fcu.response['DescribeAddressesResponse']['addressesSet']['item']['instanceId']
-                if instanceId:
-                    self.fcu.make_request("DisassociateAddress", Profile=self.profile, Version=self.version, PublicIp=ip)
-                    self.fcu.make_request("TerminateInstances", Profile=self.profile, Version=self.version, InstanceId=instanceId)
-                self.fcu.make_request("ReleaseAddress", Profile=self.profile, Version=self.version, PublicIp=ip)
+    def destroyInstances(self, ipList):
+        for ip in ipList:
+            if ip_address(ip).is_private:
+                gnFilt = {'Name':'group-id', 'Value' : self.secuGrp}
+                subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
+                privateIpFilt={'Name':'private-ip-address',
+                               'Value': [ip]}
+                self.fcu.make_request("DescribeInstances", Profile=self.profile, Version=self.version,
+                                       Filter=[gnFilt, subNetFilt, privateIpFilt])
+                if 'item' in self.fcu.response['DescribeInstancesResponse']['reservationSet']:
+                    it = self.fcu.response['DescribeInstancesResponse']['reservationSet']['item']
+                    instanceId = it['instancesSet']['item']['instanceId']
+                    if 'ipAddress' in it['instancesSet']['item']:
+                        pubIp = it['instancesSet']['item']['ipAddress']
+            else:
+                pubIp=ip
+                self.fcu.make_request("DescribeAddresses", Profile=self.profile, Version=self.version,
+                                       PublicIp=pubIp)
+                if 'instanceId' in self.fcu.response['DescribeAddressesResponse']['addressesSet']['item']:
+                    instanceId = self.fcu.response['DescribeAddressesResponse']['addressesSet']['item']['instanceId']
+            if instanceId:
+                self.fcu.make_request("DisassociateAddress", Profile=self.profile, Version=self.version, PublicIp=pubIp)
+                self.fcu.make_request("TerminateInstances", Profile=self.profile, Version=self.version, InstanceId=instanceId)
+            self.fcu.make_request("ReleaseAddress", Profile=self.profile, Version=self.version, PublicIp=pubIp)
