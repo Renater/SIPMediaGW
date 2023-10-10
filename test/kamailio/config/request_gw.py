@@ -40,7 +40,8 @@ class RequestGw:
                                       database=kamctlrc['DBNAME'])) as con:
             with closing(con.cursor()) as cursor:
                 cursor.execute('''SELECT contact, username, socket,
-                                         SUBSTR("username", 0,15) AS vm, COUNT(username) as count FROM location
+                                         SUBSTRING_INDEX(SUBSTRING_INDEX(received,'sip:',-1),':',1) AS vm,
+                                         COUNT(username) as count FROM location
                                   WHERE
                                       locked = 0 AND
                                       username LIKE CONCAT('%',%s,'%') AND

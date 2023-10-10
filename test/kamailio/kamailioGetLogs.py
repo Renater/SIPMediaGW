@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import mysql.connector as mysqlcon
 import os
 from contextlib import closing
 import mysql.connector as mysqlcon
