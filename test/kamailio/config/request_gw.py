@@ -45,16 +45,33 @@ class RequestGw:
                                   WHERE
                                       locked = 0 AND
                                       username LIKE CONCAT('%',%s,'%') AND
-                                      NOT EXISTS (
-                                          SELECT callee_contact
+                                      EXISTS (
+                                          SELECT  callee_contact
                                           FROM dialog
-                                          WHERE callee_contact LIKE CONCAT('%',location.username,'%')
+                                          WHERE SUBSTRING_INDEX(SUBSTRING_INDEX(callee_contact,'alias=',-1),'~',1) =
+                                                SUBSTRING_INDEX(SUBSTRING_INDEX(location.received,'sip:',-1),':',1)
                                       )
                                   GROUP BY vm
                                   ORDER BY count ASC;''',(self.gwNamePart,))
                 contactList = cursor.fetchall()
                 if len(contactList) == 0:
-                    return
+                    cursor.execute('''SELECT contact, username, socket,
+                                            SUBSTRING_INDEX(SUBSTRING_INDEX(received,'sip:',-1),':',1) AS vm,
+                                            COUNT(username) as count FROM location
+                                    WHERE
+                                        locked = 0 AND
+                                        username LIKE CONCAT('%',%s,'%') AND
+                                        NOT EXISTS (
+                                            SELECT  callee_contact
+                                            FROM dialog
+                                            WHERE SUBSTRING_INDEX(SUBSTRING_INDEX(callee_contact,'alias=',-1),'~',1) =
+                                                    SUBSTRING_INDEX(SUBSTRING_INDEX(location.received,'sip:',-1),':',1)
+                                        )
+                                    GROUP BY vm
+                                    ORDER BY count ASC;''',(self.gwNamePart,))
+                    contactList = cursor.fetchall()
+                    if len(contactList) == 0:
+                        return
                 for contact in contactList:
                     cursor.execute('''UPDATE location SET locked = 1
                                       WHERE
