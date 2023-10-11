@@ -38,7 +38,7 @@ class RequestGw:
                                       user=kamctlrc['DBRWUSER'],
                                       password=kamctlrc['DBRWPW'],
                                       database=kamctlrc['DBNAME'])) as con:
-            with closing(con.cursor()) as cursor:
+            with closing(con.cursor(dictionary=True)) as cursor:
                 cursor.execute('''SELECT contact, username, socket,
                                          SUBSTRING_INDEX(SUBSTRING_INDEX(received,'sip:',-1),':',1) AS vm,
                                          COUNT(username) as count FROM location
@@ -81,7 +81,7 @@ class RequestGw:
                                              SELECT callee_contact
                                              FROM dialog
                                              WHERE callee_contact LIKE CONCAT('%',%s,'%')
-                                          );''',(contact[0], contact[1],))
+                                          );''',(contact['contact'], contact['username'],))
                     res = con.commit()
                     if cursor.rowcount > 0:
                         return contact
@@ -103,8 +103,8 @@ class RequestGw:
                 Logger.LM_ERR('Room Name %s\n' % room )
                 gwRes = self.lockGw()
                 if gwRes:
-                    gwUri = gwRes[1]
-                    gwSocket = gwRes[2].split(':')[1]
+                    gwUri = gwRes['username']
+                    gwSocket = gwRes['socket'].split(':')[1]
                     Logger.LM_ERR('Returned Gateway: %s\n' % gwUri)
                     msg.rewrite_ruri("sip:%s@%s" % (gwUri, gwSocket))
                     displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))
