@@ -86,18 +86,18 @@ class Outscale(ManageInstance):
             instName = "{}.{}".format(instName.split('.')[0], name)
         if not ip:
             res = self.fcu.make_request("AllocateAddress", Profile=self.profile, Version=self.version)
-            pubIP = self.fcu.response['AllocateAddressResponse']['publicIp']
+            pubIp = self.fcu.response['AllocateAddressResponse']['publicIp']
         else:
-            pubIP=ip
+            pubIp=ip
         res = self.fcu.make_request("AssociateAddress", Profile=self.profile, Version=self.version,
                             InstanceId=instanceId,
-                            PublicIp=pubIP)
+                            PublicIp=pubIp)
         res = self.fcu.make_request("CreateTags", Profile=self.profile, Version=self.version,
                             ResourceId=instanceId,
                             Tag=[{"Key": "name", "Value":"{}".format(instName)}])
-        print('Created Instance: {:<16}{:<10}'.format(instanceId, pubIP), flush=True)
+        print('Created Instance: {:<16}{:<10}'.format(instanceId, pubIp), flush=True)
 
-        return { "id":instanceId, "ip":pubIP}
+        return { "id":instanceId, "ip":pubIp}
 
     def destroyInstances(self, ipList):
         for ip in ipList:
@@ -123,3 +123,4 @@ class Outscale(ManageInstance):
                 self.fcu.make_request("DisassociateAddress", Profile=self.profile, Version=self.version, PublicIp=pubIp)
                 self.fcu.make_request("TerminateInstances", Profile=self.profile, Version=self.version, InstanceId=instanceId)
             self.fcu.make_request("ReleaseAddress", Profile=self.profile, Version=self.version, PublicIp=pubIp)
+            print('Deleted Instance: {:<16}{:<10}'.format(instanceId, pubIp), flush=True)
