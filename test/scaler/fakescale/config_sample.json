@@ -1,0 +1,22 @@
+{
+    "security_group": [null, null],
+    "instance_image" : null,
+    "instance_type_by_cpu_num" : {
+        "4":"tinav5.c4r4p1",
+        "8":"tinav5.c8r8p1"
+    },
+    "name": null,
+    "subnet": null,
+    "user_data": {
+        "script": [],
+        "sip_domain": {
+            "priv": "127.0.0.1",
+            "pub": null
+        },
+        "turn_server":{
+            "priv":null,
+            "pub": null
+        },
+        "docker_image" : ""
+    }
+}
