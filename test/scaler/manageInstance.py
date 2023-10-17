@@ -9,7 +9,7 @@ import queue
 class ManageInstance:
 
     def __init__(self):
-        self.numCpuPerInstance = []
+        pass
 
     def configureInstance(self, configFile):
         pass
