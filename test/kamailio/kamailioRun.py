@@ -50,7 +50,8 @@ try:
                                   database=kamctlrc['DBNAME'])) as con:
         with closing(con.cursor()) as cursor:
             cursor.execute('''ALTER TABLE location
-                              ADD COLUMN locked INTEGER NOT NULL DEFAULT 0''')
+                              ADD COLUMN locked INTEGER NOT NULL DEFAULT 0,
+                              ADD COLUMN to_stop INTEGER NOT NULL DEFAULT 0;''')
             res = con.commit()
 except:
     pass
