@@ -15,7 +15,7 @@ class Fakescale(ManageInstance):
 
     def __init__(self):
         self.freeIpAddr = queue.Queue()
-        for addr in range(167772160,167773160):
+        for addr in range(167772160,167779160):
             self.freeIpAddr.put(str(ipaddress.ip_address(addr)))
 
     def configureInstance(self, configFile):
