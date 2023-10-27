@@ -98,10 +98,10 @@ def cleanup(csp, params):
     if ipList:
         csp.destroyInstances(ipList)
 
-def scale(csp, params, thresholdTimeLine, scaleTime=None):
+def scale(csp, params, thresholdTimeLine, scaleTime=None, incallsNum=None):
     if not scaleTime:
         scaleTime = dt.datetime.now().strftime("%H:%M:%S")
-    th = min([ i for i in list(thresholdTimeLine.keys()) if i < scaleTime],
+    th = min([ i for i in list(thresholdTimeLine.keys()) if i <= scaleTime],
              key=lambda x:abs(getSeconds(x)-getSeconds(scaleTime)))
 
     try:
@@ -118,22 +118,29 @@ def scale(csp, params, thresholdTimeLine, scaleTime=None):
                 contactList = cursor.fetchall()
                 currentCapacity = len(contactList)
 
-                cursor.execute('''SELECT callee_contact FROM dialog
+                cursor.execute('''SELECT contact, username FROM location
                                 WHERE
-                                    callee_contact LIKE CONCAT('%',%s,'%')
-                                    ;''',(params['gwNamePart'],))
+                                    locked = 0 AND
+                                    username LIKE CONCAT('%',%s,'%') AND
+                                NOT EXISTS (
+                                    SELECT callee_contact
+                                    FROM dialog
+                                    WHERE callee_contact LIKE CONCAT('%',location.username,'%')
+                                );''',(params['gwNamePart'],))
                 contactList = cursor.fetchall()
-                inCallNum = len(contactList)
+                readyToCallNum = len(contactList)
 
-                if currentCapacity < thresholdTimeLine[th]['capaMin']:
-                    upScale(csp, params, (thresholdTimeLine[th]['capaMin'] - currentCapacity)*params['cpuPerGW'])
-                    currentCapacity = thresholdTimeLine[th]['capaMin']
+                inCallNum = incallsNum if incallsNum else (currentCapacity - readyToCallNum )
+                minCapacity = thresholdTimeLine[th]['unlockedMin'] + inCallNum
+                if readyToCallNum < thresholdTimeLine[th]['unlockedMin']:
+                    upScale(csp, params, (thresholdTimeLine[th]['unlockedMin'] - readyToCallNum)*params['cpuPerGW'])
+                    currentCapacity = thresholdTimeLine[th]['unlockedMin'] + inCallNum
 
-                targetCapacity = max(thresholdTimeLine[th]['capaMin'], inCallNum/thresholdTimeLine[th]['loadMax'])
+                targetCapacity = max(minCapacity, inCallNum/thresholdTimeLine[th]['loadMax'])
                 capacityIncrease = math.ceil(targetCapacity - currentCapacity)
                 if capacityIncrease > 0:
                     # Upscale
-                    upScale(csp, capacityIncrease*params['cpuPerGW'])
+                    upScale(csp, params, capacityIncrease*params['cpuPerGW'])
                 if capacityIncrease < 0:
                     # Downscale
                     downScale(csp, params, abs(capacityIncrease))
