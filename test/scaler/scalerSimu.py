@@ -114,6 +114,7 @@ class Simuscale(Fakescale):
         self.simuTime = ''
         self.gwRegisterDelay = registerDelay
         self.gwCnt = 0
+        self.cpuCnt = 0
 
     def createInstance(self, numCPU, name=None, ip=None):
         ippAddr = super().createInstance(numCPU)
@@ -125,6 +126,7 @@ class Simuscale(Fakescale):
                 registerTime = self.simuTime + pd.Timedelta('{} seconds'.format(self.gwRegisterDelay
                                                                                 + randint(0,60)))
                 self.instToCreateList.append([gwName, recv, registerTime])
+            self.cpuCnt += int(numCPU)
             self.instToCreateList = sorted(self.instToCreateList, key=lambda x: x[2])
 
     def destroyInstances(self, ipList):
@@ -141,18 +143,22 @@ class Simuscale(Fakescale):
                                             ;''', (ip,))
                             con.commit()
                             self.gwCnt -= cursor.rowcount
+                            self.cpuCnt -= (cursor.rowcount*params['cpuPerGW'])
             except mysqlcon.Error as err:
                     print("Mysql error: {}".format(err), flush=True)
           super().destroyInstances(ipList)
 
 thresholdTimeLine = {'00:00:00': {'unlockedMin':2, 'loadMax':0.9},
-                     '07:00:00': {'unlockedMin':4, 'loadMax':0.8},
+                     '07:00:00': {'unlockedMin':4, 'loadMax':0.75},
                      '09:00:00': {'unlockedMin':8, 'loadMax':0.75},
-                     '10:30:00': {'unlockedMin':8, 'loadMax':0.9},
+                     '10:30:00': {'unlockedMin':8, 'loadMax':0.75},
                      '12:30:00': {'unlockedMin':4, 'loadMax':0.8},
                      '13:00:00': {'unlockedMin':8, 'loadMax':0.75},
-                     '14:30:00': {'unlockedMin':4, 'loadMax':0.9},
-                     '17:00:00': {'unlockedMin':2, 'loadMax':0.9}}
+                     '14:30:00': {'unlockedMin':4, 'loadMax':0.75},
+                     '17:00:00': {'unlockedMin':2, 'loadMax':0.8},
+                     '20:00:00': {'unlockedMin':2, 'loadMax':0.9}}
+
+vcpuCostPerHour = 0.216/4
 
 params = dict()
 params['DBHOST'] = '127.0.0.1'
@@ -168,7 +174,7 @@ cleanLocationTable(params)
 with open('17112020.csv', "r") as csvfile:
     callsList = pd.read_csv(csvfile, header=None,  parse_dates=[0, 1])
 
-callsList.drop(callsList[callsList[1]-callsList[0] < pd.Timedelta('20 minutes')].index,
+callsList.drop(callsList[callsList[1]-callsList[0] < pd.Timedelta('1 minutes')].index,
                inplace = True)
 
 callsList = callsList.to_numpy().tolist()
@@ -177,24 +183,27 @@ callsList = sorted(callsList, key=lambda x: x[0])
 
 firstCallStart = callsList[0][0].floor('D')
 
-simuFreq = '1s'
-timeLine = pd.date_range(start=firstCallStart + pd.Timedelta('6 hours'),
-                         end=firstCallStart + pd.Timedelta('15 hours'),
-                         inclusive="left", freq=simuFreq)
+simuFreq = 1
+timeLine = pd.date_range(start=firstCallStart + pd.Timedelta('0 hours'),
+                         end=firstCallStart + pd.Timedelta('24 hours'),
+                         inclusive="left", freq='{}s'.format(simuFreq))
 
 callsCount = []
 gwsCount = []
 rejectedCount = []
 missedCount = []
+vcpuCostCumul = []
 
 incalls= []
 
 callsByTry=[callsList, [], []]
 maxTryNum = len(callsByTry)
 csp.gwCnt = 0
+csp.cpuCnt = 0
 rejectCnt = 0
 missedCnt = 0
 currReject = 0
+vcpuCost = 0
 
 
 for timeId, currTime in enumerate(timeLine):
@@ -257,30 +266,39 @@ for timeId, currTime in enumerate(timeLine):
     for rej in callsByTry[1::]:
         currReject  += len(rej)
 
+    cost = simuFreq*(csp.cpuCnt*vcpuCostPerHour/3600)
+    vcpuCost += cost
+    vcpuCostCumul.append(vcpuCost)
+
 print("Start plotting")
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(nrows=2, ncols=1)
 x= (timeLine.astype(str).str[11:19]).values
 
 step = math.ceil(len(x)/1000)
 
 yCalls=np.array(callsCount)
-ax.plot(x[::step], yCalls[::step], linewidth=2.0,
+ax[0].plot(x[::step], yCalls[::step], linewidth=2.0,
         label = f'Incalls number')
 
 yGws=np.array(gwsCount)
-ax.plot(x[::step], yGws[::step], linewidth=2.0,
+ax[0].plot(x[::step], yGws[::step], linewidth=2.0,
         label = f'GWs number')
 
 yReject=np.array(rejectedCount)
-ax.plot(x[::step], yReject[::step], linewidth=2.0,
+ax[0].plot(x[::step], yReject[::step], linewidth=2.0,
         label = f'Rejected calls count')
 
 yMissed=np.array(missedCount)
-ax.plot(x[::step], yMissed[::step], linewidth=2.0,
+ax[0].plot(x[::step], yMissed[::step], linewidth=2.0,
         label = f'Missed calls count')
 
-ax.legend(loc='upper left')
-ax.xaxis.set_ticks(x[::step*int(len(x[::step])/6)])
+yCost=np.array(vcpuCostCumul)
+ax[1].plot(x[::step], yCost[::step], linewidth=2.0,
+        label = f'VCPU cumulated cost')
+
+for a in ax:
+    a.legend(loc='upper left')
+    a.xaxis.set_ticks(x[::step*int(len(x[::step])/6)])
 
 print("end")
