@@ -54,7 +54,8 @@ dispHeight = int(inputs['res'].split('x')[1])
 # Browsing
 def browse(args):
     err = args['browsing'].run()
-    exit_handler()
+    subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'],
+         shell=True)
 
 def endBrowse(args):
     if args['browsing']:
