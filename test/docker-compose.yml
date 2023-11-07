@@ -45,6 +45,29 @@ services:
       timeout: 5s
       retries: 5
 
+  scaler:
+    image: scaler4sipmediagw
+    restart: "unless-stopped"
+    build:
+      context: scaler
+    container_name: scaler
+    volumes:
+      - ./scaler/scalerTest.py:/var/scalerTest.py
+      - ./scaler/outscale/config_sample.json:/var/outscale/config_sample.json
+    network_mode: host
+    logging:
+      driver: syslog
+      options:
+        tag: "scaler"
+    depends_on:
+      sip_db:
+        condition: service_healthy
+    environment:
+      TZ: "${HOST_TZ}" # Time Zone
+    entrypoint:
+      - "python"
+      - "/var/scalerTest.py"
+
   turn_server:
     image: coturn4sipmediagw
     build:

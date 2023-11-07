@@ -1,0 +1,19 @@
+[Unit]
+Description=scaler_docker
+After=docker.service
+Requires=docker.service
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+TimeoutStartSec=0
+RestartSec=1
+WorkingDirectory=/sipmediagw/test
+EnvironmentFile=/etc/environment
+ExecStart=/usr/bin/docker compose -p scaler up --force-recreate scaler
+ExecStop=/usr/bin/docker compose -p scaler down
+
+[Install]
+WantedBy=multi-user.target
