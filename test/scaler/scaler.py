@@ -91,6 +91,7 @@ def cleanup(csp, params):
                 vmList = cursor.fetchall()
     except mysqlcon.Error as err:
         print("Mysql error: {}".format(err), flush=True)
+        return
 
     ipList = []
     for vm in vmList:

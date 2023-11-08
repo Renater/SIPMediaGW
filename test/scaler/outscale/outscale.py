@@ -80,7 +80,7 @@ class Outscale(ManageInstance):
             instanceId = res['instanceId']
             instName = res['privateDnsName']
             privIp = res['privateIpAddress']
-        instName = "{}.{}".format(instName.split('.')[0], name)
+        instName = "{}.{}.{}".format(instName.split('.')[0], self.instName,name)
         if not ip:
             res = self.fcu.make_request("AllocateAddress", Profile=self.profile, Version=self.version)
             pubIp = self.fcu.response['AllocateAddressResponse']['publicIp']
