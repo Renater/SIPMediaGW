@@ -92,14 +92,16 @@ class Outscale(ManageInstance):
         res = self.fcu.make_request("CreateTags", Profile=self.profile, Version=self.version,
                             ResourceId=instanceId,
                             Tag=[{"Key": "name", "Value":"{}".format(instName)}])
-        print('Created Instance: {:<16}{:<16}{:<10}'.format(instanceId, privIp, pubIp), flush=True)
+        print('Created Instance: {}, {}, {}, {}VCPUs'.format(instanceId, privIp, pubIp, numCPU), flush=True)
 
         return { "id":instanceId, "ip":pubIp}
 
     def destroyInstances(self, ipList):
         for ip in ipList:
             pubIp = None
+            privIp = None
             if ip_address(ip).is_private:
+                privIp = ip
                 gnFilt = {'Name':'group-id', 'Value' : self.secuGrp}
                 subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
                 privateIpFilt={'Name':'private-ip-address',
@@ -123,4 +125,4 @@ class Outscale(ManageInstance):
                 self.fcu.make_request("TerminateInstances", Profile=self.profile, Version=self.version, InstanceId=instanceId)
             if pubIp:
                 self.fcu.make_request("ReleaseAddress", Profile=self.profile, Version=self.version, PublicIp=pubIp)
-            print('Deleted Instance: {:<16}{:<10}'.format(instanceId, ip), flush=True)
+            print('Deleted Instance: {}, {}, {}'.format(instanceId, privIp, pubIp), flush=True)
