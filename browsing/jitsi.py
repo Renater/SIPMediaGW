@@ -5,6 +5,8 @@ import time
 import os
 import requests
 import json
+import threading
+import time
 from browsing import Browsing
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -21,15 +23,6 @@ UIHelperPath = os.environ.get('UI_HELPER_PATH')
 confMapperURL = os.environ.get('CONFMAPPER')
 IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
 
-UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
-             "0": "window.JitsiMeetUIHelper.executeCommand('toggle-tts')",
-             "1": "window.JitsiMeetUIHelper.executeCommand('toggle-audio')",
-             "2": "window.JitsiMeetUIHelper.executeCommand('toggle-video')",
-             "3": "window.JitsiMeetUIHelper.executeCommand('toggle-chat')",
-             "4": "window.JitsiMeetUIHelper.executeCommand('toggle-tile-view')",
-             "5": "window.JitsiMeetUIHelper.executeCommand('toggle-raise-hand')",
-             "s": "window.JitsiMeetUIHelper.executeCommand('toggle-share-screen')"}
-
 if not UIHelperPath:
     UIHelperPath = "file:///var/UIHelper/src/index.html"
     UIHelperConfig =  json.load(open('/var/UIHelper/src/config_sample.json'))
@@ -41,6 +34,35 @@ if not UIHelperPath:
 
     with open('/var/UIHelper/src/config.json', 'w', encoding='utf-8') as f:
         json.dump(UIHelperConfig, f, ensure_ascii=False, indent=4)
+
+UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
+             "0": "window.JitsiMeetUIHelper.executeCommand('toggle-tts')",
+             "1": "window.JitsiMeetUIHelper.executeCommand('toggle-audio')",
+             "2": "window.JitsiMeetUIHelper.executeCommand('toggle-video')",
+             "3": "window.JitsiMeetUIHelper.executeCommand('toggle-chat')",
+             "4": "window.JitsiMeetUIHelper.executeCommand('toggle-tile-view')",
+             "5": "window.JitsiMeetUIHelper.executeCommand('toggle-raise-hand')",
+             "s": "window.JitsiMeetUIHelper.executeCommand('toggle-share-screen')"}
+
+def waitAndClick(driver, element, selector, timeout):
+    script = """const el = document.querySelector("iframe").contentWindow.document.querySelector("{css}");
+                if (el) {{
+                    el.click();
+                    return true;
+                }}
+                return false;""".format(css=selector)
+    try:
+        res = "Element not found"
+        start = time.time()
+        while time.time() - start < timeout:
+            driver.switch_to.default_content()
+            if driver.execute_script(script):
+                res = "Element found and clicked"
+                break
+            time.sleep(1)
+        print("{}: {}".format(element, res), flush=True)
+    except Exception as e:
+        print("{} 'wait and click' error".format(element), flush=True)
 
 class Jitsi (Browsing):
 
@@ -98,7 +120,6 @@ class Jitsi (Browsing):
             ActionChains(driver).key_down(Keys.BACKSPACE).perform()
 
     def browse(self, driver):
-
         # IVR
         try:
             ivrIn = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#input_room_id")))
@@ -117,13 +138,13 @@ class Jitsi (Browsing):
             except:
                 return
 
-        # Swith to iframe
+        # UIHelper
         try:
-            WebDriverWait(driver, 5).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"#jitsiConferenceFrame0")))
+            driver.switch_to.default_content()
             jitsiUrl = self.driver.execute_script("return window.JitsiMeetUIHelper.room.jitsiApiClient._url;")
             print("Jitsi URL: "+jitsiUrl, flush=True)
         except Exception as e:
-            print("Iframe not found", flush=True)
+            print("Iframe to defaut content switching error", flush=True)
             try:
                 jitsiUrl = self.driver.execute_script("return window.location.href;")
             except:
@@ -131,24 +152,18 @@ class Jitsi (Browsing):
             print("Jitsi URL: "+jitsiUrl, flush=True)
 
         # Validate MOTD
-        try:
-            element = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#motd_do_not_show_again")))
-            element.click()
-        except Exception as e:
-            print("MOTD not found", flush=True)
+        motdThread = threading.Thread(target=waitAndClick,
+                                      args=(self.driver,"MOTD",
+                                            "#motd-modal > button.close > span",
+                                            10,))
+        motdThread.start()
 
         # Accept Cookies
-        try:
-            element = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#cookie_footer > section > section > section > a")))
-            element.click()
-        except Exception as e:
-            print("Cookies banner not found", flush=True)
-
-        #Swith back from iframe
-        try:
-            driver.switch_to.default_content()
-        except Exception as e:
-            print("Swith back from iframe error", flush=True)
+        cookiesThread = threading.Thread(target=waitAndClick,
+                                         args=(self.driver, "Cookies",
+                                               "#cookie_footer > section > section > section > a",
+                                               10,))
+        cookiesThread.start()
 
         while self.url:
             self.interact()
@@ -156,6 +171,11 @@ class Jitsi (Browsing):
     def unset(self):
         try:
             self.driver.execute_script("window.JitsiMeetUIHelper.room.jitsiApiClient.dispose()")
-            WebDriverWait(self.driver, 5).until_not(EC.presence_of_element_located((By.CSS_SELECTOR,"#jitsiConferenceFrame0")))
+            start = time.time()
+            while time.time() - start < 5:
+                if self.driver.execute_script("return document.getElementsByTagName('iframe')[0];"):
+                    time.sleep(1)
+                else:
+                    break
         except Exception as e:
             print("Iframe error", flush=True)
