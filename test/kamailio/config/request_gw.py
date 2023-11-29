@@ -7,11 +7,17 @@ import httplib2
 import json
 import configparser
 import os
-import sqlite3
+import mysql.connector as mysqlcon
 import datetime
 from contextlib import closing
+from configparser import ConfigParser
 
-dbPath = '/usr/local/etc/kamailio/kamailio.sqlite'
+parser = ConfigParser()
+parser.optionxform = str
+with open("/etc/kamailio/kamctlrc") as stream:
+    parser.read_string("[kamctlrc]\n" + stream.read())
+kamctlrc = dict(parser.items("kamctlrc"))
+
 
 class RequestGw:
     def __init__(self):
@@ -28,33 +34,54 @@ class RequestGw:
 
     def lockGw (self):
         res=''
-        with closing(sqlite3.connect(dbPath)) as con:
-            with closing(con.cursor()) as cursor:
+        with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
+                                      user=kamctlrc['DBRWUSER'],
+                                      password=kamctlrc['DBRWPW'],
+                                      database=kamctlrc['DBNAME'])) as con:
+            with closing(con.cursor(dictionary=True)) as cursor:
                 cursor.execute('''SELECT contact, username, socket,
-                                         SUBSTR("username", 0,15) AS vm, COUNT(username) as count FROM location
+                                         SUBSTRING_INDEX(SUBSTRING_INDEX(received,'sip:',-1),':',1) AS vm,
+                                         COUNT(username) as count FROM location
                                   WHERE
                                       locked = 0 AND
-                                      username LIKE '%'||?||'%' AND
-                                      NOT EXISTS (
-                                          SELECT callee_contact
+                                      username LIKE CONCAT('%',%s,'%') AND
+                                      EXISTS (
+                                          SELECT  callee_contact
                                           FROM dialog
-                                          WHERE callee_contact LIKE '%'||location.username||'%'
+                                          WHERE SUBSTRING_INDEX(SUBSTRING_INDEX(callee_contact,'alias=',-1),'~',1) =
+                                                SUBSTRING_INDEX(SUBSTRING_INDEX(location.received,'sip:',-1),':',1)
                                       )
                                   GROUP BY vm
                                   ORDER BY count ASC;''',(self.gwNamePart,))
                 contactList = cursor.fetchall()
                 if len(contactList) == 0:
-                    return
+                    cursor.execute('''SELECT contact, username, socket,
+                                            SUBSTRING_INDEX(SUBSTRING_INDEX(received,'sip:',-1),':',1) AS vm,
+                                            COUNT(username) as count FROM location
+                                    WHERE
+                                        locked = 0 AND
+                                        username LIKE CONCAT('%',%s,'%') AND
+                                        NOT EXISTS (
+                                            SELECT  callee_contact
+                                            FROM dialog
+                                            WHERE SUBSTRING_INDEX(SUBSTRING_INDEX(callee_contact,'alias=',-1),'~',1) =
+                                                    SUBSTRING_INDEX(SUBSTRING_INDEX(location.received,'sip:',-1),':',1)
+                                        )
+                                    GROUP BY vm
+                                    ORDER BY count ASC;''',(self.gwNamePart,))
+                    contactList = cursor.fetchall()
+                    if len(contactList) == 0:
+                        return
                 for contact in contactList:
                     cursor.execute('''UPDATE location SET locked = 1
                                       WHERE
-                                          location.contact = ? AND
+                                          location.contact = %s AND
                                           locked = 0 AND
                                           NOT EXISTS (
                                              SELECT callee_contact
                                              FROM dialog
-                                             WHERE callee_contact LIKE '%'||?||'%'
-                                          );''',(contact[0], contact[1],))
+                                             WHERE callee_contact LIKE CONCAT('%',%s,'%')
+                                          );''',(contact['contact'], contact['username'],))
                     res = con.commit()
                     if cursor.rowcount > 0:
                         return contact
@@ -76,8 +103,8 @@ class RequestGw:
                 Logger.LM_ERR('Room Name %s\n' % room )
                 gwRes = self.lockGw()
                 if gwRes:
-                    gwUri = gwRes[1]
-                    gwSocket = gwRes[2].split(':')[1]
+                    gwUri = gwRes['username']
+                    gwSocket = gwRes['socket'].split(':')[1]
                     Logger.LM_ERR('Returned Gateway: %s\n' % gwUri)
                     msg.rewrite_ruri("sip:%s@%s" % (gwUri, gwSocket))
                     displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))

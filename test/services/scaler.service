@@ -1,5 +1,5 @@
 [Unit]
-Description=kamailio_docker
+Description=scaler_docker
 After=docker.service
 Requires=docker.service
 After=network-online.target
@@ -12,8 +12,8 @@ TimeoutStartSec=0
 RestartSec=1
 WorkingDirectory=/sipmediagw/test
 EnvironmentFile=/etc/environment
-ExecStart=/usr/bin/docker compose -p kamailio up --force-recreate sip_server sip_db
-ExecStop=/usr/bin/docker compose -p kamailio down
+ExecStart=/usr/bin/docker compose -p scaler up --force-recreate scaler
+ExecStop=/usr/bin/docker compose -p scaler down
 
 [Install]
 WantedBy=multi-user.target
