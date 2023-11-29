@@ -1,4 +1,11 @@
 {
+    "profile":{
+        "visio-dev":
+            {"access_key": null,
+             "secret_key": null,
+             "region": null
+            }
+    },
     "security_group": [null, null],
     "instance_image" : null,
     "instance_type_by_cpu_num" : {

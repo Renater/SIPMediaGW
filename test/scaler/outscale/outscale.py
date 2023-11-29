@@ -9,7 +9,6 @@ import base64
 from ipaddress import ip_address
 from manageInstance import ManageInstance
 
-
 class Outscale(ManageInstance):
 
     def __init__(self, profile):
@@ -56,6 +55,20 @@ class Outscale(ManageInstance):
                 stunSrv = instConfig['user_data']['turn_server']['pub']
         dockerImg = instConfig['user_data']['docker_image']
         self.userData = "\n".join(instConfig['user_data']['script']).format(docker=dockerImg, sip=sipDomain, stun=stunSrv, pub=pubIp )
+
+    def enumerateInstances(self):
+        gnFilt = {'Name':'group-id', 'Value' : self.secuGrp}
+        subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
+        self.fcu.make_request("DescribeInstances", Profile=self.profile, Version=self.version,
+                              Filter=[gnFilt, subNetFilt])
+        items = self.fcu.response['DescribeInstancesResponse']['reservationSet']['item']
+        items = items if isinstance(items, list) else [items]
+        ipList = []
+        for it in items:
+            if 'privateIpAddress' in it['instancesSet']['item']:
+                privIpAddress = it['instancesSet']['item']['privateIpAddress']
+                ipList.append(privIpAddress)
+        return ipList
 
     def runInstance(self, numCPU):
             bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 10, "VolumeType": "gp2"},

@@ -14,6 +14,9 @@ class ManageInstance:
     def configureInstance(self, configFile):
         pass
 
+    def enumerateInstances(self):
+        pass
+
     def createInstance(self, numCPU, name=None, ip=None):
         pass
 
