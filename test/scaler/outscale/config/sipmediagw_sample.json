@@ -6,7 +6,10 @@
              "region": null
             }
     },
-    "security_group": [null, null],
+    "security_group":{
+        "admin": null,
+        "app": null
+    },
     "instance_image" : null,
     "instance_type_by_cpu_num" : {
         "4":"tinav5.c4r4p1",
@@ -34,6 +37,6 @@
             "priv":null,
             "pub": null
         },
-        "docker_image" : "renater/sipmediagw:1.4.2"
+        "docker_image" : "renater/sipmediagw:1.4.4"
     }
 }
