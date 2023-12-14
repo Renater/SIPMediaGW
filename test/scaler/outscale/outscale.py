@@ -57,18 +57,24 @@ class Outscale(ManageInstance):
         self.userData = "\n".join(instConfig['user_data']['script']).format(docker=dockerImg, sip=sipDomain, stun=stunSrv, pub=pubIp )
 
     def enumerateInstances(self):
-        gnFilt = {'Name':'group-id', 'Value' : self.secuGrp}
+        gnFilt = {'Name':'group-id', 'Value' : [self.secuGrp['app']]}
         subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
         self.fcu.make_request("DescribeInstances", Profile=self.profile, Version=self.version,
                               Filter=[gnFilt, subNetFilt])
-        items = self.fcu.response['DescribeInstancesResponse']['reservationSet']['item']
+        if (self.fcu.response['DescribeInstancesResponse']['reservationSet'] and
+            'item' in self.fcu.response['DescribeInstancesResponse']['reservationSet']):
+            items = self.fcu.response['DescribeInstancesResponse']['reservationSet']['item']
+        else:
+            return
         items = items if isinstance(items, list) else [items]
-        ipList = []
+        instDict = []
         for it in items:
             if 'privateIpAddress' in it['instancesSet']['item']:
                 privIpAddress = it['instancesSet']['item']['privateIpAddress']
-                ipList.append(privIpAddress)
-        return ipList
+            if 'launchTime' in it['instancesSet']['item']:
+                launchTime = it['instancesSet']['item']['launchTime']
+            instDict.append({'start':launchTime, 'addr':privIpAddress})
+        return instDict
 
     def runInstance(self, numCPU):
             bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 10, "VolumeType": "gp2"},
@@ -83,7 +89,7 @@ class Outscale(ManageInstance):
                             InstanceInitiatedShutdownBehavior="stop",
                             InstanceType=self.instType[numCPU],
                             SubnetId=self.subNet,
-                            SecurityGroupId=self.secuGrp,
+                            SecurityGroupId=[self.secuGrp['admin'],self.secuGrp['app']],
                             UserData=base64.b64encode(self.userData.encode('ascii')).decode("utf-8"))
             return self.fcu.response['RunInstancesResponse']['instancesSet']['item']
 
@@ -115,7 +121,7 @@ class Outscale(ManageInstance):
             privIp = None
             if ip_address(ip).is_private:
                 privIp = ip
-                gnFilt = {'Name':'group-id', 'Value' : self.secuGrp}
+                gnFilt = {'Name':'group-id', 'Value' : self.secuGrp['app']}
                 subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
                 privateIpFilt={'Name':'private-ip-address',
                                'Value': [ip]}
