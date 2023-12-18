@@ -56,13 +56,16 @@ def waitAndClick(driver, element, selector, timeout):
         start = time.time()
         while time.time() - start < timeout:
             driver.switch_to.default_content()
-            if driver.execute_script(script):
-                res = "Element found and clicked"
-                break
+            try:
+                if driver.execute_script(script):
+                    res = "Element found and clicked"
+                    break
+            except Exception as e:
+                print("{}: Element selection: {}".format(element, e), flush=True)
             time.sleep(1)
         print("{}: {}".format(element, res), flush=True)
     except Exception as e:
-        print("{} 'wait and click' error".format(element), flush=True)
+        print("{}: 'wait and click' error: {}".format(element, e), flush=True)
 
 class Jitsi (Browsing):
 
@@ -153,16 +156,18 @@ class Jitsi (Browsing):
 
         # Validate MOTD
         motdThread = threading.Thread(target=waitAndClick,
+                                      daemon=True,
                                       args=(self.driver,"MOTD",
                                             "#motd-modal > button.close > span",
-                                            10,))
+                                            40,))
         motdThread.start()
 
         # Accept Cookies
         cookiesThread = threading.Thread(target=waitAndClick,
+                                         daemon=True,
                                          args=(self.driver, "Cookies",
                                                "#cookie_footer > section > section > section > a",
-                                               10,))
+                                               40,))
         cookiesThread.start()
 
         while self.url:
