@@ -90,7 +90,7 @@ def event_handler(data, args):
         print("My room: "+args['browsing'].room, flush=True)
         print("My name: "+displayName, flush=True)
         args['browsing'].name = displayName
-        browseThread = threading.Thread(target=browse, args=(args,))
+        browseThread = threading.Thread(target=browse, daemon=True, args=(args,))
         browseThread.start()
 
     if data['type'] == 'CALL_DTMF_START':
