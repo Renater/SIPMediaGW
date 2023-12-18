@@ -8,22 +8,21 @@ import pandas as pd
 import numpy as np
 import math
 import os
+import json
 from contextlib import closing
 import mysql.connector as mysqlcon
-import scaler
+from Scaler import Scaler
 import matplotlib.pyplot as plt
 
 sys.path.append('fakescale')
 from fakescale import Fakescale
 
-configFile = "config_sample.json"
-
-def kamDbInsert(params, gwName, recv):
+def kamDbInsert(config, gwName, recv):
     try:
-        with closing(mysqlcon.connect(host=params['DBHOST'],
+        with closing(mysqlcon.connect(host=config['sip_db']['host'],
                                 database='kamailio',
                                 user='root',
-                                password=params['DBROOTPW'])) as con:
+                                password=config['sip_db']['root_password'])) as con:
             with closing(con.cursor()) as cursor:
                     cursor.execute('''INSERT INTO location (username, ruid, received) VALUES (%s, %s, %s);''',
                                    (gwName, gwName, recv,))
@@ -31,21 +30,21 @@ def kamDbInsert(params, gwName, recv):
     except mysqlcon.Error as err:
             print("Mysql error: {}".format(err), flush=True)
 
-def cleanLocationTable(params):
-    with closing(mysqlcon.connect(host=params['DBHOST'],
+def cleanLocationTable(config):
+    with closing(mysqlcon.connect(host=config['sip_db']['host'],
                                   database='kamailio',
                                   user='root',
-                                  password=params['DBROOTPW'])) as con:
+                                  password=config['sip_db']['root_password'])) as con:
         with closing(con.cursor(dictionary=True)) as cursor:
             cursor.execute('''TRUNCATE location''')
             con.commit()
 
-def lockGw (params):
+def lockGw (config):
     res=''
-    with closing(mysqlcon.connect(host=params['DBHOST'],
+    with closing(mysqlcon.connect(host=config['sip_db']['host'],
                                   database='kamailio',
                                   user='root',
-                                  password=params['DBROOTPW'])) as con:
+                                  password=config['sip_db']['root_password'])) as con:
         with closing(con.cursor(dictionary=True)) as cursor:
             cursor.execute('''SELECT contact, username, socket,
                                         SUBSTRING_INDEX(SUBSTRING_INDEX(received,'sip:',-1),':',1) AS vm,
@@ -60,7 +59,7 @@ def lockGw (params):
                                             SUBSTRING_INDEX(SUBSTRING_INDEX(location.received,'sip:',-1),':',1)
                                     )
                                 GROUP BY vm
-                                ORDER BY count ASC;''',(params['gwNamePart'],))
+                                ORDER BY count ASC;''',(config['gw_name_prefix'],))
             contactList = cursor.fetchall()
             if len(contactList) == 0:
                 cursor.execute('''SELECT contact, username, socket,
@@ -76,7 +75,7 @@ def lockGw (params):
                                                 SUBSTRING_INDEX(SUBSTRING_INDEX(location.received,'sip:',-1),':',1)
                                     )
                                 GROUP BY vm
-                                ORDER BY count ASC;''',(params['gwNamePart'],))
+                                ORDER BY count ASC;''',(config['gw_name_prefix'],))
                 contactList = cursor.fetchall()
                 if len(contactList) == 0:
                     return False
@@ -95,11 +94,11 @@ def lockGw (params):
                     return contact
     return False
 
-def unlockGw(params, username):
-    with closing(mysqlcon.connect(host=params['DBHOST'],
+def unlockGw(config, username):
+    with closing(mysqlcon.connect(host=config['sip_db']['host'],
                                   database='kamailio',
                                   user='root',
-                                  password=params['DBROOTPW'])) as con:
+                                  password=config['sip_db']['root_password'])) as con:
         with closing(con.cursor()) as cursor:
             cursor.execute('''UPDATE location SET locked = 0
                               WHERE  username LIKE CONCAT('%',%s,'%');''',
@@ -107,9 +106,11 @@ def unlockGw(params, username):
             res = con.commit()
 
 class Simuscale(Fakescale):
-    def __init__(self, params, registerDelay):
+    def __init__(self, configFile, registerDelay):
         super().__init__()
-        self.params = params
+        f = open(configFile)
+        self.config = json.load(f)
+        f.close()
         self.instToCreateList=[]
         self.simuTime = ''
         self.gwRegisterDelay = registerDelay
@@ -118,10 +119,10 @@ class Simuscale(Fakescale):
 
     def createInstance(self, numCPU, name=None, ip=None):
         ippAddr = super().createInstance(numCPU)
-        numGw = int(int(numCPU)/params['cpuPerGW'])
+        numGw = int(int(numCPU)/self.config['cpu_per_gw'])
         if self.simuTime:
             for id in range(numGw):
-                gwName = "{}.{}.{}".format(ippAddr, params['gwNamePart'], id)
+                gwName = "{}.{}.{}".format(ippAddr, self.config['gw_name_prefix'], id)
                 recv = "sip:{}:12345;transport=tcp".format(ippAddr)
                 registerTime = self.simuTime + pd.Timedelta('{} seconds'.format(self.gwRegisterDelay
                                                                                 + randint(0,60)))
@@ -132,10 +133,10 @@ class Simuscale(Fakescale):
     def destroyInstances(self, ipList):
           for ip in ipList:
             try:
-                with closing(mysqlcon.connect(host=params['DBHOST'],
+                with closing(mysqlcon.connect(host=self.config['sip_db']['host'],
                                         database='kamailio',
                                         user='root',
-                                        password=params['DBROOTPW'])) as con:
+                                        password=self.config['sip_db']['root_password'])) as con:
                     with closing(con.cursor()) as cursor:
                             cursor.execute('''DELETE FROM location 
                                                 WHERE 
@@ -143,33 +144,21 @@ class Simuscale(Fakescale):
                                             ;''', (ip,))
                             con.commit()
                             self.gwCnt -= cursor.rowcount
-                            self.cpuCnt -= (cursor.rowcount*params['cpuPerGW'])
+                            self.cpuCnt -= (cursor.rowcount*self.config['cpu_per_gw'])
             except mysqlcon.Error as err:
                     print("Mysql error: {}".format(err), flush=True)
           super().destroyInstances(ipList)
 
-thresholdTimeLine = {'00:00:00': {'unlockedMin':2, 'loadMax':0.9},
-                     '07:00:00': {'unlockedMin':4, 'loadMax':0.75},
-                     '09:00:00': {'unlockedMin':8, 'loadMax':0.75},
-                     '10:30:00': {'unlockedMin':8, 'loadMax':0.75},
-                     '12:30:00': {'unlockedMin':4, 'loadMax':0.8},
-                     '13:00:00': {'unlockedMin':8, 'loadMax':0.75},
-                     '14:30:00': {'unlockedMin':4, 'loadMax':0.75},
-                     '17:00:00': {'unlockedMin':2, 'loadMax':0.8},
-                     '20:00:00': {'unlockedMin':2, 'loadMax':0.9}}
-
 vcpuCostPerHour = 0.216/4
+simuFreq = 60 # in seconds
 
-params = dict()
-params['DBHOST'] = '127.0.0.1'
-params['DBROOTPW'] = 'dbrootpw'
-params['cpuPerGW'] = 4
+scalerConfigFile = "config/scaler.json"
+csp = Simuscale(scalerConfigFile, 60)
+csp.configureInstance("{}/{}".format("fakescale", "config/sipmediagw_sample.json"))
+scaler = Scaler(csp)
+scaler.configure(scalerConfigFile)
 
-params['gwNamePart'] = 'mediagw'
-
-csp = Simuscale(params, 60)
-csp.configureInstance("{}/{}".format("fakescale", configFile))
-cleanLocationTable(params)
+cleanLocationTable(scaler.config)
 
 with open('17112020.csv', "r") as csvfile:
     callsList = pd.read_csv(csvfile, header=None,  parse_dates=[0, 1])
@@ -183,7 +172,6 @@ callsList = sorted(callsList, key=lambda x: x[0])
 
 firstCallStart = callsList[0][0].floor('D')
 
-simuFreq = 1
 timeLine = pd.date_range(start=firstCallStart + pd.Timedelta('0 hours'),
                          end=firstCallStart + pd.Timedelta('24 hours'),
                          inclusive="left", freq='{}s'.format(simuFreq))
@@ -205,18 +193,16 @@ missedCnt = 0
 currReject = 0
 vcpuCost = 0
 
-
 for timeId, currTime in enumerate(timeLine):
-    #callsCount.append(callsCount[timeId-1]) if timeId > 0 else callsCount.append(0)
     csp.simuTime = currTime
     ### Scaler
     if currTime.second == 0:
-        scaler.scale(csp, params, thresholdTimeLine, currTime.strftime("%H:%M:%S"))
+        scaler.scale(scaleTime=currTime.strftime("%H:%M:%S"))
     ### Instances
     if csp.instToCreateList:
         while csp.instToCreateList[0][2] <= currTime:
             gw = csp.instToCreateList.pop(0)
-            kamDbInsert(params, gw[0], gw[1])
+            kamDbInsert(scaler.config, gw[0], gw[1])
             csp.gwCnt += 1
             if not csp.instToCreateList:
                 break
@@ -228,7 +214,7 @@ for timeId, currTime in enumerate(timeLine):
             currConfStart = calls[0][0]
             tryLock = True
             while currConfStart <= currTime:
-                gw = lockGw(params) if tryLock else False
+                gw = lockGw(scaler.config) if tryLock else False
                 if gw:
                     newCall = calls.pop(0)
                     newCall.append(gw['username'])
@@ -251,7 +237,7 @@ for timeId, currTime in enumerate(timeLine):
         incalls = sorted(incalls, key=lambda x: x[1])
         currConfStop = incalls[0][1]
         while currConfStop <= currTime:
-            unlockGw(params, incalls[0][2])
+            unlockGw(scaler.config, incalls[0][2])
             incalls.pop(0)
             if not incalls:
                 break

@@ -52,8 +52,9 @@ services:
       context: scaler
     container_name: scaler
     volumes:
+      - ./scaler/config:/var/config
       - ./scaler/scalerTest.py:/var/scalerTest.py
-      - ./scaler/outscale/config_sample.json:/var/outscale/config_sample.json
+      - ./scaler/outscale/config:/var/outscale/config
     network_mode: host
     logging:
       driver: syslog

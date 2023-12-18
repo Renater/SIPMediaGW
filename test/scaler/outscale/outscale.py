@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
-import os
 import json
-from dataclasses import dataclass
 import importlib
-import inspect
 import base64
 from ipaddress import ip_address
 from manageInstance import ManageInstance
@@ -59,13 +56,14 @@ class Outscale(ManageInstance):
     def enumerateInstances(self):
         gnFilt = {'Name':'group-id', 'Value' : [self.secuGrp['app']]}
         subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
+        statusFilt={'Name':'instance-state-name', 'Value' : ['running']}
         self.fcu.make_request("DescribeInstances", Profile=self.profile, Version=self.version,
-                              Filter=[gnFilt, subNetFilt])
+                              Filter=[gnFilt, subNetFilt, statusFilt])
         if (self.fcu.response['DescribeInstancesResponse']['reservationSet'] and
             'item' in self.fcu.response['DescribeInstancesResponse']['reservationSet']):
             items = self.fcu.response['DescribeInstancesResponse']['reservationSet']['item']
         else:
-            return
+            return []
         items = items if isinstance(items, list) else [items]
         instDict = []
         for it in items:
@@ -73,7 +71,10 @@ class Outscale(ManageInstance):
                 privIpAddress = it['instancesSet']['item']['privateIpAddress']
             if 'launchTime' in it['instancesSet']['item']:
                 launchTime = it['instancesSet']['item']['launchTime']
-            instDict.append({'start':launchTime, 'addr':privIpAddress})
+            if 'instanceType' in it['instancesSet']['item']:
+                instanceType = it['instancesSet']['item']['instanceType']
+                cpuCnt = instanceType.split('.c')[1].split('r')[0]
+            instDict.append({'start':launchTime, 'addr':privIpAddress, 'cpu_count':int(cpuCnt)})
         return instDict
 
     def runInstance(self, numCPU):
