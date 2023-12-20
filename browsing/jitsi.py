@@ -42,6 +42,9 @@ UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
              "3": "window.JitsiMeetUIHelper.executeCommand('toggle-chat')",
              "4": "window.JitsiMeetUIHelper.executeCommand('toggle-tile-view')",
              "5": "window.JitsiMeetUIHelper.executeCommand('toggle-raise-hand')",
+             "6": "window.JitsiMeetUIHelper.executeCommand('toggle-participants-pane')",
+             "7": "window.JitsiMeetUIHelper.executeCommand('toggle-lobby')",
+             "8": "window.JitsiMeetUIHelper.executeCommand('mute-everyone')",
              "s": "window.JitsiMeetUIHelper.executeCommand('toggle-share-screen')"}
 
 def waitAndClick(driver, element, selector, timeout):
