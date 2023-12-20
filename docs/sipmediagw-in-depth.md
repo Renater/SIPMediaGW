@@ -37,7 +37,7 @@ To overcome NAT traversal issues, a TURN server acts as a media traffic relay. C
 
 Before starting the gateway, a local (docker based) testing environment (Kamailio and Coturn) may be simply started as follows:
 
-	docker compose -f test/docker-compose.yml -p testing up -d --force-recreate
+	docker compose -f deploy/docker-compose.yml -p testing up -d --force-recreate
 
 Usage
 --------
@@ -62,4 +62,4 @@ Logs:
 	
 Inspect Kamailio database:
 
-	sqlite3  test/kamailio/kamailio_db/kamailio.sqlite "SELECT * FROM location"
+	sqlite3  deploy/kamailio/kamailio_db/kamailio.sqlite "SELECT * FROM location"

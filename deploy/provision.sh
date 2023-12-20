@@ -33,14 +33,14 @@ if [ ! "$(docker network ls | grep gw_net)" ]; then
   sudo docker network create --subnet=192.168.92.0/29 gw_net
 fi
 #
-docker build -f /sipmediagw/test/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/test/kamailio
-docker build -f /sipmediagw/test/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/test/coturn
+docker build -f /sipmediagw/deploy/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/deploy/kamailio
+docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/deploy/coturn
 #
 echo "SIP_DOMAIN=$HOST_IP" >> /etc/environment
 echo "PUBLIC_IP=$HOST_IP" >> /etc/environment
 echo "LOCAL_IP=$HOST_IP" >> /etc/environment
 echo "STUN_SRV=$HOST_IP" >> /etc/environment
-sudo cp /sipmediagw/test/services/* /etc/systemd/system
+sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
 sudo systemctl enable coturn.service
 sudo systemctl enable kamailio.service
 sudo systemctl enable sipmediagw.service

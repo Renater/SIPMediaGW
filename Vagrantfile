@@ -20,7 +20,7 @@ Vagrant.configure(2) do |config|
     s.env = {
 	  "HOST_IP" => HOST,
 	}
-	s.inline = "/sipmediagw/test/provision.sh"
+	s.inline = "/sipmediagw/deploy/provision.sh"
   end
   # Set a specific VM name
   config.vm.provider "virtualbox" do |v|
