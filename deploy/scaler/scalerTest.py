@@ -7,7 +7,7 @@ from Scaler import Scaler
 
 # Get a manageInstance object from CSP file name
 cspName = "outscale"
-cspConfigFile = "config/sipmediagw_staging.json"
+cspConfigFile = "config/sipmediagw_sample.json"
 sys.path.append(cspName)
 modName = cspName
 print("CSP mod name: "+modName, flush=True)
