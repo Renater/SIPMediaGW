@@ -22,8 +22,8 @@ services:
         tag: "{{.ImageName}}/{{.Name}}"
     env_file:
       - .env
-      - test/.env_kamailio
-      - test/.env_turn
+      - deploy/.env_kamailio
+      - deploy/.env_turn
     environment:
       TZ: "${HOST_TZ}" # Time Zone
       GW_ID: "${ID}"
