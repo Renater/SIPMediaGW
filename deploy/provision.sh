@@ -35,6 +35,7 @@ fi
 #
 docker build -f /sipmediagw/deploy/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/deploy/kamailio
 docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/deploy/coturn
+docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db
 #
 echo "SIP_DOMAIN=$HOST_IP" >> /etc/environment
 echo "PUBLIC_IP=$HOST_IP" >> /etc/environment
