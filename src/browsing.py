@@ -82,8 +82,10 @@ class Browsing:
 
         try:
             self.driver.execute_script(self.UIKeyMap[inKey])
+            return inKey
         except Exception as e:
-            print("User input error", flush=True)
+            print("User input error: {}".format(e), flush=True)
+            return
 
     def unset(self):
         pass

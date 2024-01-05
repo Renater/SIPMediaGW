@@ -174,7 +174,14 @@ class Jitsi (Browsing):
         cookiesThread.start()
 
         while self.url:
-            self.interact()
+            key = self.interact()
+            if key == 's':
+                showMyScreenThread = threading.Thread(target=waitAndClick,
+                                                      daemon=True,
+                                                      args=(self.driver, "showMyScreen",
+                                                      "#largeVideoWrapper > div > div > span.css-9u2gwz-showSharing",
+                                                      40,))
+                showMyScreenThread.start()
 
     def unset(self):
         try:
