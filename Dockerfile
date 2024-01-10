@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && rm -r baresip re rem-2.10.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout 36a1db872c99d0807741f894b1214cc095ed7fe4 \
+    && cd /var/UIHelper && git checkout d5a808a7d21c5ba523e9afeb8154b4ddae778420 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
