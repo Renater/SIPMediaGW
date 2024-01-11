@@ -1,0 +1,24 @@
+networks:
+  default:
+    name: gw_net
+services:
+  baresip:
+    image: baresip
+    network_mode: host
+    build:
+        context: .
+        dockerfile: Dockerfile
+    container_name: baresip
+    stdin_open: true
+    tty: true
+    volumes:
+        - .baresip:/var/.baresip:ro
+        - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+        DISPLAY: "${DISPLAY}"
+    command:
+        - /bin/sh
+        - -c
+        - "baresip -f /var/.baresip -v ${UA} ${DIAL}"

@@ -35,4 +35,7 @@
 #  <sip:user@1.2.3.4;transport=tcp>;auth_pass=secret
 #  <sip:user@[2001:df8:0:16:216:6fff:fe91:614c]:5070;transport=tcp>;auth_pass=secret
 #
-nano<sip:daviel@192.168.92.1>;auth_pass=1234
+micro<sip:test@127.0.0.1;transport=tcp>;answermode=auto;medianat=stun;stunserver=stun:194.57.7.22:3478
+nano<sip:test@192.168.75.1>;auth_pass=1234
+pico<sip:test@192.168.92.1>;auth_pass=1234
+

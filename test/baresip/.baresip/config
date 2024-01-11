@@ -39,7 +39,7 @@ audio_telev_pt		101		# payload type for telephone-event
 
 # Video
 #video_source		avformat,/var/file_in
-video_display		sdl
+video_display		x11,nil
 video_size		640x480
 video_bitrate		1000000
 video_fps		30.00
@@ -121,7 +121,7 @@ module			avcodec.so
 
 # Video display modules
 #module			directfb.so
-#module			x11.so
+module			x11.so
 #module			sdl.so
 module			fakevideo.so
 
@@ -165,7 +165,8 @@ module_app		menu.so
 #module_app		httpreq.so
 #module_app		multicast.so
 module_app		netroam.so
-#module_app		vidloop.so
+module_app		vidloop.so
+module_app		auloop.so
 
 
 #------------------------------------------------------------------------------

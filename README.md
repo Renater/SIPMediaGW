@@ -6,10 +6,10 @@ Overview
 
 <img src="docs/architecture.png" width=80% height=80%>
 
-The Room Connector can be easily deployed thanks to the "All-in-one" [vagrant file](https://github.com/Renater/SIPMediaGW/blob/main/Vagrantfile) (requires Vagrant and VirtualBox).\
+The Room Connector can be easily deployed thanks to the "All-in-one" [vagrant file](https://github.com/Renater/SIPMediaGW/blob/main/test/Vagrantfile) (requires Vagrant and VirtualBox).\
 To do so, simply run:
 
-	vagrant up
+	VAGRANT_VAGRANTFILE=test/Vagrantfile vagrant up
 
 > **Note**\
 > In this case, the provisioning is managed by a simple [shell script](https://github.com/Renater/SIPMediaGW/blob/main/test/provision.sh)
