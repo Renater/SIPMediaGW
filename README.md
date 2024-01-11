@@ -19,6 +19,10 @@ Once the virtual machin is up, you can join a conference from your preferred SIP
 - **sip:your_conference_name@192.168.75.13** (Direct access)
 - **sip:0@192.168.75.13** (IVR access => Jitsi Meet only)
 
+In order to do that, you can use Baresip thanks to the provided [testing environment](https://github.com/Renater/SIPMediaGW/tree/main/test/baresip):
+	
+	./test/baresip/SIPCall.sh -u sip:test@192.168.75.1 -d 0@192.168.75.13
+
 Depending on [BROWSE_FILE](https://github.com/Renater/SIPMediaGW/blob/114ee4be29e0460132a0c018b8bbd94c72728522/.env#L12) and [WEBRTC_DOMAIN](https://github.com/Renater/SIPMediaGW/blob/114ee4be29e0460132a0c018b8bbd94c72728522/.env#L13) variables, the corresponding webconference is:
 - jitsi (default): https://meet.jit.si/your_conference_name \
 or
