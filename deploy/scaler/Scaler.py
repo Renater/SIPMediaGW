@@ -158,5 +158,6 @@ class Scaler:
                     if capacityIncrease < 0:
                         # Downscale
                         self.downScale(abs(capacityIncrease))
+                    return 0
         except mysqlcon.Error as err:
             print("Mysql error: {}".format(err), flush=True)
