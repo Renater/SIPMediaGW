@@ -142,6 +142,9 @@ sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
 if [[ "$STUN_SRV" ]] && [[ "$STUN_USER" ]]  ; then
     sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
 fi
+if [[ "$MEDIAENC" ]] ; then
+    sipAccount+=";mediaenc="$MEDIAENC
+fi
 sipAccount+=";answermode=manual"
 
 ### Configure and start Baresip ###

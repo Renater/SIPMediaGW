@@ -166,7 +166,7 @@ module			ice.so
 #module			pcp.so
 
 # Media encryption modules
-#module			srtp.so
+module			srtp.so
 #module			dtls_srtp.so
 #module			zrtp.so
 
@@ -229,6 +229,9 @@ vumeter_stderr		yes
 # Selfview
 video_selfview		window # {window,pip}
 #selfview_size		64x64
+
+# SRTP
+preferred_crypto_suite	AEAD_AES_128_GCM
 
 # ZRTP
 #zrtp_hash		no  # Disable SDP zrtp-hash (not recommended)
