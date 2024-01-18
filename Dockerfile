@@ -61,12 +61,15 @@ COPY alsa/asound.conf /etc/asound.conf
 COPY fluxbox/init /root/.fluxbox/init
 
 COPY baresip /var/baresip
+COPY streaming /var/streaming
 COPY browsing /var/browsing
 COPY src /var/src
 
 RUN mkdir /var/.baresip
 
 RUN chmod +x /var/entrypoint.sh
+RUN chmod +x /var/streaming/streaming.sh
+RUN chmod +x /var/baresip/baresip.sh
 
 RUN adduser root pulse-access
 

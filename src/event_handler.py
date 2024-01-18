@@ -118,12 +118,15 @@ def event_handler(data, args):
             args['browsing'].userInputs.put('s')
             args['browsing'].screenShared = False
 
-# Start event handler loop
-ns = Netstring(baresipHost, 4444)
-
 argDict = {'browsing':browsingObj(dispWidth, dispHeight, inputs['room'])}
 
-ns.getEvents(event_handler, argDict)
+if os.environ.get('MAIN_APP') == 'baresip':
+    # Start event handler loop
+    ns = Netstring(baresipHost, 4444)
+    ns.getEvents(event_handler, argDict)
+
+if os.environ.get('MAIN_APP') == 'streaming':
+    browse(argDict)
 
 # Terminate
 endBrowse(argDict)
