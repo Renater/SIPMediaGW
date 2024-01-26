@@ -138,6 +138,7 @@ if [[ "$SIP_NAME_PREFIX" ]]; then
     userNamePref=${SIP_NAME_PREFIX}"."${userNamePref}
 fi
 sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=$SIP_PROTOCOL>;regint=60;"
+sipAccount+="outbound=sip:"$SIP_DOMAIN";"
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
 if [[ "$STUN_SRV" ]] && [[ "$STUN_USER" ]]  ; then
     sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
