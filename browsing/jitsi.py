@@ -191,7 +191,7 @@ class Jitsi (Browsing):
 
     def unset(self):
         try:
-            if self.driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
+            if self.driver and self.driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
                 self.driver.execute_script("window.JitsiMeetUIHelper.room.jitsiApiClient.dispose()")
             else:
                 return
