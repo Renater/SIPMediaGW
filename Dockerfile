@@ -46,7 +46,7 @@ RUN wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
-RUN pip3 install selenium requests
+RUN pip3 install selenium requests pynetstring
 
 RUN pip3 install gTTS pydub \
     && python3 /var/UIHelper/scripts/generate_tts_files.py -i /var/UIHelper/src/assets/lang/ -o /var/UIHelper/src/assets/lang/files/ \
