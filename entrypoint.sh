@@ -7,6 +7,7 @@ fi
 
 ### Init logging ###
 HISTORY="/var/logs/gw"$GW_ID"_history"
+STATE="/var/logs/gw"$GW_ID"_state"
 echo "start_gw:$(date +'%b %d %H:%M:%S')"> $HISTORY
 
 cleanup() {
@@ -41,11 +42,11 @@ check_v4l2() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
-    state=$(v4l2-ctl --device "$1" --get-input | awk '{ print $1 }')
-    while [[ $state != "Video" && ("$timer" < $timeOut) ]]; do
+    state=$(grep -q $1 $STATE; echo $?)
+    while [[ ($state == "1") && ("$timer" < $timeOut) ]]; do
         timer=$(($timer + 1))
         sleep 1
-        state=$(v4l2-ctl --device "$1" --get-input | awk '{ print $1 }')
+        state=$(grep -q $1 $STATE; echo $?)
     done
     if [ "$timer" = $timeOut ]; then
         echo "V4l2 loopback failed to launch" | logParse -p "V4l2"
