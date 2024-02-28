@@ -118,15 +118,20 @@ def event_handler(data, args):
             args['browsing'].userInputs.put('s')
             args['browsing'].screenShared = False
 
+    if data['type'] == 'CHAT_INPUT':
+        print('Received chat message: '+ data['text'], flush=True)
+        args['browsing'].chatMsg.put(data['text'])
+
 argDict = {'browsing':browsingObj(dispWidth, dispHeight, inputs['room'])}
 
-if os.environ.get('MAIN_APP') == 'baresip':
-    # Start event handler loop
-    ns = Netstring(baresipHost, 4444)
-    ns.getEvents(event_handler, argDict)
-
 if os.environ.get('MAIN_APP') == 'streaming':
-    browse(argDict)
+    argDict['browsing'].name="streaming"
+    browseThread = threading.Thread(target=browse, args=(argDict,))
+    browseThread.start()
+
+# Start event handler loop
+ns = Netstring(baresipHost, 4444)
+ns.getEvents(event_handler, argDict)
 
 # Terminate
 endBrowse(argDict)

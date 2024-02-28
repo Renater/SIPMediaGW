@@ -13,6 +13,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import TimeoutException
 
 bbbFQDN = os.environ.get('WEBRTC_DOMAIN')
 if not bbbFQDN:
@@ -42,13 +43,23 @@ def tryClick(driver, selector, attempts=5, timeout=20):
 class BigBlueButton (Browsing):
 
     def setUrl(self):
-        self.url = 'https://{}/{}/join'.format(bbbFQDN, self.room)
+        self.url = 'https://{}/{}'.format(bbbFQDN, self.room)
         print("Web browsing URL: "+self.url, flush=True)
+
+    def chatHandler(self):
+        try:
+            message = self.chatMsg.get(True, 0.02)
+            if self.chatInput.is_enabled() and self.sendChatMsg.is_enabled():
+                self.chatInput.send_keys(message)
+                self.sendChatMsg.click()
+        except Exception as e:
+            pass
 
     def browse(self, driver):
         # Enter name
         try:
-            element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#joinFormName')))
+            #element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#joinFormName')))
+            element = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#fullname")))
             element.send_keys(self.name)
             element.submit()
         except Exception as e:
@@ -58,7 +69,7 @@ class BigBlueButton (Browsing):
         try:
             tryClick(driver, "[aria-label=Microphone]", 5, 20)
 
-            test=WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "option[value='default']")))
+            test = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "option[value='default']")))
 
             tryClick(driver, "[data-test=joinEchoTestButton]", 5, 20)
         except Exception as e:
@@ -74,6 +85,13 @@ class BigBlueButton (Browsing):
         except Exception as e:
             print("Camera activation failed", flush=True)
 
+        # Detect Chat
+        try:
+            self.chatInput = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID,"message-input")))
+            self.sendChatMsg = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[aria-label="Send message"]')))
+        except Exception as e:
+            print("Chat detection failed", flush=True)
+
         while self.url:
-            time.sleep(1)
+            self.chatHandler()
 

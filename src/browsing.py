@@ -23,6 +23,7 @@ class Browsing:
         self.height = height
         self.screenShared = False
         self.userInputs = queue.Queue()
+        self.chatMsg = queue.Queue()
         self.UIKeyMap = {}
         self.driver = []
         self.service = []
