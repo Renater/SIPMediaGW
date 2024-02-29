@@ -4,6 +4,21 @@ networks:
     external: true
 
 services:
+  api:
+    image: sipmediagw_api
+    build:
+      context: deploy/api
+    container_name: sipmediagw_api
+    networks:
+      - default
+    logging:
+      driver: syslog
+      options:
+        tag: "sipmediagw_api"
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "python sipmediagw.py"
   gw:
     image: "${DOCKER_IMAGE}"
     restart: ${RESTART}
