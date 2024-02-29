@@ -8,6 +8,10 @@ services:
     image: "${DOCKER_IMAGE}"
     restart: ${RESTART}
     container_name: gw${ID}
+    networks:
+      default:
+        aliases:
+          - "${ROOM}"
     tmpfs:
       - /tmp
     volumes:
@@ -29,4 +33,6 @@ services:
       GW_ID: "${ID}"
       SIP_NAME_PREFIX: "${PREFIX}"
       ROOM_NAME: "${ROOM}"
+      WEBRTC_DOMAIN: "${DOMAIN}"
+      RTMP_DST_URI: "${RTMP_DST}"
     stop_grace_period: 20s

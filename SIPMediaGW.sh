@@ -7,10 +7,12 @@ trap cleanup SIGINT SIGQUIT SIGTERM
 
 unset room prefix loop
 
-while getopts r:f:p:l opt; do
+while getopts r:f:p:d:u:l opt; do
     case $opt in
             r) room=$OPTARG ;;
             p) prefix=$OPTARG ;;
+            d) domain=$OPTARG ;;
+            u) rtmp_dst=$OPTARG ;;
             l) loop=1 ;;
             *)
                 echo 'Error in command line parsing' >&2
@@ -74,6 +76,8 @@ gwName="gw"$id
 RESTART=$restart \
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room \
+WEBRTC_DOMAIN=$domain \
+RTMP_DST=$rtmp_dst \
 PREFIX=$prefix \
 ID=$id \
 docker compose -p ${gwName} up -d --force-recreate --remove-orphans gw
