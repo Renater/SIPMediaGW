@@ -18,7 +18,7 @@ clients = [serversocket]
 
 def push(inDict, fromSock):
     for i in clients:
-        if i is serversocket or i is fromSock:
+        if i is serversocket or i is fromSock or not inDict:
             continue
         print('Received input event: '+ inDict, flush=True)
         try:
@@ -30,7 +30,7 @@ def handler(clientsocket, clientaddr):
     print("Accepted connection from: ", clientaddr)
     while True:
         data = clientsocket.recv(1024)
-        push(data.decode("utf-8"), clientsocket)
+        push(data.decode("utf-8").rstrip(), clientsocket)
         if data.decode("utf-8") == "bye\n" or not data:
             break
 
