@@ -23,7 +23,7 @@ def authorize(func):
         else:
             web.header('WWW-Authenticate', 'Bearer error="invalid_token"')
             web.ctx.status = '401 Unauthorized'
-            return
+            return 'authorization error'
     return inner
 
 class Start:
