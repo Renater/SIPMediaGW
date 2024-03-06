@@ -131,6 +131,14 @@ class Jitsi (Browsing):
         if inKey == '*':
             ActionChains(driver).key_down(Keys.BACKSPACE).perform()
 
+    def chatHandler(self):
+        try:
+            message = self.chatMsg.get(True, 0.01).strip()
+            chatCmd = "window.JitsiMeetUIHelper.room.jitsiApiClient.executeCommand('sendChatMessage', '{}')".format(message)
+            self.driver.execute_script(chatCmd)
+        except Exception as e:
+            pass
+
     def browse(self, driver):
         # IVR
         try:
@@ -188,6 +196,7 @@ class Jitsi (Browsing):
                                                       "#largeVideoWrapper > div > div > span.css-9u2gwz-showSharing",
                                                       40,))
                 showMyScreenThread.start()
+            self.chatHandler()
 
     def unset(self):
         try:

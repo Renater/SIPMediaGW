@@ -46,7 +46,7 @@ RUN wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
-RUN pip3 install selenium requests
+RUN pip3 install selenium requests pynetstring
 
 RUN pip3 install gTTS pydub \
     && python3 /var/UIHelper/scripts/generate_tts_files.py -i /var/UIHelper/src/assets/lang/ -o /var/UIHelper/src/assets/lang/files/ \
@@ -61,12 +61,15 @@ COPY alsa/asound.conf /etc/asound.conf
 COPY fluxbox/init /root/.fluxbox/init
 
 COPY baresip /var/baresip
+COPY streaming /var/streaming
 COPY browsing /var/browsing
 COPY src /var/src
 
 RUN mkdir /var/.baresip
 
 RUN chmod +x /var/entrypoint.sh
+RUN chmod +x /var/streaming/streaming.sh
+RUN chmod +x /var/baresip/baresip.sh
 
 RUN adduser root pulse-access
 
