@@ -76,16 +76,26 @@ gwName="gw"$id
 RESTART=$restart \
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room \
-WEBRTC_DOMAIN=$domain \
+DOMAIN=$domain \
 RTMP_DST=$rtmp_dst \
 PREFIX=$prefix \
 ID=$id \
-docker compose -p ${gwName} up -d --force-recreate --remove-orphans gw
+docker compose -p ${room:-$gwName} up -d --force-recreate --remove-orphans gw
 
 checkGwStatus $gwName
-sipUri=$(docker container exec gw$id  sh -c "cat /var/.baresip/accounts |
+
+MAIN_APP=$(docker exec gw0 sh -c 'echo $MAIN_APP')
+
+if [ "$MAIN_APP" == "baresip" ]; then
+    sipUri=$(docker container exec gw$id  sh -c "cat /var/.baresip/accounts |
                                            sed 's/.*<//; s/;.*//'")
-echo "{'res':'ok', 'uri':'$sipUri'}"
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'uri':'$sipUri'}"
+fi
+
+if [ "$MAIN_APP" == "streaming" ]; then
+    GW_PROXY=$(docker exec gw0 sh -c 'echo $GW_PROXY')
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$RTMP_DST_URI'}"
+fi
 
 # child process => lockFile locked until the container exits:
 ID=$id \
