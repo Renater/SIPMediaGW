@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+import traceback
 
 
 jitsiFQDN = os.environ.get('WEBRTC_DOMAIN')
@@ -48,27 +49,32 @@ UIKeyMap = { "#": "window.JitsiMeetUIHelper.executeCommand('show-dtmf-menu')",
              "s": "window.JitsiMeetUIHelper.executeCommand('toggle-share-screen')"}
 
 def waitAndClick(driver, element, selector, timeout):
-    script = """const el = document.querySelector("iframe").contentWindow.document.querySelector("{css}");
-                if (el) {{
-                    el.click();
-                    return true;
+    script = """try{{
+                    const el = document.querySelector("iframe").contentWindow.document.querySelector("{css}");
+                    if (el) {{
+                        el.click();
+                        return true;
+                    }}
+                    return false;
                 }}
-                return false;""".format(css=selector)
+                catch{{return false}}""".format(css=selector)
     try:
         res = "Element not found"
         start = time.time()
         while time.time() - start < timeout:
             driver.switch_to.default_content()
             try:
-                if driver.execute_script(script):
+                if driver and driver.execute_script(script):
                     res = "Element found and clicked"
                     break
             except Exception as e:
                 print("{}: Element selection: {}".format(element, e), flush=True)
+                return
             time.sleep(1)
-        print("{}: {}".format(element, res), flush=True)
+        print("Wait and click {}: {}".format(element, res), flush=True)
     except Exception as e:
         print("{}: 'wait and click' error: {}".format(element, e), flush=True)
+        return
 
 class Jitsi (Browsing):
 
@@ -194,7 +200,10 @@ class Jitsi (Browsing):
 
     def unset(self):
         try:
-            self.driver.execute_script("window.JitsiMeetUIHelper.room.jitsiApiClient.dispose()")
+            if self.driver and self.driver.find_elements(By.CSS_SELECTOR,"#jitsiConferenceFrame0"):
+                self.driver.execute_script("window.JitsiMeetUIHelper.room.jitsiApiClient.dispose()")
+            else:
+                return
             start = time.time()
             while time.time() - start < 5:
                 if self.driver.execute_script("return document.getElementsByTagName('iframe')[0];"):
@@ -202,4 +211,6 @@ class Jitsi (Browsing):
                 else:
                     break
         except Exception as e:
-            print("Iframe error", flush=True)
+            traceback.print_exc(file=sys.stdout)
+            print("Iframe error: {}".format(e), flush=True)
+
