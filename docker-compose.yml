@@ -4,21 +4,6 @@ networks:
     external: true
 
 services:
-  api:
-    image: sipmediagw_api
-    build:
-      context: deploy/api
-    container_name: sipmediagw_api
-    networks:
-      - default
-    logging:
-      driver: syslog
-      options:
-        tag: "sipmediagw_api"
-    entrypoint:
-      - "/bin/sh"
-      - "-c"
-      - "python sipmediagw.py"
   gw:
     image: "${DOCKER_IMAGE}"
     restart: ${RESTART}
@@ -31,8 +16,13 @@ services:
       - /tmp
     volumes:
       - ./logs:/var/logs
+      - ./streaming/streaming.sh:/var/streaming/streaming.sh
+      - ./entrypoint.sh:/var/entrypoint.sh
+      - ./src/eventServer.py:/var/src/eventServer.py
+      - ./src/event_handler.py:/var/src/event_handler.py
+      - ./src/netstring.py:/var/src/netstring.py
     devices:
-      - /dev/video${ID}:/dev/video0
+      - /dev/${ID:+video}${ID:-null}:/dev/video0
       - /dev/snd:/dev/snd
     shm_size: '2gb'
     logging:
@@ -43,11 +33,4 @@ services:
       - .env
       - deploy/.env_kamailio
       - deploy/.env_turn
-    environment:
-      TZ: "${HOST_TZ}" # Time Zone
-      GW_ID: "${ID}"
-      SIP_NAME_PREFIX: "${PREFIX}"
-      ROOM_NAME: "${ROOM}"
-      WEBRTC_DOMAIN: "${DOMAIN}"
-      RTMP_DST_URI: "${RTMP_DST}"
     stop_grace_period: 20s
