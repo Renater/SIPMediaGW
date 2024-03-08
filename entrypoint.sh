@@ -8,6 +8,7 @@ fi
 ### Init logging ###
 HISTORY="/var/logs/gw"$GW_ID"_history"
 STATE="/var/logs/gw"$GW_ID"_state"
+touch $STATE
 echo "start_gw:$(date +'%b %d %H:%M:%S')"> $HISTORY
 
 cleanup() {
