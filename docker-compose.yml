@@ -16,11 +16,6 @@ services:
       - /tmp
     volumes:
       - ./logs:/var/logs
-      - ./streaming/streaming.sh:/var/streaming/streaming.sh
-      - ./entrypoint.sh:/var/entrypoint.sh
-      - ./src/eventServer.py:/var/src/eventServer.py
-      - ./src/event_handler.py:/var/src/event_handler.py
-      - ./src/netstring.py:/var/src/netstring.py
     devices:
       - /dev/${ID:+video}${ID:-null}:/dev/video0
       - /dev/snd:/dev/snd
