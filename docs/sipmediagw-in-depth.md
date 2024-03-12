@@ -62,4 +62,4 @@ Logs:
 	
 Inspect Kamailio database:
 
-	sqlite3  deploy/kamailio/kamailio_db/kamailio.sqlite "SELECT * FROM location"
+	docker run -it --network=host --entrypoint mysql mysql -h 127.0.0.1 -u root -pdbrootpw kamailio -e "SELECT username, locked, to_stop FROM location"
