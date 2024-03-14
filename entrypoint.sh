@@ -104,6 +104,9 @@ DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen1 \
 DISPLAY=:$SERVERNUM0 fluxbox | logParse -p "fluxbox" &
 DISPLAY=:$SERVERNUM0 unclutter -idle 1 &
 
+### Main application ###
+source $MAIN_APP"/"$MAIN_APP".sh"
+
 ### Check if video device is ready ###
 check_v4l2 "/dev/video0"
 

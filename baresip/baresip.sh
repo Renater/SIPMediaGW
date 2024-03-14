@@ -28,7 +28,7 @@ echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"
 ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
        -draw_mouse 0 -threads 0 \
        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
-       -f v4l2 /dev/video0 -nostats | tee $STATE | logParse -p "Event" &
+       -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &
 
 ### set SIP account ###
 userNamePref=$GW_NAME_PREFIX"."$GW_ID
