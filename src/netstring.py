@@ -19,13 +19,14 @@ class Netstring:
                       lambda s,f : self.__sendCommand({"command":"quit"}))
 
     def decodeNetString(self, inStr):
-        mDict = {'event': 'null', 'type': 'null'}
+        mDict = {}
         if inStr and len(inStr) > 0 :
             inStrLen = inStr[0:inStr.find(':')]
             resp = inStr.split(inStrLen+':')[1]
             try:
                 mDict = json.loads(resp[0:len(resp)-1], strict=False)
             except:
+                mDict = {'event': 'null', 'type': 'null'}
                 print("Failed to load string as JSON", file=sys.stdout, flush=True)
 
         return mDict
