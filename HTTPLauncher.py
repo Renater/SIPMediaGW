@@ -83,21 +83,9 @@ class Stop:
         return json.dumps(resJson)
 
 class Chat:
-    def POST(self):
-        data = json.loads(web.data().decode("utf-8"))
-        web.header('Content-Type', 'application/json')
-        if 'room' in data:
-            room = data['room']
-        else:
-            return '{"Error": "a room name must be specified"}'
-        if 'msg' in data:
-            msg = data['msg']
-        else:
-            return '{"Error": "message missing or not readable"}'
-        msgDict = '{{"event":"message", "type":"CHAT_INPUT", "text": "{}" }}'.format(msg)
-        msgDict = msgDict.replace('\n', '\\n')
+    def forwardCommand(self, inDict, room):
         msgSubProc = ['docker', 'compose', 'run', '--rm', '--entrypoint', '/bin/sh', 'gw', '-c']
-        msgSubProc.append( "echo '{}' | netcat -q 1 {} 4444".format(msgDict, room) )
+        msgSubProc.append( "echo '{}' | netcat -q 1 {} 4444".format(inDict, room) )
         filePath = os.path.dirname(__file__)
         print(msgSubProc)
         res = subprocess.Popen(msgSubProc, cwd=filePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -115,6 +103,38 @@ class Chat:
         else:
             resJson = {'res': 'ok'}
         return json.dumps(resJson)
+
+    @authorize
+    def GET(self, args=None):
+        data = web.input()
+        web.header('Content-Type', 'application/json')
+        if 'room' in data.keys():
+            room = data['room']
+        else:
+            return '{"Error": "a room name must be specified"}'
+        if 'toggle' in data.keys():
+            action = 'toggle'
+        else:
+            return '{"Error": "toggle parameter is expected"}'
+        actDict = '{{"event":"action", "type":"CHAT_INPUT", "action": "{}" }}'.format(action)
+        actDict = actDict.replace('\n', '\\n')
+        return self.forwardCommand(actDict, room)
+
+    def POST(self):
+        data = json.loads(web.data().decode("utf-8"))
+        web.header('Content-Type', 'application/json')
+        if 'room' in data:
+            room = data['room']
+        else:
+            return '{"Error": "a room name must be specified"}'
+        if 'msg' in data:
+            msg = data['msg']
+        else:
+            return '{"Error": "message missing or not readable"}'
+        msgDict = '{{"event":"message", "type":"CHAT_INPUT", "text": "{}" }}'.format(msg)
+        msgDict = msgDict.replace('\n', '\\n')
+        return self.forwardCommand(msgDict, room)
+
 
 urls = ("/start", "Start",
         "/stop", "Stop",

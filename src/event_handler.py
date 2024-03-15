@@ -119,8 +119,13 @@ def event_handler(data, args):
             args['browsing'].screenShared = False
 
     if data['type'] == 'CHAT_INPUT':
-        print('Received chat message: '+ data['text'], flush=True)
-        args['browsing'].chatMsg.put(data['text'])
+        if 'text' in data:
+            print('Received chat message: '+ data['text'], flush=True)
+            args['browsing'].chatMsg.put(data['text'])
+        if 'action' in data:
+            print('Received chat action: '+ data['action'], flush=True)
+            if data['action'] == 'toggle':
+                args['browsing'].userInputs.put('c')
 
 argDict = {'browsing':browsingObj(dispWidth, dispHeight, inputs['room'])}
 

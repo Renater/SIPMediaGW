@@ -49,17 +49,34 @@ class BigBlueButton (Browsing):
     def chatHandler(self):
         try:
             message = self.chatMsg.get(True, 0.02)
-            if self.chatInput.is_enabled() and self.sendChatMsg.is_enabled():
+            if hasattr(self, 'chatInput') and hasattr(self, 'sendChatMsg'):
                 self.chatInput.send_keys(message)
                 self.sendChatMsg.click()
         except Exception as e:
             pass
+        try:
+            input = self.userInputs.get(True, 0.02)
+            if input == 'c':
+                self.toggleChat.click()
+                self.chatInput = WebDriverWait(self.driver, 1).until(EC.element_to_be_clickable((By.ID,"message-input")))
+                self.sendChatMsg = WebDriverWait(self.driver, 1).until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-test="sendMessageButton"]')))
+
+        except Exception as e:
+            pass
 
     def browse(self, driver):
+
+        # Accept Cookies
+        try:
+            tryClick(driver, "#okcookie", 5, 40)
+        except Exception as e:
+            print("Cookie acceptation failed", flush=True)
+
         # Enter name
         try:
             #element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#joinFormName')))
-            element = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#fullname")))
+            #element = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#fullname')))
+            element = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#id_name")))
             element.send_keys(self.name)
             element.submit()
         except Exception as e:
@@ -87,8 +104,9 @@ class BigBlueButton (Browsing):
 
         # Detect Chat
         try:
-            self.chatInput = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID,"message-input")))
-            self.sendChatMsg = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[aria-label="Send message"]')))
+            self.toggleChat = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,'#chat-toggle-button')))
+            self.chatInput = WebDriverWait(driver, 1).until(EC.element_to_be_clickable((By.ID,"message-input")))
+            self.sendChatMsg = WebDriverWait(driver, 1).until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-test="sendMessageButton"]')))
         except Exception as e:
             print("Chat detection failed", flush=True)
 
