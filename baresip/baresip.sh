@@ -1,5 +1,9 @@
 #!/bin/bash
 
+HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
+export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
+export STUN_SRV=${STUN_SRV:-$HOST_IP}
+
 check_register() {
     # 5 seconds timeout before exit
     timeOut=5
@@ -16,11 +20,6 @@ check_register() {
         exit 1
     fi
 }
-
-### Hosts/IP adresses ###
-export HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
-export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
-export STUN_SRV=${STUN_SRV:-$HOST_IP}
 
 ### Start default video capture ###
 echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
@@ -39,6 +38,9 @@ sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=$SIP_PROTOCOL>;regint
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
 if [[ "$STUN_SRV" ]] && [[ "$STUN_USER" ]]  ; then
     sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
+    if [ "$FORCE_PUBLIC_IP" == "true" ]; then
+        PUBLIC_IP=$STUN_SRV
+    fi
 fi
 if [[ "$MEDIAENC" ]] ; then
     sipAccount+=";mediaenc="$MEDIAENC

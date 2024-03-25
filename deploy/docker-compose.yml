@@ -13,8 +13,8 @@ services:
       options:
         tag: "kamailio"
     env_file:
-      - .env
       - .env_kamailio
+      - ./kamailio/config/.env_cred
       - .env_mysql
     depends_on:
       sip_db:
@@ -31,6 +31,8 @@ services:
     volumes:
       - kamailio_db:/var/lib/mysql
       - ./kamailio/db_healthcheck.sh:/usr/local/bin/db_healtcheck
+    networks:
+      - default
     env_file:
       - .env_mysql
     ports:
@@ -85,8 +87,8 @@ services:
       options:
         tag: "coturn"
     env_file:
-      - .env
       - .env_turn
+      - ./coturn/.env_cred
     entrypoint:
       - "/bin/sh"
       - "-c"

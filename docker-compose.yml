@@ -26,6 +26,6 @@ services:
         tag: "{{.ImageName}}/{{.Name}}"
     env_file:
       - .env
-      - deploy/.env_kamailio
-      - deploy/.env_turn
+      - ./deploy/kamailio/config/.env_cred
+      - ./deploy/coturn/.env_cred
     stop_grace_period: 20s
