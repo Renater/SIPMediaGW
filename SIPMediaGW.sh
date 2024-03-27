@@ -7,13 +7,15 @@ trap cleanup SIGINT SIGQUIT SIGTERM
 
 unset room prefix loop
 
-while getopts r:f:p:d:u:l opt; do
+while getopts d:g:l:p:r:u:w opt; do
     case $opt in
-            r) room=$OPTARG ;;
-            p) prefix=$OPTARG ;;
-            d) domain=$OPTARG ;;
-            u) rtmp_dst=$OPTARG ;;
+            d) dial_uri=$OPTARG ;;
+            g) gw_name=$OPTARG ;;
             l) loop=1 ;;
+            p) prefix=$OPTARG ;;
+            r) room=$OPTARG ;;
+            u) rtmp_dst=$OPTARG ;;
+            w) webrtc_domain=$OPTARG ;;
             *)
                 echo 'Error in command line parsing' >&2
                 exit 1
@@ -25,7 +27,6 @@ shift "$(( OPTIND - 1 ))"
 source <(grep = .env)
 
 lockFilePrefix="sipmediagw"
-gwNamePrefix="gw"
 
 lockGw() {
     maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
@@ -72,17 +73,17 @@ if [[ "$loop" ]]; then
 fi
 
 ### launch the gateway ###
-gwName="gw"$id
 RESTART=$restart \
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room \
-DOMAIN=$domain \
+GW_NAME=$gw_name \
+DOMAIN=$webrtc_domain \
 RTMP_DST=$rtmp_dst \
 PREFIX=$prefix \
 ID=$id \
-docker compose -p ${room:-$gwName} up -d --force-recreate --remove-orphans gw
+docker compose -p ${room:-"gw"$id} up -d --force-recreate --remove-orphans gw
 
-checkGwStatus $gwName
+checkGwStatus "gw"$id
 
 MAIN_APP=$(docker exec gw0 sh -c 'echo $MAIN_APP')
 
@@ -90,6 +91,12 @@ if [ "$MAIN_APP" == "baresip" ]; then
     sipUri=$(docker container exec gw$id  sh -c "cat /var/.baresip/accounts |
                                            sed 's/.*<//; s/;.*//'")
     echo "{'res':'ok', 'app': '$MAIN_APP', 'uri':'$sipUri'}"
+    if [[ "$dial_uri" ]]; then
+        gwIp=$(docker inspect -f \
+                '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+                "gw"$id)
+        echo '/dial '$dial_uri | netcat -q 1 $gwIp 5555
+    fi
 fi
 
 if [ "$MAIN_APP" == "streaming" ]; then
