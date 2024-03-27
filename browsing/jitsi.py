@@ -16,9 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import traceback
 
 
-jitsiFQDN = os.environ.get('WEBRTC_DOMAIN')
-if not jitsiFQDN:
-    jitsiFQDN = "rendez-vous.renater.fr"
+jitsiFQDN = os.environ.get('WEBRTC_DOMAIN').strip('"').strip("'")
 
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
 confMapperURL = os.environ.get('CONFMAPPER')
