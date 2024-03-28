@@ -38,13 +38,17 @@ class Start:
         else:
             return '{"Error": "a room name must be specified"}'
         if 'from' in data.keys():
-            gwSubProc.append( '-f%s' % data['from'])
+            gwSubProc.append('-f%s' % data['from'])
         if 'prefix' in data.keys():
-            gwSubProc.append( '-p%s' % data['prefix'])
+            gwSubProc.append('-p%s' % data['prefix'])
         if 'domain' in data.keys():
-            gwSubProc.append( '-d%s' % data['domain'])
+            gwSubProc.append('-w%s' % data['domain'])
         if 'rtmpDst' in data.keys():
-            gwSubProc.append( '-u%s' % data['rtmpDst'])
+            gwSubProc.append('-u%s' % data['rtmpDst'])
+        if 'dial' in data.keys():
+            gwSubProc.append('-d%s' % data['dial'])
+        if 'loop' in data.keys():
+            gwSubProc.append('-l%s')
         filePath = os.path.dirname(__file__)
         print(gwSubProc)
         res = subprocess.Popen(gwSubProc, cwd=filePath, stdout=subprocess.PIPE)
