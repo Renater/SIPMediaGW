@@ -7,7 +7,7 @@ trap cleanup SIGINT SIGQUIT SIGTERM
 
 unset room prefix loop
 
-while getopts d:g:l:p:r:u:w opt; do
+while getopts d:g:p:r:u:w:l opt; do
     case $opt in
             d) dial_uri=$OPTARG ;;
             g) gw_name=$OPTARG ;;
@@ -16,7 +16,8 @@ while getopts d:g:l:p:r:u:w opt; do
             r) room=$OPTARG ;;
             u) rtmp_dst=$OPTARG ;;
             w) webrtc_domain=$OPTARG ;;
-            *)
+            l) loop=1 ;;
+	    *)
                 echo 'Error in command line parsing' >&2
                 exit 1
     esac
