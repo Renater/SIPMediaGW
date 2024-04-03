@@ -45,6 +45,9 @@ fi
 if [[ "$MEDIAENC" ]] ; then
     sipAccount+=";mediaenc="$MEDIAENC
 fi
+if [[ "$OUTBOUND" ]] ; then
+    sipAccount+=';outbound="sip:'$OUTBOUND';transport=tcp"'
+fi
 sipAccount+=";answermode=manual"
 
 ### Configure and start Baresip ###
