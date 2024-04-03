@@ -10,12 +10,12 @@ check_register() {
     timer=0
     OK="OK "
     state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555  2>/dev/null | grep -c "$OK")"
-    while [[ ($state == "0") && ("$timer" < $timeOut) ]] ; do
+    while [[ ($state == "0") && ($timer -lt $timeOut) ]] ; do
         timer=$(($timer + 1))
         sleep 1
         state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555 2>/dev/null | grep -c "$OK")"
     done
-    if [ "$timer" = $timeOut ]; then
+    if [ $timer -eq $timeOut ]; then
         echo "Baresip failed to register" | logParse -p "Baresip"
         exit 1
     fi

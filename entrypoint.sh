@@ -28,12 +28,12 @@ check_Xvfb() {
     timeOut=5
     timer=0
     state=$(xdpyinfo -display ":$1" >/dev/null 2>&1; echo $?)
-    while [[ ($state == "1") && ("$timer" < $timeOut) ]]; do
+    while [[ ($state == "1") && ($timer -lt $timeOut) ]]; do
         timer=$(($timer + 1))
         sleep 1
         state=$(xdpyinfo -display ":$1" >/dev/null 2>&1; echo $?)
     done
-    if [ "$timer" = $timeOut ]; then
+    if [ $timer -eq $timeOut ]; then
         echo "Xvfb :$1 failed to launch" | logParse -p "Xvfb"
         exit 1
     fi
@@ -44,12 +44,12 @@ check_v4l2() {
     timeOut=5
     timer=0
     state=$(grep -q $1 $STATE; echo $?)
-    while [[ ($state == "1") && ("$timer" < $timeOut) ]]; do
+    while [[ ($state == "1") && ($timer -lt $timeOut) ]]; do
         timer=$(($timer + 1))
         sleep 1
         state=$(grep -q $1 $STATE; echo $?)
     done
-    if [ "$timer" = $timeOut ]; then
+    if [ $timer -eq $timeOut ]; then
         echo "V4l2 loopback failed to launch" | logParse -p "V4l2"
         exit 1
     fi
