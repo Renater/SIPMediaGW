@@ -7,17 +7,17 @@ trap cleanup SIGINT SIGQUIT SIGTERM
 
 unset room prefix loop
 
-while getopts d:g:p:r:u:w:l opt; do
+while getopts d:g:p:r:t:u:w:l opt; do
     case $opt in
             d) dial_uri=$OPTARG ;;
             g) gw_name=$OPTARG ;;
-            l) loop=1 ;;
             p) prefix=$OPTARG ;;
             r) room=$OPTARG ;;
+            t) timeout=$OPTARG ;;
             u) rtmp_dst=$OPTARG ;;
             w) webrtc_domain=$OPTARG ;;
             l) loop=1 ;;
-	    *)
+            *)
                 echo 'Error in command line parsing' >&2
                 exit 1
     esac
@@ -46,15 +46,15 @@ lockGw() {
 
 checkGwStatus() {
     # 5 seconds timeout before exit
-    timeOut=5
+    timeOut=$2
     timer=0
     state="$(docker container exec  $1  netstat -t | grep :4444 | grep -c ESTABLISHED)"
-    while [[ ($state != "2") && ("$timer" < $timeOut) ]] ; do
+    while [[ ($state != "2") && ($timer -lt $timeOut) ]] ; do
         timer=$(($timer + 1))
         state="$(docker container exec  $1  netstat -t | grep :4444 | grep -c ESTABLISHED)"
         sleep 1
     done
-    if [ "$timer" = $timeOut ]; then
+    if [ $timer -eq $timeOut ]; then
         echo "{'res':'error','type':'The gateway failed to launch'}"
         exit 1
     fi
@@ -84,13 +84,13 @@ PREFIX=$prefix \
 ID=$id \
 docker compose -p ${room:-"gw"$id} up -d --force-recreate --remove-orphans gw
 
-checkGwStatus "gw"$id
+checkGwStatus "gw"$id ${timeout:-5}
 
 MAIN_APP=$(docker exec gw0 sh -c 'echo $MAIN_APP')
 
 if [ "$MAIN_APP" == "baresip" ]; then
-    sipUri=$(docker container exec gw$id  sh -c "cat /var/.baresip/accounts |
-                                           sed 's/.*<//; s/;.*//'")
+    sipUri=$(docker exec gw$id sh -c 'cat /var/.baresip/accounts |
+                                      sed "s/.*<//; s/;.*//"')
     echo "{'res':'ok', 'app': '$MAIN_APP', 'uri':'$sipUri'}"
     if [[ "$dial_uri" ]]; then
         gwIp=$(docker inspect -f \
