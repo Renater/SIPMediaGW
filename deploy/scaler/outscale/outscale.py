@@ -13,7 +13,7 @@ class Outscale(ManageInstance):
         self.profile = profile
         self.version = '2016-09-15'
 
-    def configureInstance(self, configFile):
+    def configureInstance(self, configFile, initData):
         f = open(configFile)
         instConfig = json.load(f)
         f.close()
@@ -43,6 +43,13 @@ class Outscale(ManageInstance):
                 sipDomain = instConfig['user_data']['sip_domain']['pub']
                 pubIp = instConfig['user_data']['sip_domain']['pub']
 
+        outboundProxy = None
+        if 'outbound_proxy' in instConfig['user_data']:
+            if instConfig['user_data']['outbound_proxy']['priv']:
+                outboundProxy = instConfig['user_data']['outbound_proxy']['priv']
+            else:
+                outboundProxy = instConfig['user_data']['outbound_proxy']['pub']
+
         stunSrv = None
         if 'turn_server' in instConfig['user_data']:
             pubIp = instConfig['user_data']['turn_server']['pub']
@@ -51,7 +58,15 @@ class Outscale(ManageInstance):
             else:
                 stunSrv = instConfig['user_data']['turn_server']['pub']
         dockerImg = instConfig['user_data']['docker_image']
-        self.userData = "\n".join(instConfig['user_data']['script']).format(docker=dockerImg, sip=sipDomain, stun=stunSrv, pub=pubIp )
+        self.userData = "\n".join(instConfig['user_data']['script']['common']).format(docker=dockerImg,
+                                                                                      sip=sipDomain,
+                                                                                      outbound=outboundProxy,
+                                                                                      stun=stunSrv,
+                                                                                      pub=pubIp)
+        for act in initData:
+            self.userData += "\n"
+            self.userData += "\n".join(instConfig['user_data']['script'][act]).format(**initData[act])
+
 
     def enumerateInstances(self):
         gnFilt = {'Name':'group-id', 'Value' : [self.secuGrp['app']]}
@@ -122,8 +137,8 @@ class Outscale(ManageInstance):
             privIp = None
             if ip_address(ip).is_private:
                 privIp = ip
-                gnFilt = {'Name':'group-id', 'Value' : self.secuGrp['app']}
-                subNetFilt={'Name':'subnet-id', 'Value' : [self.subNet]}
+                gnFilt = {}#{'Name':'group-id', 'Value' : self.secuGrp['app']}
+                subNetFilt={}#{'Name':'subnet-id', 'Value' : [self.subNet]}
                 privateIpFilt={'Name':'private-ip-address',
                                'Value': [ip]}
                 self.fcu.make_request("DescribeInstances", Profile=self.profile, Version=self.version,
