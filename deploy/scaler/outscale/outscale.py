@@ -137,8 +137,8 @@ class Outscale(ManageInstance):
             privIp = None
             if ip_address(ip).is_private:
                 privIp = ip
-                gnFilt = {}#{'Name':'group-id', 'Value' : self.secuGrp['app']}
-                subNetFilt={}#{'Name':'subnet-id', 'Value' : [self.subNet]}
+                gnFilt = {'Name':'group-id', 'Value' : self.secuGrp['app']}
+                subNetFilt = {'Name':'subnet-id', 'Value' : [self.subNet]}
                 privateIpFilt={'Name':'private-ip-address',
                                'Value': [ip]}
                 self.fcu.make_request("DescribeInstances", Profile=self.profile, Version=self.version,
