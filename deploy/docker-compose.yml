@@ -73,8 +73,8 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "scaler &
-         python webService.py"
+      - "python webService.py &
+         /var/scale.sh"
 
   turn_server:
     image: coturn4sipmediagw
