@@ -5,10 +5,10 @@ import subprocess
 coturnRunCmd='turnserver --log-file=stdout --lt-cred-mech \
                          --min-port=40000 --max-port=49999'
 
-if os.getenv("STUN_SRV"):
-    coturnRunCmd+= ' --external-ip={}/{}'.format(os.getenv("STUN_SRV"),os.getenv("LOCAL_IP"))
+if os.getenv("PUBLIC_IP"):
+    coturnRunCmd+= ' --external-ip={}/{}'.format(os.getenv("PUBLIC_IP"),os.getenv("LOCAL_IP"))
 
-coturnRunCmd+=' --user={}:{}'.format(os.getenv("STUN_USER"), os.getenv("STUN_PASS"))
+coturnRunCmd+=' --user={}:{}'.format(os.getenv("TURN_USER"), os.getenv("TURN_PASS"))
 
 print("Coturn run command: {}".format(coturnRunCmd), flush=True)
 

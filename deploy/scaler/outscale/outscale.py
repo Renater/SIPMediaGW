@@ -50,18 +50,18 @@ class Outscale(ManageInstance):
             else:
                 outboundProxy = instConfig['user_data']['outbound_proxy']['pub']
 
-        stunSrv = None
+        turnSrv = None
         if 'turn_server' in instConfig['user_data']:
             pubIp = instConfig['user_data']['turn_server']['pub']
             if instConfig['user_data']['turn_server']['priv']:
-                stunSrv = instConfig['user_data']['turn_server']['priv']
+                turnSrv = instConfig['user_data']['turn_server']['priv']
             else:
-                stunSrv = instConfig['user_data']['turn_server']['pub']
+                turnSrv = instConfig['user_data']['turn_server']['pub']
         dockerImg = instConfig['user_data']['docker_image']
         self.userData = "\n".join(instConfig['user_data']['script']['common']).format(docker=dockerImg,
                                                                                       sip=sipDomain,
                                                                                       outbound=outboundProxy,
-                                                                                      stun=stunSrv,
+                                                                                      turn=turnSrv,
                                                                                       pub=pubIp)
         for act in initData:
             self.userData += "\n"

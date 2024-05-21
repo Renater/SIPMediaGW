@@ -2,7 +2,7 @@
 
 HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
 export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
-export STUN_SRV=${STUN_SRV:-$HOST_IP}
+export TURN_SRV=${TURN_SRV:-$HOST_IP}
 
 check_register() {
     # 5 seconds timeout before exit
@@ -36,10 +36,10 @@ if [[ "$SIP_NAME_PREFIX" ]]; then
 fi
 sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=$SIP_PROTOCOL>;regint=60;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
-if [[ "$STUN_SRV" ]] && [[ "$STUN_USER" ]]  ; then
-    sipAccount+="medianat=turn;stunserver=turn:"$STUN_SRV":3478;stunuser="$STUN_USER";stunpass="$STUN_PASS
-    if [ "$FORCE_PUBLIC_IP" == "true" ]; then
-        PUBLIC_IP=$STUN_SRV
+if [[ "$TURN_SRV" ]] && [[ "$TURN_USER" ]]  ; then
+    sipAccount+="medianat=turn;stunserver=turn:"$TURN_SRV":3478;stunuser="$TURN_USER";stunpass="$TURN_PASS
+    if [[ "$SDP_IN_IP4" ]]; then
+        PUBLIC_IP=$SDP_IN_IP4
     fi
 fi
 if [[ "$MEDIAENC" ]] ; then
