@@ -40,7 +40,7 @@ docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db
 echo "SIP_DOMAIN=$HOST_IP" >> /etc/environment
 echo "PUBLIC_IP=$HOST_IP" >> /etc/environment
 echo "LOCAL_IP=$HOST_IP" >> /etc/environment
-echo "STUN_SRV=$HOST_IP" >> /etc/environment
+echo "TURN_SRV=$HOST_IP" >> /etc/environment
 sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
 sudo systemctl enable coturn.service
 sudo systemctl enable kamailio.service
