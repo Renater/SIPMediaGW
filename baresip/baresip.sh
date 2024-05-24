@@ -3,6 +3,7 @@
 HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
 export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
 export TURN_SRV=${TURN_SRV:-$HOST_IP}
+export HEPLIFY_SRV=${HEPLIFY_SRV:-$HOST_IP:3478}
 
 check_register() {
     # 5 seconds timeout before exit
@@ -28,6 +29,12 @@ ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
        -draw_mouse 0 -threads 0 \
        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
        -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &
+
+### Start SIP capture (HEP) ###
+if [[ "$HEPLIFY_SRV" ]]; then
+    sudo sudo sngrep -H udp:$HEPLIFY_SRV -c -q --no-interface \
+         2> >( logParse -p "heplify" ) &
+fi
 
 ### set SIP account ###
 userNamePref=$GW_NAME_PREFIX"."$GW_ID

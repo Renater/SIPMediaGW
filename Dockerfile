@@ -1,7 +1,7 @@
 FROM debian:11.4-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    netcat wget unzip net-tools sudo psmisc procps \
+    netcat wget unzip net-tools sudo psmisc procps sngrep\
     v4l2loopback-utils libsdl2-2.0-0 libgl1-mesa-dri \
     fluxbox xdotool unclutter \
     dbus-user-session \
@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt autoremove -y \
     && apt autoclean -y
 
-RUN wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_110.0.5481.77-1_amd64.deb \
+RUN wget https://mirror.cs.uchicago.edu/google-chrome/pool/main/g/google-chrome-stable/google-chrome-stable_110.0.5481.77-1_amd64.deb \
     && apt install -y ./google-chrome-stable_110.0.5481.77-1_amd64.deb \
     && rm google-chrome-stable_110.0.5481.77-1_amd64.deb \
     && CHROME_STRING=$(google-chrome --version) \

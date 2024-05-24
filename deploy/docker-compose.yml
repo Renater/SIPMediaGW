@@ -1,5 +1,6 @@
 volumes:
   kamailio_db:
+  hep_db:
 
 services:
   sip_server:
@@ -26,26 +27,85 @@ services:
          cron && kamailioRun"
 
   sip_db:
-    container_name: kamailioDB
     image: mysql
+    container_name: kamailioDB
     volumes:
       - kamailio_db:/var/lib/mysql
       - ./kamailio/db_healthcheck.sh:/usr/local/bin/db_healtcheck
     networks:
       - default
-    env_file:
-      - .env_mysql
     ports:
       - "3306:3306"
     logging:
       driver: syslog
       options:
         tag: "kamailioDB"
+    env_file:
+      - .env_mysql
     healthcheck:
       test: "db_healtcheck"
       interval: 5s
       timeout: 5s
       retries: 5
+
+  hep_db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: postgres
+    restart: unless-stopped
+    volumes:
+      - hep_db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    logging:
+      driver: syslog
+      options:
+        tag: "postgres"
+    env_file:
+      - .env_postgres
+    healthcheck:
+      test: ["CMD-SHELL", "psql -h 'localhost' -U 'root' -c '\\l'"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  heplify_server:
+    image: sipcapture/heplify-server
+    container_name: heplify-server
+    restart: unless-stopped
+    ports:
+      - "9060:9060"
+      - "9060:9060/udp"
+      - "9061:9061/tcp"
+      - "9876:9876"
+    logging:
+      driver: syslog
+      options:
+        tag: "heplify-server"
+    env_file:
+      - .env_postgres
+      - .env_hep
+    command:
+      - './heplify-server'
+    depends_on:
+      hep_db:
+        condition: service_healthy
+
+  homer_webapp:
+    image: sipcapture/webapp
+    container_name: homer-webapp
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    logging:
+      driver: syslog
+      options:
+        tag: "heplify-server"
+    env_file:
+      - .env_postgres
+      - .env_homer
+    depends_on:
+      hep_db:
+        condition: service_healthy
 
   scaler:
     image: scaler4sipmediagw
@@ -92,5 +152,6 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "coturnRun"
+      - "heplify.sh &
+         coturnRun"
 

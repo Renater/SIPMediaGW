@@ -44,8 +44,9 @@ echo "TURN_SRV=$HOST_IP" >> /etc/environment
 sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
 sudo systemctl enable coturn.service
 sudo systemctl enable kamailio.service
+sudo systemctl enable homer.service
 sudo systemctl enable sipmediagw.service
 sudo systemctl start coturn.service
 sudo systemctl start kamailio.service
+sudo systemctl start homer.service
 sudo systemctl start sipmediagw.service
-

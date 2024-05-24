@@ -84,6 +84,10 @@ if os.getenv('TLS', 'False').lower() == 'true':
 if os.getenv('DEBUG_LEVEL') and os.getenv('DEBUG_LEVEL').isdigit():
         kamRunCmd+= ' -A \'DBGLEVEL={}\''.format(os.getenv("DEBUG_LEVEL"))
 
+if os.getenv('HEPLIFY_SRV'):
+        kamRunCmd+= ' -A WITH_HOMER'
+        kamRunCmd+= ' -A \'HEPURI="sip:{}:9060"\''.format(os.getenv("HEPLIFY_SRV"))
+
 if os.getenv('ANTIFLOOD', 'False').lower() == 'true':
     kamRunCmd+= ' -A WITH_ANTIFLOOD'
 
