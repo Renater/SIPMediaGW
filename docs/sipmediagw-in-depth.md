@@ -37,7 +37,13 @@ To overcome NAT traversal issues, a TURN server acts as a media traffic relay. C
 
 Before starting the gateway, a local (docker based) testing environment (Kamailio and Coturn) may be simply started as follows:
 
-	docker compose -f deploy/docker-compose.yml -p testing up -d --force-recreate
+	docker compose -f deploy/docker-compose.yml up -d --force-recreate sip_server turn_server
+ 
+### SIP capture and Homer
+
+For troubleshooting/monitoring purposes, real-time packet capture and visualization tools can be deployed as follows:
+
+	docker compose -f deploy/docker-compose.yml up -d --force-recreate heplify_server homer_webapp
 
 Usage
 --------
