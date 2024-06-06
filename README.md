@@ -35,7 +35,7 @@ To use Baresip for testing:
 ```bash
 ./test/baresip/SIPCall.sh -u sip:test@192.168.75.1 -d 0@192.168.75.13
 ```
-You can monitor the call by visiting [http://192.168.75.13](http://192.168.75.13) (with default [Homer credentials](https://github.com/sipcapture/homer/wiki/homer-seven-setup)).
+You can monitor the call by visiting [http://192.168.75.13](http://192.168.75.13) (with default [Homer credentials](https://github.com/sipcapture/homer/wiki/homer-seven-setup#homer-web-app)).
 
 
 ## Technical insights
