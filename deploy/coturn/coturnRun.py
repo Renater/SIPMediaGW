@@ -6,7 +6,9 @@ coturnRunCmd='turnserver --log-file=stdout --lt-cred-mech \
                          --min-port=40000 --max-port=49999'
 
 if os.getenv("PUBLIC_IP"):
-    coturnRunCmd+= ' --external-ip={}/{}'.format(os.getenv("PUBLIC_IP"),os.getenv("LOCAL_IP"))
+    coturnRunCmd+= ' --external-ip={}'.format(os.getenv("PUBLIC_IP"))
+    if  os.getenv("LOCAL_IP"):
+        coturnRunCmd+= '/{}'.format(os.getenv("LOCAL_IP"))
 
 coturnRunCmd+=' --user={}:{}'.format(os.getenv("TURN_USER"), os.getenv("TURN_PASS"))
 
