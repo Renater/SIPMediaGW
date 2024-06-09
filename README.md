@@ -42,7 +42,7 @@ You can monitor the call by visiting [http://192.168.75.13](http://192.168.75.13
 
 - [Architecture](docs/architecture.md)
 - [Call flow](docs/call_flow.md)
-- [BFCP: Screen sharing from meeting room to web users](docs/bfcp.md)
+- [BFCP: Screen sharing from meeting room to web users](docs/BFCP.png)
 
 ## Open Source Projects Used
 
