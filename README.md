@@ -40,9 +40,9 @@ You can monitor the call by visiting [http://192.168.75.13](http://192.168.75.13
 
 ## Technical insights
 
-- [Architecture](docs/architecture.md)
-- [Call flow](docs/call_flow.md)
-- [BFCP: Screen sharing from meeting room to web users](docs/BFCP.png)
+- Architecture: [SIPMediaGW in-depth](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw-in-depth.md)
+- Call flow: [SIPMediaGW call flow](https://github.com/Renater/SIPMediaGW/blob/main/docs/call_flow.md)
+- BFCP: [Screen sharing from meeting room to web users](https://github.com/Renater/SIPMediaGW/blob/main/docs/BFCP.png)
 
 ## Open Source Projects Used
 
