@@ -1,13 +1,13 @@
-FROM debian:11.4-slim
+FROM debian:12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    netcat wget unzip net-tools sudo psmisc procps sngrep\
+    netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep\
     v4l2loopback-utils libsdl2-2.0-0 libgl1-mesa-dri \
     fluxbox xdotool unclutter \
     dbus-user-session \
     pulseaudio socat alsa-utils libspandsp2 \
     ffmpeg xvfb \
-    python3 python3-pip python3-setuptools \
+    python3 python3-pip python3-setuptools python3.11-venv\
     libnss3 openssl \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && rm -r baresip re rem-2.10.0 \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout d5a808a7d21c5ba523e9afeb8154b4ddae778420 \
+    && cd /var/UIHelper && git checkout a18a3527fab43fcdc423e1cd8d16e87f0c59fc61 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
@@ -30,25 +30,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt autoremove -y \
     && apt autoclean -y
 
-RUN wget https://mirror.cs.uchicago.edu/google-chrome/pool/main/g/google-chrome-stable/google-chrome-stable_110.0.5481.77-1_amd64.deb \
-    && apt install -y ./google-chrome-stable_110.0.5481.77-1_amd64.deb \
-    && rm google-chrome-stable_110.0.5481.77-1_amd64.deb \
-    && CHROME_STRING=$(google-chrome --version) \
-    && CHROME_VERSION_STRING=$(echo "${CHROME_STRING}" | grep -oP "\d+\.\d+\.\d+\.\d+") \
-    && CHROME_MAJOR_VERSION=$(echo "${CHROME_VERSION_STRING%%.*}") \
-    && wget --no-verbose -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}" \
-    && CHROME_DRIVER_VERSION=$(cat "/tmp/LATEST_RELEASE") \
-    && wget https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
-    && unzip chromedriver_linux64.zip && sudo mv chromedriver /usr/bin/chromedriver && chmod +x /usr/bin/chromedriver \
-    && rm chromedriver_linux64.zip \
-    && apt autoremove -y \
-    && apt autoclean -y \
-    && rm -rf /var/lib/apt/lists/*
+RUN wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium_125.0.6422.141-1~deb12u1_amd64.deb \
+   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-sandbox_125.0.6422.141-1~deb12u1_amd64.deb \
+   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-driver_125.0.6422.141-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium-sandbox_125.0.6422.141-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium_125.0.6422.141-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium-driver_125.0.6422.141-1~deb12u1_amd64.deb \
+   && rm *.deb
 
-RUN pip3 install --upgrade pip
-RUN pip3 install selenium requests pynetstring
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip3 install --no-cache-dir --upgrade pip
+RUN pip3 install --no-cache-dir selenium requests pynetstring
 
-RUN pip3 install gTTS pydub \
+RUN pip3 install --no-cache-dir gTTS pydub \
     && python3 /var/UIHelper/scripts/generate_tts_files.py -i /var/UIHelper/src/assets/lang/ -o /var/UIHelper/src/assets/lang/files/ \
     && pip3 uninstall -y gTTS pydub
 
