@@ -11,6 +11,8 @@ import signal
 import argparse
 import json
 import threading
+import requests
+import re
 from netstring import Netstring
 
 # Default Baresip host
@@ -40,13 +42,41 @@ if inputs['addr']:
 if inputs['from']:
     print("From URI: "+inputs['from'], flush=True)
 
-# Get a browsing object from the browsing file name
-sys.path.append(os.path.dirname(inputs['browsing']))
-modName = os.path.splitext(os.path.basename(inputs['browsing']))[0]
-print("Browsing mod name: "+modName, flush=True)
-mod = importlib.import_module(modName)
-isClassMember = lambda member: inspect.isclass(member) and member.__module__ == modName
-browsingObj = inspect.getmembers(mod, isClassMember)[0][1]
+def importBrowsing(browseFile):
+    # Get a browsing object from the browsing file name
+    sys.path.append(os.path.dirname(browseFile))
+    modName = os.path.splitext(os.path.basename(browseFile))[0]
+    print("Browsing mod name: "+modName, flush=True)
+    mod = importlib.import_module(modName)
+    isClassMember = lambda member: inspect.isclass(member) and member.__module__ == modName
+    return inspect.getmembers(mod, isClassMember)[0][1]
+
+def getBrowsing(roomId, browseFileIn, w, h):
+    browseFile = browseFileIn
+    room = roomId
+    if roomId:
+        confMapperURL = os.environ.get('CONFMAPPER')
+        reqUrl = '{}?id={}'.format(confMapperURL, roomId)
+        print("ConfMapper request URL: "+reqUrl, flush=True)
+        r = requests.get(reqUrl, verify=False)
+        mapping = json.loads(r.content.decode('utf-8'))
+        if 'conference' in mapping:
+            roomName = mapping['conference'].split('@')[0]
+        else:
+            raise Exception(mapping['error'])
+
+        if re.search(r'^\d{12}\?p=[A-Fa-f0-9]+$',roomName):
+            #os.environ['WEBRTC_DOMAIN'] = None
+            browseFile = re.sub('/[A-Za-z]+\.py',
+                                '/teams.py',
+                                browseFileIn)
+            id = roomName.split('?p=')[0]
+            pwd = bytearray.fromhex(roomName.split('?p=')[1]).decode()
+            room = '{}?p={}'.format(id, pwd)
+
+    browsingObj = importBrowsing(browseFile)
+    return browsingObj(w, h, room)
+
 
 dispWidth = int(inputs['res'].split('x')[0])
 dispHeight = int(inputs['res'].split('x')[1])
@@ -80,6 +110,9 @@ def event_handler(data, args):
                 try:
                     roomLen = int(data['peerdisplayname'].split('-', 1)[0])
                     args['browsing'].room = data['peerdisplayname'].split('-',1)[1][0:roomLen]
+                    args['browsing'] = getBrowsing(data['peerdisplayname'].split('-',1)[1][0:roomLen],
+                                                   inputs['browsing'],
+                                                   args['browsing'].width, args['browsing'].height)
                     displayName = data['peerdisplayname'].split('-',1)[1][roomLen:]
                 except:
                     displayName = data['peerdisplayname']
@@ -127,7 +160,7 @@ def event_handler(data, args):
             if data['action'] == 'toggle':
                 args['browsing'].userInputs.put('c')
 
-argDict = {'browsing':browsingObj(dispWidth, dispHeight, inputs['room'])}
+argDict = {'browsing':getBrowsing(inputs['room'], inputs['browsing'], dispWidth, dispHeight)}
 
 if os.environ.get('MAIN_APP') == 'streaming':
     argDict['browsing'].name="streaming"

@@ -15,9 +15,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import TimeoutException
 
-teamsFQDN = os.environ.get('WEBRTC_DOMAIN')
-if not teamsFQDN:
-    teamsFQDN = "teams.live.com/meet"
+#teamsFQDN = os.environ.get('WEBRTC_DOMAIN')
+#if not teamsFQDN:
+#teamsFQDN = "teams.live.com/meet"
+teamsFQDN = "teams.microsoft.com/v2/?meetingjoin=true#/meet"
+#352026135202?p=ve7NYu
 
 def getIframe(driver, timeout):
     script = """try{{
@@ -64,10 +66,14 @@ class Teams (Browsing):
 
     def browse(self, driver):
 
-        # Enter name
+        # Disable background suppression (audio) and enter name
         try:
-            iframe = getIframe(self.driver, 60)
-            driver.switch_to.frame(iframe)
+            #iframe = getIframe(self.driver, 60)
+            #driver.switch_to.frame(iframe)
+            element = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-tid='toggle-devicesettings-computeraudio']")))
+            element.click()
+            element = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-tid='background-suppression-switch-div']")))
+            element.click()
             element = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-tid='prejoin-display-name-input']")))
             element.send_keys(self.name)
             element = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-tid='prejoin-join-button']")))
