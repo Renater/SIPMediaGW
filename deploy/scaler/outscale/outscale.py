@@ -84,12 +84,16 @@ class Outscale(ManageInstance):
         for it in items:
             if 'privateIpAddress' in it['instancesSet']['item']:
                 privIpAddress = it['instancesSet']['item']['privateIpAddress']
+            pubIpAddress = None
+            if 'ipAddress' in it['instancesSet']['item']:
+                pubIpAddress = it['instancesSet']['item']['ipAddress']
             if 'launchTime' in it['instancesSet']['item']:
                 launchTime = it['instancesSet']['item']['launchTime']
             if 'instanceType' in it['instancesSet']['item']:
                 instanceType = it['instancesSet']['item']['instanceType']
                 cpuCnt = instanceType.split('.c')[1].split('r')[0]
-            instDict.append({'start':launchTime, 'addr':privIpAddress, 'cpu_count':int(cpuCnt)})
+            instDict.append({'start':launchTime, 'addr':{'priv':privIpAddress, 'pub':pubIpAddress},
+                             'cpu_count':int(cpuCnt)})
         return instDict
 
     def runInstance(self, numCPU):

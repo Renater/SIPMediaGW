@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade setuptools
 RUN pip3 install requests httplib2 web.py mysql-connector-python \
-                 defusedxml fire xmltodict typing_extensions
+                 defusedxml fire xmltodict typing_extensions \
+                 python-dateutil
 
 COPY Scaler.py manageInstance.py scale.sh /var/
 COPY webService.py /var
