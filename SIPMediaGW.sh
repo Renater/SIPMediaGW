@@ -69,12 +69,17 @@ if [[ -z "$id" ]]; then
 fi
 
 restart="no"
-if [[ "$loop" ]]; then
+check_reg="yes"
+if [[ "$loop" && "$MAIN_APP" == "baresip" ]]; then
     restart="unless-stopped"
+	check_reg="no"
 fi
+
+docker container prune --force > /dev/null
 
 ### launch the gateway ###
 RESTART=$restart \
+CHECK_REG=$check_reg \
 HOST_TZ=$(cat /etc/timezone) \
 ROOM=$room \
 GW_NAME=$gw_name \
@@ -84,7 +89,7 @@ PREFIX=$prefix \
 ID=$id \
 docker compose -p ${room:-"gw"$id} up -d --force-recreate --remove-orphans gw
 
-checkGwStatus "gw"$id ${timeout:-5}
+checkGwStatus "gw"$id ${timeout:-10}
 
 MAIN_APP=$(docker exec gw0 sh -c 'echo $MAIN_APP')
 
@@ -102,7 +107,7 @@ fi
 
 if [ "$MAIN_APP" == "streaming" ]; then
     GW_PROXY=$(docker exec gw0 sh -c 'echo $GW_PROXY')
-    echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$RTMP_DST_URI'}"
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$rtmp_dst'}"
 fi
 
 # child process => lockFile locked until the container exits:

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ -z "$RTMP_DST_URI" ]]; then
+    echo "Must provide RTMP_DST_URI variable" | logParse -p "Streaming"
+    exit 1
+fi
+
 ### Start default video capture ###
 ffmpeg  -f lavfi -i "smptebars=s=640x360" -vf drawtext="fontsize=60:text='STREAMING':x=(w-text_w)/2:y=(h-text_h)/2:fontcolor=White" -pix_fmt yuv420p \
        -video_size 640x360 -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &

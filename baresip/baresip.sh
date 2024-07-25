@@ -81,5 +81,6 @@ DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESI
                      # "sed -u 's/\[..." => to remove already printed \r characters...
 
 ### Check Baresip registering ###
-check_register
-
+if [ "$CHECK_REGISTER" == "yes" ]; then
+    check_register
+fi

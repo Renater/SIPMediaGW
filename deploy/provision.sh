@@ -17,6 +17,7 @@ sudo apt-get update
 sudo apt-get install -y \
     ca-certificates \
     curl \
+    python3-webpy \
     gnupg \
     lsb-release
 sudo mkdir -p /etc/apt/keyrings
