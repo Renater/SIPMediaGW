@@ -30,12 +30,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt autoremove -y \
     && apt autoclean -y
 
-RUN wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium_125.0.6422.141-1~deb12u1_amd64.deb \
-   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-sandbox_125.0.6422.141-1~deb12u1_amd64.deb \
-   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-driver_125.0.6422.141-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium-sandbox_125.0.6422.141-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium_125.0.6422.141-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium-driver_125.0.6422.141-1~deb12u1_amd64.deb \
+RUN wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium_126.0.6478.182-1~deb12u1_amd64.deb \
+   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-sandbox_126.0.6478.182-1~deb12u1_amd64.deb \
+   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-driver_126.0.6478.182-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium-sandbox_126.0.6478.182-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium_126.0.6478.182-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium-driver_126.0.6478.182-1~deb12u1_amd64.deb \
    && rm *.deb
 
 RUN python3 -m venv /opt/venv
