@@ -2,6 +2,7 @@
 
 HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
 export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
+export OUTBOUND=${OUTBOUND:-$HOST_IP}
 export TURN_SRV=${TURN_SRV:-$HOST_IP}
 export HEPLIFY_SRV=${HEPLIFY_SRV:-$HOST_IP:3478}
 
