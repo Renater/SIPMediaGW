@@ -23,20 +23,21 @@ def authorize(func):
         else:
             web.header('WWW-Authenticate', 'Bearer error="invalid_token"')
             web.ctx.status = '401 Unauthorized'
-            return 'authorization error'
+            return json.dumps({'Error': 'authorization error'})
     return inner
 
 class Start:
     @authorize
     def GET(self, args=None):
         data = web.input()
-        resJson = []
+        resJson = {}
         web.header('Content-Type', 'application/json')
         gwSubProc = ['./SIPMediaGW.sh']
         if 'room' in data.keys() and data['room'] != '0':
-            gwSubProc.append( '-r%s' % data['room'])
+            gwSubProc.append('-r%s' % data['room'])
         else:
-            return '{"Error": "a room name must be specified"}'
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "a room name must be specified"})
         if 'from' in data.keys():
             gwSubProc.append('-f%s' % data['from'])
         if 'prefix' in data.keys():
@@ -56,20 +57,22 @@ class Start:
         resStr = res.stdout.read().decode('utf-8')
         resJson = json.loads(resStr.replace("'", '"'))
 
-        return json.dumps(resJson)
+        web.ctx.status = '200 OK'
+        return json.dumps({"status": "success", "details": resJson})
 
 class Stop:
     @authorize
     def GET(self, args=None):
         data = web.input()
-        resJson = []
+        resJson = {}
         web.header('Content-Type', 'application/json')
         gwSubProc = ['docker', 'compose']
         if 'room' in data.keys() and data['room'] != '0':
-            gwSubProc.append( '-p%s' % data['room'])
+            gwSubProc.append('-p%s' % data['room'])
         else:
-            return '{"Error": "a room name must be specified"}'
-        gwSubProc.append( 'down')
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "a room name must be specified"})
+        gwSubProc.append('down')
         filePath = os.path.dirname(__file__)
         print(gwSubProc)
         res = subprocess.Popen(gwSubProc, cwd=filePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -84,12 +87,13 @@ class Stop:
                 retStr += line
         resJson = {'res': retStr}
 
-        return json.dumps(resJson)
+        web.ctx.status = '200 OK'
+        return json.dumps({"status": "success", "details": resJson})
 
 class Chat:
     def forwardCommand(self, inDict, room):
         msgSubProc = ['docker', 'compose', 'run', '--rm', '--entrypoint', '/bin/sh', 'gw', '-c']
-        msgSubProc.append( "echo '{}' | netcat -q 1 {} 4444".format(inDict, room) )
+        msgSubProc.append("echo '{}' | netcat -q 1 {} 4444".format(inDict, room))
         filePath = os.path.dirname(__file__)
         print(msgSubProc)
         res = subprocess.Popen(msgSubProc, cwd=filePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -115,11 +119,13 @@ class Chat:
         if 'room' in data.keys():
             room = data['room']
         else:
-            return '{"Error": "a room name must be specified"}'
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "a room name must be specified"})
         if 'toggle' in data.keys():
             action = 'toggle'
         else:
-            return '{"Error": "toggle parameter is expected"}'
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "toggle parameter is expected"})
         actDict = '{{"event":"action", "type":"CHAT_INPUT", "action": "{}" }}'.format(action)
         actDict = actDict.replace('\n', '\\n')
         return self.forwardCommand(actDict, room)
@@ -130,11 +136,13 @@ class Chat:
         if 'room' in data:
             room = data['room']
         else:
-            return '{"Error": "a room name must be specified"}'
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "a room name must be specified"})
         if 'msg' in data:
             msg = data['msg']
         else:
-            return '{"Error": "message missing or not readable"}'
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "message missing or not readable"})
         msgDict = '{{"event":"message", "type":"CHAT_INPUT", "text": "{}" }}'.format(msg)
         msgDict = msgDict.replace('\n', '\\n')
         return self.forwardCommand(msgDict, room)
