@@ -6,6 +6,7 @@ import datetime as dt
 import inspect
 import re
 import web
+import json
 from Scaler import Scaler
 
 scalerConfigFile = os.environ.get("SCALER_CONFIG_FILE", "scaler.json")
@@ -18,7 +19,7 @@ def authorize(func):
         try:
             token = args[0].scaler.config['api_token']
         except:
-            return 'internal error'
+            return json.dumps({'Error': 'internal error'})
         auth = web.ctx.env.get('HTTP_AUTHORIZATION')
         authReq = False
         if auth is None:
@@ -32,7 +33,7 @@ def authorize(func):
         else:
             web.header('WWW-Authenticate', 'Bearer error="invalid_token"')
             web.ctx.status = '401 Unauthorized'
-            return 'authorization error'
+            return json.dumps({'Error': 'authorization error'})
     return inner
 
 class Scaling:
@@ -61,21 +62,25 @@ class Scaling:
             try:
                 self.scaler.cleanup()
                 if self.scaler.scale() == 0:
-                    return "The scaler iteration succeed"
+                    web.ctx.status = '200 OK'
+                    return json.dumps({"status": "success", "message": "The scaler iteration succeed"})
             except Exception as error:
                 return "The scaler iteration failed: {}".format(error)
         if 'up' in data.keys():
             roomId = '0'
+            initData = { 'callin' : {}}
             if 'roomId' in data.keys():
                 roomId= data['roomId']
             if 'dialOut' in data.keys():
-                initData = {'callout' : { 'dial' : data['dialOut'], 'room' : roomId},
-                            'callin' : {}}
+                initData['callout'] = { 'dial' : data['dialOut'], 'room' : roomId}
                 self.scaler.csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
                 try:
-                    return self.scaler.csp.createInstance('4', name='mediagw')
+                    instRes = self.scaler.csp.createInstance('4', name='mediagw')
+                    web.ctx.status = '200 OK'
+                    return json.dumps({"status": "success", "instance": instRes})
                 except Exception as error:
-                    return "Instance creation failed: {}".format(error)
+                    web.ctx.status = '500 Internal Server Error'
+                    return json.dumps({"Error": "Instance creation failed: {}".format(error)})
 
 
 
