@@ -11,7 +11,7 @@ SIPMediaGW is a Docker-based media gateway to be used on top of a web conferenci
 - Easy to deploy with Docker
 - Comprehensive SIP ecosystem
 - Content sharing via BFCP (Binary Floor Control Protocol)
-- Autoscaling logic for cloud deployement
+- Autoscaling logic for cloud deployment
 - Streaming capabilities via RTMP (Real-Time Messaging Protocol) 
 
 ## Installation
