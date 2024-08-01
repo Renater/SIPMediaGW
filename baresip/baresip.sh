@@ -1,8 +1,8 @@
 #!/bin/bash
 
 HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
-export SIP_DOMAIN=${SIP_DOMAIN:-$HOST_IP}
-export OUTBOUND=${OUTBOUND:-$HOST_IP}
+export SIP_REGISTRAR=${SIP_REGISTRAR:-$HOST_IP}
+export SIP_PROXY=${SIP_PROXY:-$HOST_IP}
 export TURN_SRV=${TURN_SRV:-$HOST_IP}
 export HEPLIFY_SRV=${HEPLIFY_SRV:-$HOST_IP:3478}
 
@@ -42,7 +42,7 @@ userNamePref=$GW_NAME_PREFIX"."$GW_ID
 if [[ "$SIP_NAME_PREFIX" ]]; then
     userNamePref=${SIP_NAME_PREFIX}"."${userNamePref}
 fi
-sipAccount="<sip:"${userNamePref}"@"$SIP_DOMAIN";transport=$SIP_PROTOCOL>;regint=60;"
+sipAccount="<sip:"${userNamePref}"@"$SIP_REGISTRAR";transport=$SIP_PROTOCOL>;regint=60;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
 if [[ "$TURN_SRV" ]] && [[ "$TURN_USER" ]]  ; then
     sipAccount+="medianat=turn;stunserver=turn:"$TURN_SRV":3478;stunuser="$TURN_USER";stunpass="$TURN_PASS
@@ -53,8 +53,8 @@ fi
 if [[ "$MEDIAENC" ]] ; then
     sipAccount+=";mediaenc="$MEDIAENC
 fi
-if [[ "$OUTBOUND" ]] ; then
-    sipAccount+=';outbound="sip:'$OUTBOUND';transport=tcp"'
+if [[ "$SIP_PROXY" ]] ; then
+    sipAccount+=';outbound="sip:'$SIP_PROXY';transport=tcp"'
 fi
 sipAccount+=";answermode=manual"
 
