@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     build-essential cmake git \
     && git clone --branch bfcp https://github.com/Renater/re.git \
-    && cd re && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && cd re && git checkout 9e879ba5a9e8944dfac2514311016866d133d334 \
+    && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && wget https://github.com/baresip/rem/archive/v2.10.0.tar.gz && tar -xzf v2.10.0.tar.gz && rm v2.10.0.tar.gz \
     && cd rem-2.10.0 && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && git clone --branch bfcp https://github.com/Renater/baresip.git \
@@ -30,12 +31,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt autoremove -y \
     && apt autoclean -y
 
-RUN wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium_126.0.6478.182-1~deb12u1_amd64.deb \
-   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-sandbox_126.0.6478.182-1~deb12u1_amd64.deb \
-   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-driver_126.0.6478.182-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium-sandbox_126.0.6478.182-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium_126.0.6478.182-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium-driver_126.0.6478.182-1~deb12u1_amd64.deb \
+RUN wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium_128.0.6613.113-1~deb12u1_amd64.deb \
+   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-sandbox_128.0.6613.113-1~deb12u1_amd64.deb \
+   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-driver_128.0.6613.113-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium-sandbox_128.0.6613.113-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium_128.0.6613.113-1~deb12u1_amd64.deb \
+   && apt install -y ./chromium-driver_128.0.6613.113-1~deb12u1_amd64.deb \
    && rm *.deb
 
 RUN python3 -m venv /opt/venv
