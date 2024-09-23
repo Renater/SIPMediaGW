@@ -1,80 +1,61 @@
 # SIPMediaGW
+SIPMediaGW is a Docker-based set of open-source components that allow traditional video conferencing rooms to join Jitsi or Big Blue Button web conferences using SIP and RTP protocols.
 
-SIPMediaGW is a Docker-based media gateway to be used on top of a web conferencing service (Jitsi Meet, BigBlueButton, etc.), to provide SIP (audio+video) access.
+<img src="docs/architecture.png">
 
-<img src="docs/architecture.png" width=80% height=80%>
+The room connector is compatible with all video devices supporting the SIP protocol. It has been tested with major devices from Polycom, Cisco, Huawei, and Aver.
+
+SIPMediaGW relies on several open-source projects such as [Coturn](https://github.com/coturn/coturn), [Kamailio](https://github.com/kamailio/kamailio), [Homer](https://github.com/sipcapture/homer), [Baresip](https://github.com/baresip/baresip), [FFmpeg](https://github.com/FFmpeg/FFmpeg), [Pulseaudio](https://github.com/pulseaudio/pulseaudio), [ALSA](https://github.com/alsa-project/alsa-lib), [Video4Linux](https://linuxtv.org/), [Fluxbox](http://www.fluxbox.org/).
+
 
 ## Features
 
-- Provides SIP access to web conferences (inbound and outbound calls)
-- Supports audio and video
-- Easy to deploy with Docker
-- Comprehensive SIP ecosystem
+- Audio and video support
+- Encrypted SIP and RTP traffic
+- Autoscaling logic for Cloud deployment
 - Content sharing via BFCP (Binary Floor Control Protocol)
-- Autoscaling logic for cloud deployment
-- Streaming capabilities via RTMP (Real-Time Messaging Protocol) 
+- Streaming capabilities via RTMP (Real-Time Messaging Protocol)
 
-## Quick Installation and Testing
+## Usage
+### Installation
+- [Development environment](./docs/install_dev_env.md) 
+- [Production environment](./docs/install_prod_env.md)
 
-The Room Connector can be easily deployed thanks to the "All-in-one" Vagrant file (requires Vagrant and VirtualBox).  
-To do so, simply run:
+After installation, ensure that your firewall permits the following network traffic :
 
-```bash
-VAGRANT_VAGRANTFILE=test/Vagrantfile vagrant up
+<img src="./docs/firewall_rules.jpeg" alt="Firewall rules">
+
+### Testing 
+Once the services are up and running, you can join a conference from your preferred SIP softphone.
+Refer to the [testing section](./docs/testing.md) for more information.
+
+### Troubleshooting 
+The logs are handled by syslog of the host machine:
 ```
-### Making a Call (inbound calls)
-Once the virtual machine is up, you can join a conference from your preferred SIP softphone:
-
-* **Direct access** \
-    sip:your_conference_name@192.168.75.13
-* **IVR access** \
-    sip:0@192.168.75.13
-  
-To use Baresip for testing:
-```bash
-./test/baresip/SIPCall.sh -u sip:test@192.168.75.1 -d 0@192.168.75.13
-```
-### Receiving a Call (outbound calls)
-By default, the gateway is configured to receive calls from SIP endpoints. \
-Providing the SIP URI of the endpoint, it is also possible to make the call coming from the gateway to the SIP endpoint. \
-To do so, first stop the default systemd service:
-```bash
-sudo systemctl stop sipmediagw.service
-```
-And then, from /sipmediagw directory, launch the gateway as follows:
-```bash
-sudo ./SIPMediaGW.sh -r your_conference_name -d test@192.168.75.1
+tail -f /var/log/syslog | grep mediagw
 ```
 
-You can monitor calls by visiting [http://192.168.75.13](http://192.168.75.13) (with default [Homer credentials](https://github.com/sipcapture/homer/wiki/homer-seven-setup#homer-web-app)).
+Inspect Kamailio database:
+```
+docker run -it --network=host --entrypoint mysql mysql -h 127.0.0.1 -u root -pdbrootpw kamailio -e "SELECT username, locked, to_stop FROM location"
+```
 
+For troubleshooting/monitoring purposes, real-time packet capture and visualization tools can be deployed as follows:
 
-## Technical insights
+```
+docker compose -f deploy/docker-compose.yml up -d --force-recreate heplify_server homer_webapp
+```
 
-- Architecture: [SIPMediaGW in-depth](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw-in-depth.md)
-- Call flow: [SIPMediaGW call flow](https://github.com/Renater/SIPMediaGW/blob/main/docs/call_flow.md)
-- BFCP: [Screen sharing from meeting room to web users](https://github.com/Renater/SIPMediaGW/blob/main/docs/BFCP.png)
-- APIs: [SIPMediaGW API](https://github.com/Renater/SIPMediaGW/blob/main/docs/sipmediagw_API.md), [Scaler API](https://github.com/Renater/SIPMediaGW/blob/main/docs/scaler_API.md)
+## Contributing
 
-## Open Source Projects Used
+Contributions are always welcome.
 
-SIPMediaGW relies on several open-source projects:
-
-- [Coturn](https://github.com/coturn/coturn)
-- [Kamailio](https://github.com/kamailio/kamailio)
-- [Homer](https://github.com/sipcapture/homer)
-- [Baresip](https://github.com/baresip/baresip)
-- [FFmpeg](https://github.com/FFmpeg/FFmpeg)
-- [Pulseaudio](https://github.com/pulseaudio/pulseaudio)
-- [ALSA](https://github.com/alsa-project/alsa-lib)
-- [Video4Linux](https://linuxtv.org/)
-- [Fluxbox](http://www.fluxbox.org/)
-  <!---- [Chromium](https://github.com/chromium/chromium)--->
-
-## FAQ
-
-For frequently asked questions, please refer to our [FAQ](docs/FAQ.md).
+1. Fork the repository and create your branch from `main`.
+2. Open an issue to discuss proposed changes.
+3. Make your changes and ensure tests pass.
+4. Submit a pull request with a clear description of your changes.
 
 ## License
 
-This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache 2.0 License. 
+See the [LICENSE](LICENSE) file for details.
