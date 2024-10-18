@@ -20,6 +20,7 @@ jitsiFQDN = os.environ.get('WEBRTC_DOMAIN').strip('"').strip("'")
 
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
 confMapperURL = os.environ.get('CONFMAPPER')
+authToken = os.environ.get('AUTH_TOKEN')
 IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
 
 if not UIHelperPath:
@@ -93,6 +94,8 @@ class Jitsi (Browsing):
             self.url = '{}?display_name={}'.format(UIHelperPath, self.name)
             if self.room:
                 self.url = '{}&room_id={}'.format(self.url, self.room)
+            if authToken:
+                self.url = '{}&room_token={}'.format(self.url, authToken)
             self.chromeOptions.add_argument('--disable-web-security')
             self.UIKeyMap = UIKeyMap
         else:

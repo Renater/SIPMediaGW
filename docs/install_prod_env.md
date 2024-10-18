@@ -117,6 +117,12 @@ On the SIPMediaGW Server, run the following tasks:
    DOMAIN=WEBRTC_DOMAIN
    ```
 
+   If you want to use the SIPMediaGW with with a JWT protected Jitsi-Meet platform add this variable :
+   ```
+   AUTH_TOKEN=A_VALID_JWT_TOKEN
+   ```
+   The provided token must have a reasonable expiration time an be valid for all rooms.   
+
 5. Copy the service file in systemd folder
    ```
    sudo cp /sipmediagw/deploy/services/sipmediagw.service /etc/systemd/system
