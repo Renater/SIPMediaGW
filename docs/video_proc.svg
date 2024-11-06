@@ -1,0 +1,35 @@
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg" style="background-color: white; font-family: 'Comic Sans MS', cursive;">
+  <!-- SIPMediaGW Gateway -->
+  <rect x="50" y="20" width="500" height="360" fill="#f0f4f8" stroke="#333333" stroke-width="2" rx="10" ry="10"/>
+  <text x="300" y="40" font-size="18" text-anchor="middle" fill="#333333" style="font-weight: bold;">SIPMediaGW</text>
+
+  <!-- Baresip Stack -->
+  <rect x="75" y="70" width="200" height="140" fill="#d1e8e4" stroke="#333333" stroke-width="1.5" rx="10" ry="10"/>
+  <text x="175" y="90" font-size="16" text-anchor="middle" fill="#333333">Baresip Stack</text>
+
+  <!-- Baresip Encoder 720p30 -->
+  <rect x="95" y="110" width="160" height="40" fill="#a8d5d0" stroke="#333333" stroke-width="1.5" rx="8" ry="8"/>
+  <text x="175" y="135" font-size="14" text-anchor="middle" fill="#333333">Video Encoder 720p30</text>
+
+  <!-- Baresip Decoder 720p30 -->
+  <rect x="95" y="160" width="160" height="40" fill="#a8d5d0" stroke="#333333" stroke-width="1.5" rx="8" ry="8"/>
+  <text x="175" y="185" font-size="14" text-anchor="middle" fill="#333333">Video Decoder 720p30</text>
+
+  <!-- Chromium Stack -->
+  <rect x="325" y="70" width="200" height="240" fill="#fde2e2" stroke="#333333" stroke-width="1.5" rx="10" ry="10"/>
+  <text x="425" y="90" font-size="16" text-anchor="middle" fill="#333333">Chromium Stack</text>
+
+  <!-- Chromium Encoder 720p30 -->
+  <rect x="345" y="110" width="160" height="40" fill="#f8bfbf" stroke="#333333" stroke-width="1.5" rx="8" ry="8"/>
+  <text x="425" y="135" font-size="14" text-anchor="middle" fill="#333333">Video Encoder 720p30</text>
+
+  <!-- Chromium Decoder 720p30 -->
+  <rect x="345" y="160" width="160" height="40" fill="#f8bfbf" stroke="#333333" stroke-width="1.5" rx="8" ry="8"/>
+  <text x="425" y="185" font-size="14" text-anchor="middle" fill="#333333">Video Decoder 720p30</text>
+
+  <!-- Chromium N SD Decoders -->
+  <rect x="345" y="210" width="160" height="80" fill="#f8bfbf" stroke="#333333" stroke-width="1.5" rx="8" ry="8"/>
+  <text x="425" y="235" font-size="14" text-anchor="middle" fill="#333333">N Video Decoders SD</text>
+  <text x="425" y="255" font-size="12" text-anchor="middle" fill="#333333">(variable number)</text>
+
+</svg>
