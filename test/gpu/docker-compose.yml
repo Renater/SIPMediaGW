@@ -1,0 +1,39 @@
+networks:
+  default:
+    name: gw_net
+    external: true
+
+services:
+  gw:
+    image: "${DOCKER_IMAGE}"
+    restart: ${RESTART}
+    container_name: gw${ID}
+    networks:
+      default:
+        aliases:
+          - "${ROOM}"
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./logs:/var/logs
+      - ./config_default:/var/baresip/config_default
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    devices:
+      - /dev/${ID:+video}${ID:-null}:/dev/video0
+      - /dev/snd:/dev/snd
+    shm_size: '2gb'
+    logging:
+      driver: syslog
+      options:
+        tag: "{{.ImageName}}/{{.Name}}"
+    env_file:
+      - .env
+      - ./deploy/kamailio/config/.env_cred
+      - ./deploy/coturn/.env_cred
+    stop_grace_period: 20s

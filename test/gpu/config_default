@@ -1,0 +1,283 @@
+#
+# baresip configuration
+#
+
+#------------------------------------------------------------------------------
+
+# Core
+#poll_method		epoll		# poll, select, epoll ..
+
+# SIP
+#sip_listen		0.0.0.0:5060
+#sip_certificate	cert.pem
+sip_cafile		/etc/ssl/certs/ca-certificates.crt
+sip_capath		/etc/ssl/certs
+#sip_transports		udp,tcp,tls,ws,wss
+#sip_trans_def		udp
+#sip_verify_server	yes
+#sip_verify_client	no
+#sip_tls_resumption	all
+sip_tos			160
+#filter_registrar	udp,tcp,tls,ws,wss
+sip_media_control       yes
+
+# Call
+#call_local_timeout	120
+call_max_calls		1
+call_hold_other_calls	no
+
+# Audio
+#audio_path		/usr/local/share/baresip
+audio_player		pulse,VirtMicSink0
+audio_source		pulse,VirtMicSrc1
+audio_alert		pulse,VirtMicSink0
+#ausrc_srate		48000
+#auplay_srate		48000
+ausrc_channels		1
+auplay_channels		1
+audio_txmode		thread		# poll, thread
+audio_level			no
+ausrc_format		s16		# s16, float, ..
+auplay_format		s16		# s16, float, ..
+auenc_format		s16		# s16, float, ..
+audec_format		s16		# s16, float, ..
+audio_buffer		20-160		# ms
+audio_buffer_mode	adaptive	# fixed, adaptive
+audio_silence		-35.0		# in [dB]
+audio_telev_pt		101		# payload type for telephone-event
+
+# Video
+video_source		x11grab,:0
+video_display		x11
+video_size		1280x720
+video_bitrate		2000000
+video_sendrate		20000000
+video_burst_bit		4000000
+video_fps		30.00
+video_fullscreen	yes
+videnc_format		yuv420p
+
+# Slides
+slides_source		fakevideo,nil
+slides_display		x11
+slides_size		2x2
+slides_bitrate		1000
+slides_fps		1.00
+slides_fullscreen	no
+slidenc_format		yuv420p
+
+# AVT - Audio/Video Transport
+rtp_tos			184
+rtp_video_tos		136
+#rtp_ports		10000-20000
+rtp_bandwidth		1024-2048
+audio_jitter_buffer_type	adaptive		# off, fixed, adaptive
+audio_jitter_buffer_delay	1-100		# (min. frames)-(max. packets)
+video_jitter_buffer_type	adaptive		# off, fixed, adaptive
+video_jitter_buffer_delay	1-100		# (min. frames)-(max. packets)
+rtp_stats		yes
+rtp_timeout		60
+rtp_rxmode		thread
+
+# Network
+#dns_server		1.1.1.1:53
+#dns_server		1.0.0.1:53
+#dns_fallback		8.8.8.8:53
+#net_interface		eth0
+#public_address		127.0.0.1
+
+# BFCP
+bfcp_proto		udp
+bfcp_floorctrl	c-s
+
+#------------------------------------------------------------------------------
+# Modules
+
+module_path		/usr/local/lib/baresip/modules
+
+# UI Modules
+#module		stdio.so
+module		cons.so
+#module		evdev.so
+#module		httpd.so
+
+# Audio codec Modules (in order)
+#module			opus.so
+#module			amr.so
+#module			g7221.so
+module			g722.so
+#module			g726.so
+module			g711.so
+#module			gsm.so
+#module			l16.so
+#module			mpa.so
+#module			codec2.so
+#module			ilbc.so
+#module			isac.so
+
+# Audio filter Modules (in encoding order)
+#module			auconv.so
+#module			auresamp.so
+#module			vumeter.so
+#module			sndfile.so
+#module			speex_pp.so
+#module			plc.so
+#module			webrtc_aec.so
+
+# Audio driver Modules
+module			alsa.so
+module			pulse.so
+#module			jack.so
+#module			portaudio.so
+#module			aubridge.so
+#module			aufile.so
+#module			ausine.so
+
+# Video codec Modules (in order)
+module			avcodec.so
+#module			vp8.so
+#module			vp9.so
+
+# Video filter Modules (in encoding order)
+#module			selfview.so
+#module			snapshot.so
+#module			swscale.so
+#module			vidinfo.so
+#module			avfilter.so
+
+# Video source modules
+module			v4l2.so
+module			x11grab.so
+#module			cairo.so
+#module			vidbridge.so
+
+# Video display modules
+#module			directfb.so
+module			x11.so
+#module			sdl.so
+module			fakevideo.so
+
+# Audio/Video source modules
+module			avformat.so
+#module			gst.so
+
+# Compatibility modules
+#module			ebuacip.so
+module			uuid.so
+
+# Media NAT modules
+module			stun.so
+module			turn.so
+module			ice.so
+#module			natpmp.so
+#module			pcp.so
+
+# Media encryption modules
+module			srtp.so
+#module			dtls_srtp.so
+#module			zrtp.so
+
+
+#------------------------------------------------------------------------------
+# Application Modules
+
+module_app		account.so
+module_app		contact.so
+module_app		debug_cmd.so
+#module_app		echo.so
+#module_app		gtk.so
+module_app		menu.so
+#module_app		mwi.so
+#module_app		presence.so
+#module_app		syslog.so
+#module_app		mqtt.so
+module			ctrl_tcp.so
+#module_app		vidloop.so
+
+
+#------------------------------------------------------------------------------
+# Module parameters
+
+# DTLS SRTP parameters
+#dtls_srtp_use_ec	prime256v1
+
+
+# UI Modules parameters
+cons_listen		0.0.0.0:5555 # cons - Console UI UDP/TCP sockets
+
+http_listen		0.0.0.0:8000 # httpd - HTTP Server
+
+ctrl_tcp_listen		0.0.0.0:4444 # ctrl_tcp - TCP interface JSON
+
+evdev_device		/dev/input/event0
+
+vumeter_stderr		yes
+
+
+# Selfview
+video_selfview		window # {window,pip}
+#selfview_size		64x64
+
+# SRTP
+preferred_crypto_suite	AEAD_AES_128_GCM
+
+# ZRTP
+#zrtp_hash		no  # Disable SDP zrtp-hash (not recommended)
+
+# Menu
+#menu_bell		yes
+#redial_attempts	0 # Num or <inf>
+#redial_delay		5 # Delay in seconds
+#ringback_disabled	no
+#statmode_default	off
+
+# avcodec
+avcodec_h264enc		h264_nvenc
+avcodec_h264dec		h264_cuvid
+#avcodec_h265enc	libx265
+#avcodec_h265dec	hevc
+#avcodec_hwaccel	vaapi
+#avcodec_profile_level_id 42002a
+#avcodec_keyint		10
+avcodec_fmtp_append	";max-mbps=108000;max-fs=3600;max-br=2048"
+
+# x11
+x11_main	:100,1280x720+0+0
+x11_slides	:99,1280x720+1280+0
+
+# ctrl_dbus
+#ctrl_dbus_use	system		# system, session
+
+# mqtt
+#mqtt_broker_host	sollentuna.example.com
+#mqtt_broker_port	1883
+#mqtt_broker_cafile	/path/to/broker-ca.crt	# set this to enforce TLS
+#mqtt_broker_clientid	baresip01	# has to be unique
+#mqtt_broker_user	user
+#mqtt_broker_password	pass
+#mqtt_basetopic		baresip/01
+
+# sndfile
+#snd_path		/tmp
+
+# EBU ACIP
+#ebuacip_jb_type	fixed	# auto,fixed
+
+# HTTP request module
+#httpreq_ca		trusted1.pem
+#httpreq_ca		trusted2.pem
+#httpreq_dns		1.1.1.1
+#httpreq_dns		8.8.8.8
+#httpreq_hostname	myserver
+#httpreq_cert		cert.pem
+#httpreq_key		key.pem
+
+# avformat
+#avformat_hwaccel	vaapi
+#avformat_inputformat	mjpeg
+#avformat_decoder	mjpeg
+#avformat_pass_through	yes
+#avformat_rtsp_transport	udp
+
+# ice
+#ice_policy		all	# all, relay (candidates)
