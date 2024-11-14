@@ -1,42 +1,47 @@
 FROM debian:12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep\
+    netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep \
     v4l2loopback-utils libsdl2-2.0-0 libgl1-mesa-dri \
     fluxbox xdotool unclutter \
     dbus-user-session \
     pulseaudio socat alsa-utils libspandsp2 \
     ffmpeg xvfb \
-    python3 python3-pip python3-setuptools python3.11-venv\
+    python3 python3-pip python3-setuptools python3.11-venv \
     libnss3 openssl \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
+    libvpx-dev libopus-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
     build-essential cmake git \
-    && git clone --branch bfcp https://github.com/Renater/re.git \
-    && cd re && git checkout 9e879ba5a9e8944dfac2514311016866d133d334 \
+    && git clone --branch v3.15.0_patch https://github.com/Renater/re.git && cd re \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
-    && wget https://github.com/baresip/rem/archive/v2.10.0.tar.gz && tar -xzf v2.10.0.tar.gz && rm v2.10.0.tar.gz \
-    && cd rem-2.10.0 && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
-    && git clone --branch bfcp https://github.com/Renater/baresip.git \
-    && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
-    && rm -r baresip re rem-2.10.0 \
+    && git clone --branch v3.15.0_patch https://github.com/Renater/baresip.git && cd baresip \
+    && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
+    && rm -r baresip re \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
     && cd /var/UIHelper && git checkout a18a3527fab43fcdc423e1cd8d16e87f0c59fc61 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
+    libvpx-dev libopus-dev \
     libssl-dev \
     build-essential cmake git \
     && apt autoremove -y \
     && apt autoclean -y
 
-RUN wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium_128.0.6613.113-1~deb12u1_amd64.deb \
-   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-sandbox_128.0.6613.113-1~deb12u1_amd64.deb \
-   && wget http://security.debian.org/debian-security/pool/updates/main/c/chromium/chromium-driver_128.0.6613.113-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium-sandbox_128.0.6613.113-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium_128.0.6613.113-1~deb12u1_amd64.deb \
-   && apt install -y ./chromium-driver_128.0.6613.113-1~deb12u1_amd64.deb \
+#v=$(curl 'https://packages.debian.org/bookworm/amd64/chromium/download' | grep -o "chromium_.*.deb" | head -1 | cut -d "_" -f 2)
+#https://snapshot.debian.org/archive/debian/20240930T202925Z/pool/main/c/chromium/
+RUN v='130.0.6723.69-1~deb12u1' \
+   && url='http://security.debian.org/debian-security/pool/updates/main/c/chromium/' \
+   && wget $url'chromium_'$v'_amd64.deb' \
+   && wget $url'chromium-common_'$v'_amd64.deb' \
+   && wget $url'chromium-sandbox_'$v'_amd64.deb' \
+   && wget $url'chromium-driver_'$v'_amd64.deb' \
+   && apt install -y './chromium-sandbox_'$v'_amd64.deb' \
+   && apt install -y './chromium-common_'$v'_amd64.deb' \
+   && apt install -y './chromium_'$v'_amd64.deb' \
+   && apt install -y './chromium-driver_'$v'_amd64.deb' \
    && rm *.deb
 
 RUN python3 -m venv /opt/venv
