@@ -19,4 +19,4 @@ The Room Connector can be easily deployed thanks to the "All-in-one" Vagrant fil
 
 5. To test the application, please see the [Testing section](./testing.md).
 
-6. To monitor and invesitgate SIP call flows, open a web browser (default url: http://192.168.75.13,  username/password: admin/sipcature)
+6. To monitor and invesitgate SIP call flows, open a web browser (default url: http://192.168.75.13,  username/password: admin/sipcapture)
