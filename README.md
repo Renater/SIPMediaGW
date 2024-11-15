@@ -11,6 +11,7 @@ SIPMediaGW relies on several open-source projects such as [Coturn](https://githu
 ## Features
 
 - Audio and video support
+- Inbound and outbound calls
 - Encrypted SIP and RTP traffic
 - Autoscaling logic for Cloud deployment
 - Content sharing via BFCP (Binary Floor Control Protocol)
