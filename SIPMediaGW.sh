@@ -68,7 +68,7 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 
-restart="yes"
+restart="no"
 check_reg="no"
 if [[ "$MAIN_APP" == "baresip" ]]; then
 	if [[ "$loop" ]]; then
