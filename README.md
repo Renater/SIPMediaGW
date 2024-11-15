@@ -46,6 +46,7 @@ For troubleshooting/monitoring purposes, real-time packet capture and visualizat
 ```
 docker compose -f deploy/docker-compose.yml up -d --force-recreate heplify_server homer_webapp
 ```
+**_NOTE:_**  Homer and SIP Capture tools are automatically deployed with the [Development environment](./docs/install_dev_env.md).
 
 ## Contributing
 
