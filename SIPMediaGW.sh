@@ -68,11 +68,14 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 
-restart="no"
-check_reg="yes"
-if [[ "$loop" && "$MAIN_APP" == "baresip" ]]; then
-    restart="unless-stopped"
-	check_reg="no"
+restart="yes"
+check_reg="no"
+if [[ "$MAIN_APP" == "baresip" ]]; then
+	if [[ "$loop" ]]; then
+		restart="unless-stopped"
+	else
+		check_reg="yes"
+	fi
 fi
 
 docker container prune --force > /dev/null
