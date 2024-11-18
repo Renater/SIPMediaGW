@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
+    libvpx-dev libopus-dev \
     build-essential cmake git \
     && git clone --branch v3.15.0_patch https://github.com/Renater/re.git && cd re \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libavcodec-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
     build-essential wget cmake git \
+    libvpx-dev libopus-dev \
     && apt autoremove -y \
     && apt autoclean -y 
 

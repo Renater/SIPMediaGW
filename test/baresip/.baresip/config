@@ -39,7 +39,7 @@ audio_telev_pt		101		# payload type for telephone-event
 
 # Video
 #video_source		avformat,lavfi,testsrc2=duration=500:size=1280x720:rate=25
-video_source		x11grab,:0
+video_source		fakevideo,nil
 video_display		x11,nil
 video_size		1280x720
 video_bitrate		2000000
@@ -74,8 +74,8 @@ rtp_rxmode		thread
 module_path		/usr/local/lib/baresip/modules
 
 # UI Modules
-#module		stdio.so
-module		cons.so
+module		stdio.so
+#module		cons.so
 #module		evdev.so
 #module		httpd.so
 
@@ -106,7 +106,7 @@ module			pulse.so
 #module			portaudio.so
 #module			aubridge.so
 #module			aufile.so
-#module			ausine.so
+module			ausine.so
 
 # Video codec Modules (in order)
 module			avcodec.so
@@ -170,8 +170,8 @@ module_app		menu.so
 #module_app		httpreq.so
 #module_app		multicast.so
 module_app		netroam.so
-module_app		vidloop.so
-module_app		auloop.so
+#module_app		vidloop.so
+#module_app		auloop.so
 
 
 #------------------------------------------------------------------------------
