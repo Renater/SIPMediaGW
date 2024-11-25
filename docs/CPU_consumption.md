@@ -24,17 +24,22 @@ The tables below summarize the CPU consumption for **baresip** and **Chromium** 
 
 #### Baresip CPU Consumption
 
-| Configuration             | Average CPU Consumption |
-|---------------------------|-------------------------|
-| Software Encoding/Decoding| 65% / 15%               |
-| GPU Encoding/Decoding     | 35% / 10%               |
+| Configuration                    | Average CPU Consumption |
+|----------------------------------|-------------------------|
+| Audio Proc. + SIP logic          | 15%                     |
+| Software Video Encoding/Decoding | 90% / 25%               |
+| GPU Video Encoding/Decoding      | 40% / 10%               |
+
+=> Baresip CPU Consumption 
+ - without GPU: 130%
+ - with GPU: 65%
 
 
 #### Chromium CPU Consumption by Number of Participants
 
 | Number of Participants    | Average CPU Consumption         |
 |---------------------------|---------------------------------|
-| 2 participants            | 80 %                            |
-| 5 participants            | 110 %                           |
-| 10 participants           | 160 %                           |
-| 50 participants           | 200 %                           |
+| 2 participants            | 100 %                            |
+| 5 participants            | 130 %                           |
+| 10 participants           | 180 %                           |
+| 50 participants           | 220 %                           |
