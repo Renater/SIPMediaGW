@@ -77,7 +77,7 @@ video_jitter_buffer_type	adaptive		# off, fixed, adaptive
 video_jitter_buffer_delay	1-100		# (min. frames)-(max. packets)
 rtp_stats		yes
 rtp_timeout		60
-rtp_rxmode		thread
+#rtp_rxmode		thread
 
 # Network
 #dns_server		1.1.1.1:53
