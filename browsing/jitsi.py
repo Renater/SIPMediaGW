@@ -17,6 +17,8 @@ import traceback
 
 
 jitsiFQDN = os.environ.get('WEBRTC_DOMAIN').strip('"').strip("'")
+if not jitsiFQDN:
+    jitsiFQDN = "meet.jit.si"
 
 UIHelperPath = os.environ.get('UI_HELPER_PATH')
 confMapperURL = os.environ.get('CONFMAPPER')
