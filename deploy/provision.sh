@@ -41,6 +41,8 @@ docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipme
 docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db
 #
 echo "HOST_IP=$HOST_IP" >> /etc/environment
+BROWSE_FILE=$BROWSING${BROWSING:+.py}
+echo "BROWSE_FILE=$BROWSE_FILE" >> /etc/environment
 sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
 sudo systemctl enable coturn.service
 sudo systemctl enable kamailio.service
