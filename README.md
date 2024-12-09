@@ -1,5 +1,5 @@
 # SIPMediaGW
-SIPMediaGW is a Docker-based set of open-source components that allow traditional video conferencing rooms to join Jitsi or Big Blue Button web conferences using SIP and RTP protocols.
+SIPMediaGW is a Docker-based set of open-source components that allow traditional video conferencing rooms to join Jitsi, Big Blue Button or LiveKit web conferences using SIP and RTP protocols.
 
 <img src="docs/architecture.png">
 
