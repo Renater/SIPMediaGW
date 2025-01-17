@@ -1,7 +1,5 @@
 [Unit]
-Description=coturn_docker
-After=docker.service
-Requires=docker.service
+Description=coturn
 After=network-online.target
 Requires=network-online.target
 
@@ -12,8 +10,8 @@ TimeoutStartSec=0
 RestartSec=1
 WorkingDirectory=/sipmediagw/deploy
 EnvironmentFile=/etc/environment
-ExecStart=/usr/bin/docker compose -p coturn up --force-recreate turn_server
-ExecStop=/usr/bin/docker compose -p coturn down
+ExecStart=echo ''
+ExecStop=echo ''
 
 [Install]
 WantedBy=multi-user.target

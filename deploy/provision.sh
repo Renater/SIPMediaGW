@@ -22,33 +22,49 @@ sudo apt-get install -y \
     python3-webpy \
     gnupg \
     lsb-release
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-#
-sudo usermod -aG docker vagrant
-sudo service docker restart
-if [ ! "$(docker network ls | grep gw_net)" ]; then
-  sudo docker network create --subnet=192.168.92.0/29 gw_net
-fi
-#
-docker build -f /sipmediagw/deploy/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/deploy/kamailio
-docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/deploy/coturn
-docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db
-#
+
 echo "HOST_IP=$HOST_IP" >> /etc/environment
+echo "IS_DOCKER=$IS_DOCKER" >> /etc/environment
 BROWSE_FILE=$BROWSING${BROWSING:+.py}
 echo "BROWSE_FILE=$BROWSE_FILE" >> /etc/environment
 sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
-sudo systemctl enable coturn.service
-sudo systemctl enable kamailio.service
-sudo systemctl enable homer.service
-sudo systemctl enable sipmediagw.service
-sudo systemctl start coturn.service
-sudo systemctl start kamailio.service
-sudo systemctl start homer.service
-sudo systemctl start sipmediagw.service
+
+if [[ "$IS_DOCKER" == "true" ]]; then
+	sudo mkdir -p /etc/apt/keyrings
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+	echo \
+	  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+	  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+	sudo apt-get update
+	sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+	#
+	sudo usermod -aG docker vagrant
+	sudo service docker restart
+	if [ ! "$(docker network ls | grep gw_net)" ]; then
+	  sudo docker network create --subnet=192.168.92.0/29 gw_net
+	fi
+	#
+	docker build -f /sipmediagw/deploy/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/deploy/kamailio
+	docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/deploy/coturn
+	docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db*
+
+	sudo systemctl enable coturnDocker.service
+	sudo systemctl enable kamailioDocker.service
+	sudo systemctl enable homerDocker.service
+	sudo systemctl enable sipmediagwDocker.service
+	sudo systemctl start coturnDocker.service
+	sudo systemctl start kamailioDocker.service
+	sudo systemctl start homerDocker.service
+	sudo systemctl start sipmediagwDocker.service
+else
+	source /sipmediagw/deploy/install.sh
+	sudo systemctl enable coturn.service
+	sudo systemctl enable kamailio.service
+	sudo systemctl enable homer.service
+	sudo systemctl enable sipmediagw.service
+	sudo systemctl start coturn.service
+	sudo systemctl start kamailio.service
+	sudo systemctl start homer.service
+	sudo systemctl start sipmediagw.service
+fi
+

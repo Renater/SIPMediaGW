@@ -1,7 +1,5 @@
 [Unit]
-Description=kamailio_docker
-After=docker.service
-Requires=docker.service
+Description=kamailio
 After=network-online.target
 Requires=network-online.target
 
@@ -12,8 +10,8 @@ TimeoutStartSec=0
 RestartSec=1
 WorkingDirectory=/sipmediagw/deploy
 EnvironmentFile=/etc/environment
-ExecStart=/usr/bin/docker compose -p kamailio up --force-recreate sip_server sip_db
-ExecStop=/usr/bin/docker compose -p kamailio down
+ExecStart=echo ''
+ExecStop=echo ''
 
 [Install]
 WantedBy=multi-user.target

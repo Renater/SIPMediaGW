@@ -1,5 +1,7 @@
 [Unit]
-Description=homer
+Description=coturn_docker
+After=docker.service
+Requires=docker.service
 After=network-online.target
 Requires=network-online.target
 
@@ -10,8 +12,8 @@ TimeoutStartSec=0
 RestartSec=1
 WorkingDirectory=/sipmediagw/deploy
 EnvironmentFile=/etc/environment
-ExecStart=echo ''
-ExecStop=echo ''
+ExecStart=/usr/bin/docker compose -p homer up --force-recreate heplify_server homer_webapp
+ExecStop=/usr/bin/docker compose -p homer down
 
 [Install]
 WantedBy=multi-user.target

@@ -1,5 +1,7 @@
 [Unit]
 Description=sipmediagw
+After=docker.service
+Requires=docker.service
 After=network-online.target
 Requires=network-online.target
 
@@ -11,18 +13,18 @@ ExecStart=/bin/bash -c \
            /bin/python3 ./HTTPLauncher.py & \n\
            modprobe -r v4l2loopback && modprobe  v4l2loopback \n\
            pref=$(hostname -I | awk "{print $1}" | cut -d" "  -f1) \n\
-           #until [ "$?" == 1 ]; do \n\
-              #cd /sipmediagw && \
-              #/bin/bash ./SIPMediaGW.sh -p $pref -l \n\
-          #done \n\
+           until [ "$?" == 1 ]; do \n\
+              cd /sipmediagw && \
+              /bin/bash ./SIPMediaGW.sh -p $pref -l \n\
+          done \n\
           exit 0'
 
 ExecStop=/bin/bash -c \
          'i=0 \n\
-         #until [ "$?" == 1 ]; do \n\
-             #docker container stop gw$i && \
-             #i=$(($i + 1)) \n\
-         #done \n\
+         until [ "$?" == 1 ]; do \n\
+             docker container stop gw$i && \
+             i=$(($i + 1)) \n\
+         done \n\
          exit 0'
 
 [Install]

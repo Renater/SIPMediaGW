@@ -2,8 +2,14 @@ HOST = "192.168.75.13"
 
 Vagrant.configure(2) do |config|
 
-  config.vm.box = "ubuntu/jammy64"
-  config.vm.box_version = "20240117.0.0"
+  if ENV['IS_DOCKER'] == 'true'
+	config.vm.box = "ubuntu/jammy64"
+	config.vm.box_version = "20240117.0.0"
+  else
+    config.vm.box = "debian/bookworm64"
+    config.vm.box_version = "12.20241217.1"
+  end
+
   config.vm.box_check_update = false
 
   config.vm.network "private_network", ip: HOST
@@ -21,7 +27,8 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", type: "shell" do |s|
     s.env = {
 	  "HOST_IP" => HOST,
-	  "BROWSING" => ENV["BROWSING"]
+	  "BROWSING" => ENV["BROWSING"],
+	  "IS_DOCKER" => ENV["IS_DOCKER"]
 	}
 	s.inline = "/sipmediagw/deploy/provision.sh"
   end
