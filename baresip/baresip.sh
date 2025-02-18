@@ -1,11 +1,5 @@
 #!/bin/bash
 
-HOST_IP=$(netstat -nr | awk '/^0\.0\.0\.0/{print $2}')
-export SIP_REGISTRAR=${SIP_REGISTRAR:-$HOST_IP}
-export SIP_PROXY=${SIP_PROXY:-$HOST_IP}
-export TURN_SRV=${TURN_SRV:-$HOST_IP}
-export HEPLIFY_SRV=${HEPLIFY_SRV:-$HOST_IP:3478}
-
 check_register() {
     # 5 seconds timeout before exit
     timeOut=5
@@ -53,7 +47,7 @@ fi
 if [[ "$MEDIAENC" ]] ; then
     sipAccount+=";mediaenc="$MEDIAENC
 fi
-if [[ "$SIP_PROXY" ]] ; then
+if [[ "$SIP_PROXY" != "" ]] ; then
     sipAccount+=';outbound="sip:'$SIP_PROXY';transport=tcp"'
 fi
 sipAccount+=";answermode=manual"

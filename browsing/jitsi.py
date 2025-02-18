@@ -26,9 +26,14 @@ authToken = os.environ.get('AUTH_TOKEN')
 IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
 
 if not UIHelperPath:
-    UIHelperPath = "file:///var/UIHelper/src/index.html"
-    UIHelperConfig =  json.load(open('/var/UIHelper/src/config_sample.json'))
+    UIHelperDir = "/var/UIHelper"
+    UIHelperPath = "file://{}/src/index.html".format(UIHelperDir)
+    UIHelperConfig =  json.load(open('{}/src/config_sample.json'.format(UIHelperDir)))
     UIHelperConfig['domain'] = 'https://{}'.format(jitsiFQDN)
+    if (os.environ.get('MAIN_APP') == "recording" or
+        os.environ.get('MAIN_APP') == "streaming"):
+        UIHelperConfig["disable_self_view"] = True
+        UIHelperConfig["disable_menu"] = True
 
     if confMapperURL:
         UIHelperConfig['ivr']['confmapper_url'] = confMapperURL.rsplit('/',1)[0]+'/'
@@ -92,6 +97,7 @@ class Jitsi (Browsing):
             return
 
     def setUrl(self):
+
         if UIHelperPath:
             self.url = '{}?display_name={}'.format(UIHelperPath, self.name)
             if self.room:

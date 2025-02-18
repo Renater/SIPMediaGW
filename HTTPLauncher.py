@@ -50,6 +50,11 @@ class Start:
             gwSubProc.append('-d%s' % data['dial'])
         if 'loop' in data.keys():
             gwSubProc.append('-l%s')
+        if 'apiKey' in data.keys():
+            gwSubProc.append('-a%s' % data['apiKey'])
+        if 'userMail' in data.keys():
+            gwSubProc.append('-m%s' % data['userMail'])
+
         filePath = os.path.dirname(__file__)
         print(gwSubProc)
         res = subprocess.Popen(gwSubProc, cwd=filePath, stdout=subprocess.PIPE)
@@ -72,7 +77,7 @@ class Stop:
         else:
             web.ctx.status = '400 Bad Request'
             return json.dumps({"Error": "a room name must be specified"})
-        gwSubProc.append('down')
+        gwSubProc.append('stop')
         filePath = os.path.dirname(__file__)
         print(gwSubProc)
         res = subprocess.Popen(gwSubProc, cwd=filePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

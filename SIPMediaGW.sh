@@ -7,7 +7,7 @@ trap cleanup SIGINT SIGQUIT SIGTERM
 
 unset room prefix loop
 
-while getopts d:g:p:r:t:u:w:l opt; do
+while getopts d:g:p:r:t:u:a:m:w:l opt; do
     case $opt in
             d) dial_uri=$OPTARG ;;
             g) gw_name=$OPTARG ;;
@@ -15,6 +15,8 @@ while getopts d:g:p:r:t:u:w:l opt; do
             r) room=$OPTARG ;;
             t) timeout=$OPTARG ;;
             u) rtmp_dst=$OPTARG ;;
+            a) api_key=$OPTARG ;;
+            m) user_mail=$OPTARG ;;
             w) webrtc_domain=$OPTARG ;;
             l) loop=1 ;;
             *)
@@ -84,10 +86,13 @@ docker container prune --force > /dev/null
 RESTART=$restart \
 CHECK_REG=$check_reg \
 HOST_TZ=$(cat /etc/timezone) \
+HOST_IP=$(hostname -I | awk '{print $1}') \
 ROOM=$room \
 GW_NAME=$gw_name \
 DOMAIN=$webrtc_domain \
 RTMP_DST=$rtmp_dst \
+API_KEY=$api_key \
+USER_MAIL=$user_mail \
 PREFIX=$prefix \
 ID=$id \
 docker compose -p ${room:-"gw"$id} up -d --force-recreate --remove-orphans gw
@@ -113,10 +118,16 @@ if [ "$MAIN_APP" == "streaming" ]; then
     echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$rtmp_dst'}"
 fi
 
+if [ "$MAIN_APP" == "recording" ]; then
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$push_file_url'}"
+fi
+
 # child process => lockFile locked until the container exits:
 ID=$id \
 LOOP=$loop \
 nohup bash -c 'state="$(docker wait gw$ID)"
                while [[ "$state" == "0" && $LOOP ]] ; do
                    state="$(docker wait gw$ID)"
-               done' &> /dev/null &
+               done
+               docker restart gw$ID
+               docker container rm gw$ID' &> /dev/null &

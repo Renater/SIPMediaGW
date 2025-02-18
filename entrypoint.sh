@@ -18,7 +18,7 @@ cleanup() {
     ### Quit Baresip ###
     echo "/quit" | netcat -q 1 127.0.0.1 5555
     sleep 10
-    killall ffmpeg Xvfb
+    killall -SIGINT ffmpeg Xvfb
 }
 
 trap 'cleanup | logParse -p "Trap"' SIGINT SIGQUIT SIGTERM EXIT
@@ -54,6 +54,22 @@ check_v4l2() {
         exit 1
     fi
 }
+
+if [ "$MAIN_APP" == "recording" ]; then
+    for file in /var/recording/*.mp4; do
+        if [ -f "$file" ]; then
+            echo "Send and remove file: "$file | logParse -p "FileSender"
+            exec python3 /var/recording/filesender.py \
+                 -u $USER_MAIL -r $USER_MAIL -a $API_KEY $file \
+                 1> >( logParse -p "FileSender") \
+                 2> >( logParse -p "FileSender")
+            rm "$file"
+        fi
+    done
+    if [ -f "$file" ]; then
+        exit 1
+    fi
+fi
 
 ### Configure audio devices ###
 if [ "$WITH_ALSA" == "true" ]; then

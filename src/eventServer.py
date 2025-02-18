@@ -31,7 +31,7 @@ def handler(clientsocket, clientaddr):
     while True:
         data = clientsocket.recv(1024)
         push(data.decode("utf-8").rstrip(), clientsocket)
-        if data.decode("utf-8") == "bye\n" or not data:
+        if "quit" in data.decode("utf-8") or not data:
             break
 
     clients.remove(clientsocket)
