@@ -97,7 +97,7 @@ class Outscale(ManageInstance):
         return instDict
 
     def runInstance(self, numCPU):
-            bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 10, "VolumeType": "gp2"},
+            bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 20, "VolumeType": "gp2"},
                     "DeviceName": "/dev/sda1" }]
             self.fcu.make_request("RunInstances", 
                             Profile=self.profile, Version=self.version,

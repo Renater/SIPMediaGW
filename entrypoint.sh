@@ -55,8 +55,36 @@ check_v4l2() {
     fi
 }
 
-if [ "$MAIN_APP" == "recording" ]; then
-    for file in /var/recording/*.mp4; do
+if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; then
+
+    firstRec=$(ls -rt /var/recording/*.mp4 | head -n 1)
+    DATE_TIME=$(stat --format='%W' "$firstRec" | awk '{print strftime("%Y_%m_%d_%H:%M", $1)}')
+
+    FINAL_VIDEO="RendezVous_$DATE_TIME.mp4"
+
+    if [ "$WITH_TRANSCRIPT" == "true" ]; then
+        python3 /var/transcript/transcript.py 1> >( logParse -p "Transcript") \
+                                              2> >( logParse -p "Transcript")
+
+        FINAL_TRANSCRIPT="RendezVous_$DATE_TIME.srt"
+        mv /var/recording/final_transcript.srt "/var/recording/"$FINAL_TRANSCRIPT
+    fi
+
+    # Generate mp4 file list for concatenation
+    > "/var/recording/segments_list.txt"
+    for f in /var/recording/segment_*.mp4; do
+        echo "file '$f'" >> "/var/recording/segments_list.txt"
+    done
+
+    # Concatenate segments into one file
+    ffmpeg -y -f concat -safe 0 -i "/var/recording/segments_list.txt" -c copy "/var/recording/$FINAL_VIDEO"
+    rm /var/recording/segment*.mp4
+    rm /var/recording/segment*.txt
+
+    echo "Processing finished : video merged in $FINAL_VIDEO and transcriptions in $FINAL_TRANSCRIPT"
+
+    for file in /var/recording/RendezVous_"${DATE_TIME}"*; do
+        [[ -e "$file" ]] || continue  # Ignore if no corresponding files
         if [ -f "$file" ]; then
             echo "Send and remove file: "$file | logParse -p "FileSender"
             exec python3 /var/recording/filesender.py \
@@ -66,7 +94,7 @@ if [ "$MAIN_APP" == "recording" ]; then
             rm "$file"
         fi
     done
-    if [ -f "$file" ]; then
+    if [ "$file" ]; then
         exit 1
     fi
 fi
@@ -123,6 +151,11 @@ DISPLAY=:$SERVERNUM0 unclutter -idle 1 &
 ### Main application ###
 source $MAIN_APP"/"$MAIN_APP".sh"
 
+if [ "$WITH_TRANSCRIPT" == "true" ]; then
+    exec python3 transcript/transcript.py 1> >( logParse -p "Transcript") \
+                                          2> >( logParse -p "Transcript") &
+fi
+
 ### Check if video device is ready ###
 check_v4l2 "/dev/video0"
 
@@ -135,5 +168,4 @@ DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -b `pwd`"/browsing/"$BROW
                                                        -s $VID_SIZE_APP \
                                                        $roomParam $fromUri \
                           1> >( logParse -p "Event" -i $HISTORY )
-
 

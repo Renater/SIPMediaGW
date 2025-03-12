@@ -5,23 +5,22 @@ cleanup() {
 }
 trap cleanup SIGINT SIGQUIT SIGTERM
 
-unset room prefix loop
-
-while getopts d:g:p:r:t:u:a:m:w:l opt; do
-    case $opt in
-            d) dial_uri=$OPTARG ;;
-            g) gw_name=$OPTARG ;;
-            p) prefix=$OPTARG ;;
-            r) room=$OPTARG ;;
-            t) timeout=$OPTARG ;;
-            u) rtmp_dst=$OPTARG ;;
-            a) api_key=$OPTARG ;;
-            m) user_mail=$OPTARG ;;
-            w) webrtc_domain=$OPTARG ;;
-            l) loop=1 ;;
-            *)
-                echo 'Error in command line parsing' >&2
-                exit 1
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -d|--dial-uri) dial_uri="$2"; shift 2;;
+        -g|--gw-name) gw_name="$2"; shift 2;;
+        -p|--prefix) prefix="$2"; shift 2;;
+        -r|--room) room="$2"; shift 2;;
+        -t|--timeout) timeout="$2"; shift 2;;
+        -u|--rtmp-dst) rtmp_dst="$2"; shift 2;;
+        -a|--api-key) api_key="$2"; shift 2;;
+        -m|--user-mail) user_mail="$2"; shift 2;;
+        -s|--with-transcript) with_transcript="true"; shift;;
+        -w|--webrtc-domain) webrtc_domain="$2"; shift 2;;
+        -l|--loop) loop=1; shift;;
+        *)
+            echo 'Error in command line parsing' >&2
+            exit 1
     esac
 done
 
@@ -81,6 +80,12 @@ if [[ "$MAIN_APP" == "baresip" ]]; then
 fi
 
 docker container prune --force > /dev/null
+SERVICES="gw"
+COMPOSE_FILE="-f docker-compose.yml"
+if [[ "$with_transcript" ]]; then
+	COMPOSE_FILE="$COMPOSE_FILE -f transcript/docker-compose.yml"
+	SERVICES="$SERVICES transcript"
+fi
 
 ### launch the gateway ###
 RESTART=$restart \
@@ -93,9 +98,12 @@ DOMAIN=$webrtc_domain \
 RTMP_DST=$rtmp_dst \
 API_KEY=$api_key \
 USER_MAIL=$user_mail \
+WITH_TRANSCRIPT=$with_transcript \
 PREFIX=$prefix \
 ID=$id \
-docker compose -p ${room:-"gw"$id} up -d --force-recreate --remove-orphans gw
+docker compose -p ${room:-"gw"$id}  $COMPOSE_FILE up \
+               -d --force-recreate --remove-orphans \
+               $SERVICES
 
 checkGwStatus "gw"$id ${timeout:-10}
 

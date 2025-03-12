@@ -1,0 +1,20 @@
+services:
+
+  gw:
+    depends_on:
+      transcript:
+        condition: service_started
+
+  transcript:
+    image: transcript4sipmediagw
+    build:
+      context: ./transcript
+    container_name: transcript
+    networks:
+      - default
+    ports:
+      - "8080:8080"
+    logging:
+      driver: syslog
+      options:
+        tag: "{{.ImageName}}/{{.Name}}"
