@@ -9,7 +9,7 @@ fi
 HISTORY="/var/logs/gw"$GW_ID"_history"
 STATE="/var/logs/gw"$GW_ID"_state"
 touch $STATE
-echo "start_gw:$(date +'%b %d %H:%M:%S')"> $HISTORY
+echo "start_gw:$(TZ=$TZ date +'%b %d %H:%M:%S')"> $HISTORY
 
 cleanup() {
     echo "Cleaning up..."
@@ -58,7 +58,7 @@ check_v4l2() {
 if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; then
 
     firstRec=$(ls -rt /var/recording/*.mp4 | head -n 1)
-    DATE_TIME=$(stat --format='%W' "$firstRec" | awk '{print strftime("%Y_%m_%d_%H:%M", $1)}')
+    DATE_TIME=$(TZ=$TZ stat --format='%W' "$firstRec" | awk '{print strftime("%Y_%m_%d_%H%M", $1)}')
 
     FINAL_VIDEO="RendezVous_$DATE_TIME.mp4"
 
