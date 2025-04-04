@@ -91,7 +91,7 @@ fi
 RESTART=$restart \
 CHECK_REG=$check_reg \
 HOST_TZ=$(cat /etc/timezone) \
-HOST_IP=$(hostname -I | awk '{print $1}') \
+HOST_IP=${HOST_IP:-localhost}
 ROOM=$room \
 GW_NAME=$gw_name \
 DOMAIN=$webrtc_domain \

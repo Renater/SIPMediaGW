@@ -5,6 +5,7 @@ function select_conferencing_tool() {
     echo "1) Jitsi (default)"
     echo "2) BigBlueButton"
     echo "3) LiveKit"
+    echo "4) Edumeet"
 
     # Read user input
     read -r choice
@@ -19,6 +20,9 @@ function select_conferencing_tool() {
             ;;
         3)
             browsing="livekit"
+            ;;
+        4)
+            browsing="edumeet"
             ;;
         *)
             echo "Invalid choice. Please try again."
