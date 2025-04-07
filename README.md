@@ -26,6 +26,12 @@ After installation, ensure that your firewall permits the following network traf
 
 <img src="./docs/firewall_rules.jpeg" alt="Firewall rules">
 
+### Configuration
+- [SIPMediaGW](./.env)
+- [Kamailio](./deploy/.env_kamailio)
+- [Coturn](./deploy/.env_turn)
+- SIPCAPTURE: [HOMER](./deploy/.env_homer), [HEP](./deploy/.env_hep)
+
 ### Testing 
 Once the services are up and running, you can join a conference from your preferred SIP softphone.
 Refer to the [testing section](./docs/testing.md) for more information.
