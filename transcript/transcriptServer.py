@@ -18,7 +18,7 @@ modelPath = "/var/models"
 @app.post("/transcribe")
 async def transcribe(
     audio: UploadFile = File(...),
-    model: str = Form("medium"),
+    model: str = Form("turbo"),
     lang: str = Form(None)
 ):
     """
@@ -89,5 +89,5 @@ async def transcribe(
 # Run FastAPI server
 if __name__ == "__main__":
     logging.info("Starting FastAPI transcription service...")
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8888)
 

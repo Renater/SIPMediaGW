@@ -36,19 +36,32 @@ if [ ! "$(docker network ls | grep gw_net)" ]; then
   sudo docker network create --subnet=192.168.92.0/29 gw_net
 fi
 #
-docker build -f /sipmediagw/deploy/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/deploy/kamailio
-docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/deploy/coturn
-docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db
+if [ "$MAIN_APP" == "baresip" ]; then
+	docker build -f /sipmediagw/deploy/kamailio/Dockerfile -t kamailio4sipmediagw /sipmediagw/deploy/kamailio
+	docker build -f /sipmediagw/deploy/coturn/Dockerfile -t coturn4sipmediagw /sipmediagw/deploy/coturn
+	docker compose -f /sipmediagw/deploy/docker-compose.yml pull sip_db
+fi
+
+if [ "$MAIN_APP" == "recording" ]; then
+	docker build -f /sipmediagw/transcript/Dockerfile -t transcript4sipmediagw /sipmediagw/transcript
+fi
+
 #
 echo "HOST_IP=$HOST_IP" >> /etc/environment
 BROWSE_FILE=$BROWSING${BROWSING:+.py}
 echo "BROWSE_FILE=$BROWSE_FILE" >> /etc/environment
+echo "MAIN_APP=$MAIN_APP" >> /etc/environment
 sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
-sudo systemctl enable coturn.service
-sudo systemctl enable kamailio.service
-sudo systemctl enable homer.service
+if [ "$MAIN_APP" == "baresip" ]; then
+	sudo systemctl enable coturn.service
+	sudo systemctl enable kamailio.service
+	sudo systemctl enable homer.service
+fi
 sudo systemctl enable sipmediagw.service
-sudo systemctl start coturn.service
-sudo systemctl start kamailio.service
-sudo systemctl start homer.service
+if [ "$MAIN_APP" == "baresip" ]; then
+	sudo systemctl start coturn.service
+	sudo systemctl start kamailio.service
+	sudo systemctl start homer.service
+fi
 sudo systemctl start sipmediagw.service
+

@@ -21,7 +21,8 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", type: "shell" do |s|
     s.env = {
 	  "HOST_IP" => HOST,
-	  "BROWSING" => ENV["BROWSING"]
+	  "BROWSING" => ENV["BROWSING"],
+	  "MAIN_APP" => ENV["MAIN_APP"]
 	}
 	s.inline = "/sipmediagw/deploy/provision.sh"
   end
@@ -30,3 +31,4 @@ Vagrant.configure(2) do |config|
     v.name = "SIPMediaGW_AllInOne"
   end
 end
+

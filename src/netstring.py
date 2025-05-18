@@ -16,7 +16,9 @@ class Netstring:
         self.host = h
         self.port = p
         signal.signal(signal.SIGTERM,
-                      lambda s,f : self.__sendCommand({"command":"quit"}))
+                      lambda s,f :
+                      subprocess.run(['echo "/quit" | netcat -q 1  {} 5555'.format(self.host)],
+                                     shell=True))
 
     def decodeNetString(self, inStr):
         mDict = {}
@@ -24,7 +26,8 @@ class Netstring:
             inStrLen = inStr[0:inStr.find(':')]
             resp = inStr.split(inStrLen+':')[1]
             try:
-                mDict = json.loads(resp[0:len(resp)-1], strict=False)
+                mDict = resp[0:len(resp)-1]
+                mDict = json.loads(mDict.replace('\\"',"'").replace('\\',''), strict=False)
             except:
                 mDict = {'event': 'null', 'type': 'null'}
                 print("Failed to load string as JSON", file=sys.stdout, flush=True)

@@ -23,7 +23,7 @@ cleanup() {
 
 trap 'cleanup | logParse -p "Trap"' SIGINT SIGQUIT SIGTERM EXIT
 
-check_Xvfb() {
+checkXvfb() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
@@ -39,7 +39,7 @@ check_Xvfb() {
     fi
 }
 
-check_v4l2() {
+checkV4l2() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
@@ -51,6 +51,22 @@ check_v4l2() {
     done
     if [ $timer -eq $timeOut ]; then
         echo "V4l2 loopback failed to launch" | logParse -p "V4l2"
+        exit 1
+    fi
+}
+
+checkEventSrv() {
+    # 5 seconds timeout before exit
+    timeOut=5
+    timer=0
+    state=$(netstat -a | grep :4444 | grep -c LISTEN)
+    while [[ ($state != "1") && ($timer -lt $timeOut) ]] ; do
+        timer=$(($timer + 1))
+        state=$(netstat -a | grep :4444 | grep -c LISTEN)
+        sleep 1
+    done
+    if [ $timer -eq $timeOut ]; then
+        echo "The gateway failed to launch" | logParse -p "EventSrv"
         exit 1
     fi
 }
@@ -83,20 +99,17 @@ if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; t
 
     echo "Processing finished : video merged in $FINAL_VIDEO and transcriptions in $FINAL_TRANSCRIPT"
 
-    for file in /var/recording/RendezVous_"${DATE_TIME}"*; do
-        [[ -e "$file" ]] || continue  # Ignore if no corresponding files
-        if [ -f "$file" ]; then
-            echo "Send and remove file: "$file | logParse -p "FileSender"
-            exec python3 /var/recording/filesender.py \
-                 -u $USER_MAIL -r $USER_MAIL -a $API_KEY $file \
-                 1> >( logParse -p "FileSender") \
-                 2> >( logParse -p "FileSender")
-            rm "$file"
-        fi
-    done
-    if [ "$file" ]; then
-        exit 1
-    fi
+    echo "Send and remove files" | logParse -p "FileSender"
+    cd /var/recording
+    exec python3 filesender.py \
+         -u $USER_MAIL -r $USER_MAIL -a $API_KEY \
+         $FINAL_VIDEO $FINAL_TRANSCRIPT \
+         1> >( logParse -p "FileSender") \
+         2> >( logParse -p "FileSender")
+    rm $FINAL_VIDEO $FINAL_TRANSCRIPT
+
+    exit 1
+
 fi
 
 ### Configure audio devices ###
@@ -137,8 +150,8 @@ Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH \
      +extension RANDR -noreset| logParse -p "Xvfb" &
 
 ### Check if Xvfb server is ready ###
-check_Xvfb $SERVERNUM0
-check_Xvfb $SERVERNUM1
+checkXvfb $SERVERNUM0
+checkXvfb $SERVERNUM1
 
 DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen0 \
         $VID_W_SIP"/640x"$VID_H_SIP"/360+0+0" screen | logParse -p "xrandr"
@@ -157,7 +170,10 @@ if [ "$WITH_TRANSCRIPT" == "true" ]; then
 fi
 
 ### Check if video device is ready ###
-check_v4l2 "/dev/video0"
+checkV4l2 "/dev/video0"
+
+### Check if event server is ready ###
+checkEventSrv
 
 ### Event handler ###
 if [[ -n "$ROOM_NAME" ]]; then

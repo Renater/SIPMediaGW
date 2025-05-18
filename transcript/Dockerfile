@@ -11,10 +11,10 @@ WORKDIR /app
 COPY transcriptServer.py /app
 
 RUN mkdir -p /var/models && \
-    python -c "from faster_whisper.utils import download_model; download_model('medium', output_dir='/var/models')"
+    python -c "from faster_whisper.utils import download_model; download_model('turbo', output_dir='/var/models')"
 
-# Expose port 8080 for external access
-EXPOSE 8080
+# Expose port 8888 for external access
+EXPOSE 8888
 
 # Run the web service
-CMD ["uvicorn", "transcriptServer:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "transcriptServer:app", "--host", "0.0.0.0", "--port", "8888"]

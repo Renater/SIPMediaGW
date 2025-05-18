@@ -46,7 +46,7 @@ lockGw() {
 }
 
 checkGwStatus() {
-    # 5 seconds timeout before exit
+    # N seconds timeout before exit
     timeOut=$2
     timer=0
     state="$(docker container exec  $1  netstat -t | grep :4444 | grep -c ESTABLISHED)"
@@ -84,6 +84,7 @@ SERVICES="gw"
 COMPOSE_FILE="-f docker-compose.yml"
 if [[ "$with_transcript" ]]; then
 	COMPOSE_FILE="$COMPOSE_FILE -f transcript/docker-compose.yml"
+	ID=$id \
 	SERVICES="$SERVICES transcript"
 fi
 
@@ -91,7 +92,7 @@ fi
 RESTART=$restart \
 CHECK_REG=$check_reg \
 HOST_TZ=$(cat /etc/timezone) \
-HOST_IP=${HOST_IP:-localhost}
+HOST_IP=${HOST_IP:-$(hostname -I | awk '{print $1}')} \
 ROOM=$room \
 GW_NAME=$gw_name \
 DOMAIN=$webrtc_domain \
@@ -127,15 +128,27 @@ if [ "$MAIN_APP" == "streaming" ]; then
 fi
 
 if [ "$MAIN_APP" == "recording" ]; then
-    echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$push_file_url'}"
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'user mail': '$user_mail'}"
 fi
 
-# child process => lockFile locked until the container exits:
+# child process => lockFile locked until the container exits + recording post processing
 ID=$id \
 LOOP=$loop \
+MAIN_APP=$MAIN_APP \
+WITH_TRANSCRIPT=$with_transcript \
+COMPOSE_FILE=$COMPOSE_FILE \
+room=$room \
 nohup bash -c 'state="$(docker wait gw$ID)"
-               while [[ "$state" == "0" && $LOOP ]] ; do
+               while [[ "$state" == "0" && $LOOP && "$MAIN_APP" == "baresip" ]] ; do
                    state="$(docker wait gw$ID)"
                done
-               docker restart gw$ID
-               docker container rm gw$ID' &> /dev/null &
+               if [[ "$MAIN_APP" == "recording" ]]; then
+                   if [[ "$WITH_TRANSCRIPT" ]]; then
+                       ID=$ID \
+                       docker compose -p $room  $COMPOSE_FILE up -d \
+                       --force-recreate --remove-orphans transcript
+                   fi
+                   docker restart gw$ID
+                   docker wait gw$ID
+                   docker stop transcript$ID
+               fi' &> /dev/null &
