@@ -83,13 +83,18 @@ if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; t
     echo "Processing finished : video merged in $FINAL_VIDEO and transcriptions in $FINAL_TRANSCRIPT"
 
     cd /var/recording
-    exec python3 filesender.py \
-         -u $USER_MAIL -r $USER_MAIL -a $API_KEY \
-         $FINAL_VIDEO $FINAL_TRANSCRIPT \
-         1> >( logParse -p "FileSender") \
-         2> >( logParse -p "FileSender")
-    rm $FINAL_VIDEO $FINAL_TRANSCRIPT
-
+    {
+        python3 filesender.py \
+                -u $USER_MAIL -r $USER_MAIL -a $API_KEY \
+                $FINAL_VIDEO $FINAL_TRANSCRIPT \
+                1> >( logParse -p "FileSender") \
+                2> >( logParse -p "FileSender") && \
+        rm $FINAL_VIDEO $FINAL_TRANSCRIPT && \
+        echo "Files sent and removed" | logParse -p "FileSender"
+    } || {
+        mv $FINAL_VIDEO $FINAL_TRANSCRIPT /var/logs && \
+        echo "Files moved in log directory" | logParse -p "FileCopy";
+    }
     exit 1
 else
     echo "start_gw:$(TZ=$TZ date +'%b %d %H:%M:%S')"> $HISTORY
