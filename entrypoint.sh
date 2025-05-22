@@ -8,8 +8,7 @@ fi
 ### Init logging ###
 HISTORY="/var/logs/gw"$GW_ID"_history"
 STATE="/var/logs/gw"$GW_ID"_state"
-touch $STATE
-echo "start_gw:$(TZ=$TZ date +'%b %d %H:%M:%S')"> $HISTORY
+> $STATE
 
 cleanup() {
     echo "Cleaning up..."
@@ -35,22 +34,6 @@ checkXvfb() {
     done
     if [ $timer -eq $timeOut ]; then
         echo "Xvfb :$1 failed to launch" | logParse -p "Xvfb"
-        exit 1
-    fi
-}
-
-checkV4l2() {
-    # 5 seconds timeout before exit
-    timeOut=5
-    timer=0
-    state=$(grep -q $1 $STATE; echo $?)
-    while [[ ($state == "1") && ($timer -lt $timeOut) ]]; do
-        timer=$(($timer + 1))
-        sleep 1
-        state=$(grep -q $1 $STATE; echo $?)
-    done
-    if [ $timer -eq $timeOut ]; then
-        echo "V4l2 loopback failed to launch" | logParse -p "V4l2"
         exit 1
     fi
 }
@@ -99,7 +82,6 @@ if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; t
 
     echo "Processing finished : video merged in $FINAL_VIDEO and transcriptions in $FINAL_TRANSCRIPT"
 
-    echo "Send and remove files" | logParse -p "FileSender"
     cd /var/recording
     exec python3 filesender.py \
          -u $USER_MAIL -r $USER_MAIL -a $API_KEY \
@@ -109,7 +91,9 @@ if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; t
     rm $FINAL_VIDEO $FINAL_TRANSCRIPT
 
     exit 1
-
+else
+    echo "start_gw:$(TZ=$TZ date +'%b %d %H:%M:%S')"> $HISTORY
+    echo "main_app:$MAIN_APP" > $HISTORY
 fi
 
 ### Configure audio devices ###
@@ -168,9 +152,6 @@ if [ "$WITH_TRANSCRIPT" == "true" ]; then
     exec python3 transcript/transcript.py 1> >( logParse -p "Transcript") \
                                           2> >( logParse -p "Transcript") &
 fi
-
-### Check if video device is ready ###
-checkV4l2 "/dev/video0"
 
 ### Check if event server is ready ###
 checkEventSrv

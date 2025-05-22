@@ -90,6 +90,11 @@ def main():
                     getLogsData ('{}\n'.format(datetime.now().strftime("%b %d %H:%M:%S")),
                                  'end', historyFile)
 
+                if( 'Files sent and removed' in line or
+                    'Files moved in log directory' in line ):
+                    getLogsData ('{}\n'.format(datetime.now().strftime("%b %d %H:%M:%S")),
+                                 'end', historyFile)
+
             except Exception as exc:
                 print("Failed to parse log line: ", exc)
 

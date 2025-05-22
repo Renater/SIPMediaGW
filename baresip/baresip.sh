@@ -1,6 +1,6 @@
 #!/bin/bash
 
-check_register() {
+checkRegister() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
@@ -17,6 +17,22 @@ check_register() {
     fi
 }
 
+checkV4l2() {
+    # 5 seconds timeout before exit
+    timeOut=5
+    timer=0
+    state=$(grep -q $1 $STATE; echo $?)
+    while [[ ($state == "1") && ($timer -lt $timeOut) ]]; do
+        timer=$(($timer + 1))
+        sleep 1
+        state=$(grep -q $1 $STATE; echo $?)
+    done
+    if [ $timer -eq $timeOut ]; then
+        echo "V4l2 loopback failed to launch" | logParse -p "V4l2"
+        exit 1
+    fi
+}
+
 ### Start default video capture ###
 echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
      logParse -p "FFMPEG"
@@ -24,6 +40,9 @@ ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
        -draw_mouse 0 -threads 0 \
        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
        -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &
+
+### Check if video device is ready ###
+checkV4l2 "/dev/video0"
 
 ### Start SIP capture (HEP) ###
 if [[ "$HEPLIFY_SRV" ]]; then
@@ -77,5 +96,5 @@ DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESI
 
 ### Check Baresip registering ###
 if [ "$CHECK_REGISTER" == "yes" ]; then
-    check_register
+    checkRegister
 fi
