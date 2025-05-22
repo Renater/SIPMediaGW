@@ -8,6 +8,7 @@ import requests
 from pathlib import Path
 
 ffmpegPid = os.getenv("FFMPEG_PID")
+segmentDur = os.environ.get('SEGMENT_TIME')
 print(f"FFMEG PID: {ffmpegPid}", flush=True)
 
 transcriptSrv = os.getenv("TRANSCRIPT_SRV").strip('"').strip("'")
@@ -66,10 +67,14 @@ def findNextSegment(lastSegment):
         time.sleep(2)
         # Get all files not yet processed
         files = sorted(glob.glob(f"{recordingDir}/segment_*.mp4"))
+        nbRecordSegments = len(files)
         files = [f for f in files if not f.endswith(".processed.mp4")]
-
+        nbTranscriptSegments = nbRecordSegments-len(files)
         for i in range(len(files) - 1):
             currentSegment = files[i]
+            print("Record/Transcript progess:{}/{}(seconds)".format(nbRecordSegments*int(segmentDur),
+                                                                    nbTranscriptSegments*int(segmentDur)),
+                  flush=True)
             return currentSegment
 
 def isProcessRunning(pid):
