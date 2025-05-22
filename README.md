@@ -54,14 +54,9 @@ docker compose -f deploy/docker-compose.yml up -d --force-recreate heplify_serve
 ```
 **_NOTE:_**  Homer and SIP Capture tools are automatically deployed with the [Development environment](./docs/install_dev_env.md).
 
-## Contributing
+## Documentation
 
-Contributions are always welcome.
-
-1. Fork the repository and create your branch from `main`.
-2. Open an issue to discuss proposed changes.
-3. Make your changes and ensure tests pass.
-4. Submit a pull request with a clear description of your changes.
+See the [Documentation index](./docs/README.md) for details.
 
 ## License
 
