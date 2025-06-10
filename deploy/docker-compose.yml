@@ -95,7 +95,7 @@ services:
     container_name: homer-webapp
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     logging:
       driver: syslog
       options:
