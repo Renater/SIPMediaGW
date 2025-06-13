@@ -67,6 +67,68 @@ class Start:
         web.ctx.status = '200 OK'
         return json.dumps({"status": "success", "details": resJson})
 
+class Progress:
+    @authorize
+    def GET(self, args=None):
+        data = web.input()
+        web.header('Content-Type', 'application/json')
+        #ipdb.set_trace()
+        if 'room' in data.keys() and data['room'] != '0':
+            try:
+                gwSubProc = ['docker', 'compose', '-p', data['room'], 'ps', '--format', 'json']
+                res = subprocess.Popen(gwSubProc, cwd='.', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = res.communicate()
+                decoded = out.decode('utf-8').strip()
+                try:
+                    parsed = json.loads(decoded)
+                    if isinstance(parsed, dict):
+                        result = [parsed]
+                    elif isinstance(parsed, list):
+                        result = parsed
+                    else:
+                        raise ValueError("Unexpected format")
+                except json.JSONDecodeError:
+                    result = [json.loads(line) for line in decoded.split('\n') if line.strip()]
+                resp = {"status": "success"}
+                web.ctx.status = '200 OK'
+                if not result:
+                    resp['gw_state'] = "down"
+                    return json.dumps(resp)
+
+                gwData = next((c for c in result if c.get("Name", "").startswith("gw")), None)
+                gwName = gwData['Name']
+                # Recording progress
+                gwSubProc = ['docker', 'exec', gwName,
+                             'sh', '-c',
+                             ('[ "$MAIN_APP" = "recording" ] && '
+                              'pid=$(pgrep -o ffmpeg) && '
+                              '[ -n "$pid" ] && '
+                              'ps -p $pid -o etimes= | '
+                              'awk \'{ sec=$1; h=int(sec/3600); m=int((sec%3600)/60); s=sec%60; '
+                              'printf "%02d:%02d:%02d", h, m, s }\'')]
+                res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = res.communicate()
+                recordElapsed = out.decode()
+                if recordElapsed:
+                    resp["recording_duration"] = recordElapsed
+                # Transcript progress
+                gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'ls /var/recording/*.mp4']
+                res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = res.communicate()
+                mp4List = out.decode().split()
+                processedPercent = (
+                    f"{(sum(f.endswith('.processed.mp4') for f in mp4List) / len(mp4List) * 100):.0f}%"
+                    if mp4List else "0%"
+                )
+                resp["transcript_progress"] = processedPercent
+                return json.dumps(resp)
+            except:
+                web.ctx.status = '404 Not Found'
+                return json.dumps({"Error": "something wrong happened"})
+        else:
+            web.ctx.status = '400 Bad Request'
+            return json.dumps({"Error": "a room name must be specified"})
+
 class Stop:
     @authorize
     def GET(self, args=None):
@@ -171,6 +233,7 @@ class Chat:
 
 urls = ("/start", "Start",
         "/stop", "Stop",
+        "/progress", "Progress",
         "/chat", "Chat")
 
 application = web.application(urls, globals()).wsgifunc()
