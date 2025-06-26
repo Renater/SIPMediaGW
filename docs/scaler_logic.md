@@ -39,25 +39,9 @@ The scaling behavior is driven by thresholds defined in `scaler.json`, configura
 
 ##  Decision Flow
 
-The auto-scaling logic operates as follows:
-
-1. **Collect current metrics**: available, busy, registered
-
-2. **Ensure Minimum Availability Buffer**:
-   - Check if the number of available SIPMediaGW instances is below `unlockedMin`.
-   - If so, scale up to restore that buffer.
-
-3. **Compute Minimum Required Capacity**:
-   - Based on current usage (`busy`) and availability buffer (`unlockedMin`).
-   - `minCapacity = busy + unlockedMin`
-
-4. **Determine Target Capacity**:
-   - Either to respect `unlockedMin` or maintain a usage ratio under `loadMax`.
-   - `targetCapacity = max(minCapacity, busy / loadMax)`
-
-5. **Adjust Deployment Accordingly**:
-   - If `targetCapacity > available`: upscale
-   - If `targetCapacity < available`: downscale
+| Decision Steps | Diagram |
+|----------------|---------|
+|**1. Collect current metrics**: `available`, `busy`, `registered`<br><br>**2. Ensure Minimum Availability Buffer**<br>- If `available < unlockedMin`, upscale to restore buffer.<br><br>**3. Compute Minimum Required Capacity**<br>- `minCapacity = busy + unlockedMin`<br><br>**4. Determine Target Capacity**<br>- `targetCapacity = max(minCapacity, busy / loadMax)`<br><br>**5. Adjust Deployment Accordingly**<br>- If `targetCapacity > available`: upscale<br>- If `targetCapacity < available`: downscale  | <img src="sipmediagw_autoscaling_logic.png" width=50% height=100%> |
 
 ---
 
