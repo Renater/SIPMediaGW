@@ -54,6 +54,8 @@ checkEventSrv() {
     fi
 }
 
+envsubst < /var/browsing/assets/config.template.json > /var/browsing/assets/config.json
+
 if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; then
 
     firstRec=$(ls -rt /var/recording/*.mp4 | head -n 1)
@@ -165,7 +167,7 @@ checkEventSrv
 if [[ -n "$ROOM_NAME" ]]; then
     roomParam="-r "$ROOM_NAME
 fi
-cp "./browsing/"$BROWSE_FILE src
+#cp "./browsing/"$BROWSE_FILE src
 DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -b `pwd`"/browsing/"$BROWSE_FILE \
                                                        -s $VID_SIZE_APP \
                                                        $roomParam $fromUri \

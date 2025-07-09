@@ -5,6 +5,10 @@ import os
 import time
 import traceback
 import queue
+import shutil
+import subprocess
+import json
+import base64
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
@@ -24,7 +28,7 @@ class Browsing:
         self.screenShared = False
         self.userInputs = queue.Queue()
         self.chatMsg = queue.Queue()
-        self.UIKeyMap = {}
+        self.IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
         self.driver = []
         self.service = []
         self.chromeOptions = webdriver.ChromeOptions()
@@ -54,7 +58,26 @@ class Browsing:
         f.close()
 
     def setUrl(self):
-        pass
+        configFile = os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/config.json')
+        with open(configFile) as f:
+            self.config = json.load(f)
+        IVRPath = "file://"
+        IVRPath += os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/index.html')
+        self.url = '{}?displayName={}'.format(IVRPath, self.name)
+        if self.room:
+            self.url = '{}&roomId={}'.format(self.url, self.room)
+        print("Web browsing URL: "+self.url, flush=True)
+
+    def loadJS(self, jsScript):
+        with open(jsScript, "r", encoding="utf-8") as f:
+            js_code = f.read()
+        self.driver.execute_script(js_code)
+
+    def loadImages(self, path, lang):
+        with open(path + "icon.png", "rb") as f:
+            self.iconB64 = "data:image/png;base64,{}".format(base64.b64encode(f.read()).decode("utf-8"))
+        with open( path + "dtmf_{}.png".format(lang), "rb") as f:
+            self.dtmfB64 = "data:image/png;base64,{}".format(base64.b64encode(f.read()).decode("utf-8"))
 
     def browse(self, driver):
         pass
@@ -79,15 +102,23 @@ class Browsing:
     def interact(self):
         try:
             inKey = self.userInputs.get(True, 0.02)
-        except Exception:
-            return
-
-        try:
-            self.driver.execute_script(self.UIKeyMap[inKey])
-            return inKey
         except Exception as e:
-            print("User input error: {}".format(e), flush=True)
             return
+        self.driver.execute_script(f"document.dispatchEvent(new KeyboardEvent('keydown',{{'key':'{inKey}'}}));")
+
+    def IVR(self):
+        startTime = time.time()
+        while True:
+            if self.IVRTimeout and time.time() > ( startTime + self.IVRTimeout ):
+                print("IVR Timeout", flush=True)
+                return
+            try:
+                room = self.driver.execute_script("return window.room")
+                if room:
+                    return room
+                self.interact()
+            except:
+                return {}
 
     def unset(self):
         pass
