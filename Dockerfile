@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep \
     v4l2loopback-utils libsdl2-2.0-0 libgl1-mesa-dri \
     fluxbox xdotool unclutter wmctrl \
-    gettext-base \
+    gettext-base xz-utils \
     dbus-user-session \
     pulseaudio socat alsa-utils libspandsp2 \
     ffmpeg xvfb \

@@ -22,6 +22,11 @@ cleanup() {
 
 trap 'cleanup | logParse -p "Trap"' SIGINT SIGQUIT SIGTERM EXIT
 
+### Assets download ###
+if [[ -n "$ASSETS_URL" ]]; then
+    wget -qO- "$ASSETS_URL" | tar xvJ -C /var/browsing/assets | logParse -p "Assets"
+fi
+
 checkXvfb() {
     # 5 seconds timeout before exit
     timeOut=5
