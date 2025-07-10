@@ -32,6 +32,8 @@ class BigBlueButton (Browsing):
             print("Cannot find IVR", flush=True)
             return
         room = self.IVR()
+        if not room:
+            return
 
         self.driver.execute_script('window.location.href = "https://{}/{}";'.format(
                                     self.config['webrtc_domain'],

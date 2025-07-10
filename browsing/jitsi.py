@@ -33,6 +33,8 @@ class Jitsi (Browsing):
             print("Cannot find IVR", flush=True)
             return
         room = self.IVR()
+        if not room:
+            return
 
         initScript = "jitsi=new Jitsi('{}', '{}', '{}', '{}', '{}'); \
                       window.meeting = jitsi".format( self.config['webrtc_domain'],

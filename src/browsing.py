@@ -125,11 +125,12 @@ class Browsing:
 
     def stop(self):
         try:
-            self.unset()
             self.room=''
             self.name=''
             self.url=''
             if self.driver:
+                if self.room:
+                    self.unset()
                 self.driver.close()
                 self.driver.quit()
                 self.driver = []
