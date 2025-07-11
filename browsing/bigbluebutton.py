@@ -35,9 +35,10 @@ class BigBlueButton (Browsing):
         if not room:
             return
 
-        self.driver.execute_script('window.location.href = "https://{}/{}";'.format(
-                                    self.config['webrtc_domain'],
-                                    room['roomName']))
+        self.driver.get("https://{}/{}".format(
+            self.config['webrtc_domain'],
+            room['roomName']
+        ))
 
         initScript = "bbb=new Bigbluebutton('{}', '{}', '{}', '{}', '{}'); \
                       window.meeting = bbb".format( self.config['webrtc_domain'],
