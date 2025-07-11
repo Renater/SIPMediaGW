@@ -15,66 +15,56 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import TimeoutException
 
-teamsFQDN = os.environ.get('WEBRTC_DOMAIN')
-if not teamsFQDN:
-    teamsFQDN = "teams.live.com/meet"
-
-def getIframe(driver, timeout):
-    script = """try{{
-                    return document.querySelector("iframe");
-                }}
-                catch{{return false}}"""
-
-    res = "Iframe not found"
-    iframe = None
-    start = time.time()
-    while time.time() - start < timeout:
-        iframe = driver.execute_script(script)
-        if driver and iframe:
-            res = "Iframe found"
-            break
-        time.sleep(1)
-    print("Get Iframe : {}".format(res), flush=True)
-    return iframe
-
-# Custom click function that relies on exceptions
-def tryClick(driver, selector, attempts=5, timeout=20):
-    count = 0
-    while count < attempts:
-        try:
-            time.sleep(1)
-            element = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-            element.click()
-            return element
-
-        except WebDriverException as e:
-            if ('is not clickable at point' in str(e)):
-                print("Retry click", flush=True)
-                count = count + 1
-            else:
-                raise e
-
-    raise TimeoutException('Custom click timed out')
+teamsFQDN="teams.live.com/meet"
 
 class Teams (Browsing):
 
-    def setUrl(self):
-        self.url = 'https://{}/{}'.format(teamsFQDN, self.room)
-        print("Web browsing URL: "+self.url, flush=True)
+    def chatHandler(self):
+        pass
 
     def browse(self, driver):
 
-        # Enter name
+        # IVR
         try:
-            iframe = getIframe(self.driver, 60)
-            driver.switch_to.frame(iframe)
-            element = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-tid='prejoin-display-name-input']")))
-            element.send_keys(self.name)
-            element = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-tid='prejoin-join-button']")))
-            element.click()
-        except Exception as e:
-            print("Name submit failed", flush=True)
+            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID,"digits")))
+        except:
+            print("Cannot find IVR", flush=True)
+            return
+        room = self.IVR()
+        if not room:
+            return
+
+        self.driver.get("https://{}/{}".format(
+            self.config['webrtc_domain'],
+            room['roomName'].replace('-', '?p=')
+        ))
+
+        initScript = "teams=new Teams('{}', '{}', '{}', '{}', '{}'); \
+                      window.meeting = teams".format( self.config['webrtc_domain'],
+                                                      room['roomName'],
+                                                      room['displayName'],
+                                                      self.config['lang'],
+                                                      room['roomToken'])
+
+        WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "video"))
+        )
+
+        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/teams.js'))
+        self.driver.execute_script(initScript)
+        self.driver.execute_script("teams.join();")
+
+        # Teams
+        self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/'),
+                        self.config['lang'])
+        menuScript = "menu=new Menu(); \
+                      menu.img['icon'] = '{}'; \
+                      menu.img['dtmf'] = '{}'; \
+                      menu.show();".format(self.iconB64, self.dtmfB64)
+        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/IVR/menu.js'))
+        self.driver.execute_script(menuScript)
 
         while self.url:
-            time.sleep(1)
+            self.interact()
+            self.chatHandler()
 
