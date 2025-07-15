@@ -27,14 +27,20 @@ def audioToTranscript(data, file):
     retryDelay = 2
     response = None
     start_time = time.time()
+    field_name = "audio"
+    filename, file_obj, mime_type = fileIn[field_name]
     while True:
         try:
             response = requests.post(url, files=file, data=data)
+            if response.status_code != 200:
+                file_obj.seek(0)  # Reset file pointer to the beginning
+                raise requests.RequestException(f"Error {response.status_code}: {response.text}")
             break
         except requests.RequestException as e:
             if time.time() - start_time > timeout:
                 break
             time.sleep(retryDelay)
+    
     return response
 
 # Load blacklist from a file
@@ -120,7 +126,8 @@ if ffmpegPid:
 # Finalyze transcript (after recording)
 for file in sorted(recordingDir.glob("segment_*.mp4")):
     if not  ".processed.mp4" in file.name and os.path.isfile(file):
-        print(f"Process {file}", flush=True)
+        fileSize = os.path.getsize(file)
+        print(f"Process {file}, Size: {fileSize} bytes", flush=True)
         transcriptFile = file.with_suffix(".txt")
 
         with open(file, "rb") as audio_file:
