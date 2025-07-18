@@ -9,10 +9,10 @@ from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-redisClient = redis.Redis(host="127.0.0.1", port=6379, decode_responses=True)
+redisClient = redis.Redis(host="redis", port=6379, decode_responses=True)
 allowedToken = "1234"
 
-gateways = ["127.0.0.1"]  # List of available gateways IP addresses
+gateways = []  # List of available gateways IP addresses
 
 def authorize(request: Request):
     authHeader = request.headers.get("Authorization")
