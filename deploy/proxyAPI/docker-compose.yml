@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  proxy:
+    image: python:3.12-slim
+    container_name: proxy
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+      pip install fastapi uvicorn httpx redis &&
+      uvicorn proxy:app --host 0.0.0.0 --port 80"
+    depends_on:
+      - redis
+    ports:
+      - "80:80"
+
