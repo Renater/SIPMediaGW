@@ -14,8 +14,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import TimeoutException
-
-teamsFQDN="teams.live.com/meet"
+import traceback
 
 class Teams (Browsing):
 
@@ -68,3 +67,11 @@ class Teams (Browsing):
             self.interact()
             self.chatHandler()
 
+    def unset(self):
+        try:
+            self.driver.execute_script(
+                "if ( teams ) { teams.leave(); }"
+            )
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            print("Meeting logout error: {}".format(e), flush=True)

@@ -53,7 +53,7 @@ class Teams {
 
     async interact(key) {
         if (key == "1")
-            document.querySelector('button[id="microphone-button"]').click();
+            document.querySelector('button[id="mic-button"]').click();
         if (key == "2")
             document.querySelector('button[id="video-button"]').click();
         if (key == "3" || key == "c")

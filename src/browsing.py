@@ -47,6 +47,9 @@ class Browsing:
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
         self.chromeOptions.add_argument('--autoplay-policy=no-user-gesture-required')
+        if os.environ.get('WITH-ALSA') == "true":
+            self.chromeOptions.add_argument('--alsa-input-device=hw:1,1')
+            self.chromeOptions.add_argument('--alsa-output-device=hw:0,0')
         self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation', 'test-type'])
         self.chromeOptions.add_experimental_option('prefs',{'profile.default_content_setting_values.media_stream_mic':1,
                                                             'profile.default_content_setting_values.media_stream_camera':1})
@@ -129,7 +132,7 @@ class Browsing:
             self.name=''
             self.url=''
             if self.driver:
-                if self.room:
+                if self.driver.execute_script("return window.meeting"):
                     self.unset()
                 self.driver.close()
                 self.driver.quit()
