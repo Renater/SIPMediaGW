@@ -64,4 +64,12 @@ class Visio (Browsing):
             self.interact()
             self.chatHandler()
 
+    def unset(self):
+        try:
+            self.driver.execute_script(
+                "if ( visio ) { visio.leave(); }"
+            )
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            print("Meeting logout error: {}".format(e), flush=True)
 
