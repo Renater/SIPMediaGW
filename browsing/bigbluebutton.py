@@ -7,12 +7,7 @@ import traceback
 from browsing import Browsing
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import WebDriverException
-from selenium.common.exceptions import TimeoutException
 
 class BigBlueButton (Browsing):
 
@@ -23,29 +18,19 @@ class BigBlueButton (Browsing):
         except Exception as e:
             pass
 
-    def browse(self, driver):
-
-        # IVR
-        try:
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID,"digits")))
-        except:
-            print("Cannot find IVR", flush=True)
-            return
-        room = self.IVR()
-        if not room:
-            return
+    def browse(self):
 
         self.driver.get("https://{}/{}".format(
-            self.config['webrtc_domain'],
-            room['roomName']
+            self.room['config']['webrtc_domain'],
+            self.room['roomName']
         ))
 
         initScript = "bbb=new Bigbluebutton('{}', '{}', '{}', '{}', '{}'); \
-                      window.meeting = bbb".format( self.config['webrtc_domain'],
-                                                    room['roomName'],
-                                                    room['displayName'],
-                                                    self.config['lang'],
-                                                    room['roomToken'])
+                      window.meeting = bbb".format( self.room['config']['webrtc_domain'],
+                                                    self.room['roomName'],
+                                                    self.room['displayName'],
+                                                    self.room['config']['lang'],
+                                                    self.room['roomToken'])
 
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/bigbluebutton.js'))
         self.driver.execute_script(initScript)
@@ -71,7 +56,7 @@ class BigBlueButton (Browsing):
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/IVR/menu.js'))
         self.driver.execute_script(menuScript)
 
-        while self.url:
+        while self.room:
             self.interact()
             self.chatHandler()
 

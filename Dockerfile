@@ -1,7 +1,7 @@
 FROM debian:12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep \
+    netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep jq \
     v4l2loopback-utils libsdl2-2.0-0 libgl1-mesa-dri \
     fluxbox xdotool unclutter wmctrl \
     gettext-base xz-utils \
@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 #v=$(curl 'https://packages.debian.org/bookworm/amd64/chromium/download' | grep -o "chromium_.*.deb" | head -1 | cut -d "_" -f 2)
 #https://snapshot.debian.org/archive/debian/20240930T202925Z/pool/main/c/chromium/
-RUN v='138.0.7204.92-1~deb12u1' \
+RUN v='139.0.7258.138-1~deb12u1' \
    && url='http://security.debian.org/debian-security/pool/updates/main/c/chromium/' \
    && wget $url'chromium_'$v'_amd64.deb' \
    && wget $url'chromium-common_'$v'_amd64.deb' \

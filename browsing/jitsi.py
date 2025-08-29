@@ -6,11 +6,6 @@ import os
 import json
 import time
 from browsing import Browsing
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support import expected_conditions as EC
 import traceback
 
 
@@ -24,24 +19,14 @@ class Jitsi (Browsing):
         except Exception as e:
             pass
 
-    def browse(self, driver):
-
-        # IVR
-        try:
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID,"digits")))
-        except:
-            print("Cannot find IVR", flush=True)
-            return
-        room = self.IVR()
-        if not room:
-            return
+    def browse(self):
 
         initScript = "jitsi=new Jitsi('{}', '{}', '{}', '{}', '{}'); \
-                      window.meeting = jitsi".format( self.config['webrtc_domain'],
-                                                      room['roomName'],
-                                                      room['displayName'],
-                                                      self.config['lang'],
-                                                      room['roomToken'])
+                      window.meeting = jitsi".format( self.room['config']['webrtc_domain'],
+                                                      self.room['roomName'],
+                                                      self.room['displayName'],
+                                                      self.room['config']['lang'],
+                                                      self.room['roomToken'])
 
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/jitsi.js'))
         self.driver.execute_script(initScript)
@@ -49,7 +34,7 @@ class Jitsi (Browsing):
 
         # Jitsi
         try:
-            driver.switch_to.default_content()
+            self.driver.switch_to.default_content()
             jitsiUrl = self.driver.execute_script("return window.jitsiApiClient._url;")
             print("Jitsi URL: "+jitsiUrl, flush=True)
         except Exception as e:
@@ -69,7 +54,7 @@ class Jitsi (Browsing):
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/IVR/menu.js'))
         self.driver.execute_script(menuScript)
 
-        while self.url:
+        while self.room:
             self.interact()
             self.chatHandler()
 

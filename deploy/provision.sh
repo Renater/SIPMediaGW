@@ -48,8 +48,7 @@ fi
 
 #
 echo "HOST_IP=$HOST_IP" >> /etc/environment
-BROWSE_FILE=$BROWSING${BROWSING:+.py}
-echo "BROWSE_FILE=$BROWSE_FILE" >> /etc/environment
+echo "BROWSING=$BROWSING" >> /etc/environment
 echo "MAIN_APP=$MAIN_APP" >> /etc/environment
 sudo cp /sipmediagw/deploy/services/* /etc/systemd/system
 if [ "$MAIN_APP" == "baresip" ]; then

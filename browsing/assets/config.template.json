@@ -1,7 +1,7 @@
 {
     "lang": "${IVR_LANG}",
     "min_ivr_digit_length": "${IVR_DIGIT_LENGTH}",
-    "webrtc_domain": "${WEBRTC_DOMAIN}",
+    "webrtc_domains": ${WEBRTC_DOMAINS},
     "conf_mapper": {
         "url": "${CONFMAPPER}"
     },

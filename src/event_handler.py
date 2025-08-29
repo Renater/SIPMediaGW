@@ -12,6 +12,7 @@ import signal
 import argparse
 import json
 import threading
+from ivr import IVR
 from netstring import Netstring
 
 # Default Baresip host
@@ -26,9 +27,8 @@ def isFfmpegRunning():
 
 def exit_handler():
     print("Cleaning up...")
-    subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'],
-             shell=True)
-    os.system("killall -SIGINT ffmpeg");
+    subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'], shell=True)
+    os.system("killall -SIGINT ffmpeg")
     while isFfmpegRunning():
         print("FFmpeg still running...")
         time.sleep(1)
@@ -38,10 +38,8 @@ signal.signal(signal.SIGTERM, exit_handler)
 signal.signal(signal.SIGINT, exit_handler)
 
 # parse arguments
-inputs = sys.argv
 parser = argparse.ArgumentParser(description='Event handler script')
 parser.add_argument('-a','--addr', help='Baresip IP', required=False)
-parser.add_argument('-b','--browsing', help='Browsing file', required=True)
 parser.add_argument('-r','--room', help='Room name', required=False)
 parser.add_argument('-f','--from', help='From URI', required=False)
 parser.add_argument('-s','--res', help='Video resolution', required=True)
@@ -53,26 +51,25 @@ if inputs['addr']:
 if inputs['from']:
     print("From URI: "+inputs['from'], flush=True)
 
-# Get a browsing object from the browsing file name
-sys.path.append(os.path.dirname(inputs['browsing']))
-modName = os.path.splitext(os.path.basename(inputs['browsing']))[0]
-print("Browsing mod name: "+modName, flush=True)
-mod = importlib.import_module(modName)
-isClassMember = lambda member: inspect.isclass(member) and member.__module__ == modName
-browsingObj = inspect.getmembers(mod, isClassMember)[0][1]
-
 dispWidth = int(inputs['res'].split('x')[0])
 dispHeight = int(inputs['res'].split('x')[1])
 
-# Browsing
+# instanciate IVR
+ivr = IVR(
+    width=dispWidth,
+    height=dispHeight,
+    room=inputs.get('room', ''),
+    name='',
+    browsing=os.environ.get('BROWSING')
+)
+
 def browse(args):
-    err = args['browsing'].run()
-    subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'],
-         shell=True)
+    args['ivr'].run()
+    subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'], shell=True)
 
 def endBrowse(args):
-    if args['browsing']:
-        args['browsing'].stop()
+    if args['ivr'] and args['ivr'].browsingObj:
+        args['ivr'].browsingObj.stop()
     subprocess.run(["xdotool", "key", "ctrl+W"])
 
 # Event handler callback
@@ -88,27 +85,26 @@ def event_handler(data, args):
         print(data, flush=True)
         displayName = ''
         if 'peerdisplayname' in data:
-            if not args['browsing'].room:
-                # specific case with custom kamailio callflow
+            if not args['ivr'].room:
                 try:
                     roomLen = int(data['peerdisplayname'].split('-', 1)[0])
-                    args['browsing'].room = data['peerdisplayname'].split('-',1)[1][0:roomLen]
+                    args['ivr'].room = data['peerdisplayname'].split('-',1)[1][0:roomLen]
                     displayName = data['peerdisplayname'].split('-',1)[1][roomLen:]
                 except:
                     displayName = data['peerdisplayname']
             else:
                 displayName = data['peerdisplayname']
-        if not displayName:
+        else:
             displayName = data['peeruri'].split(';')[0].split(':')[1]
-        print("My room: "+args['browsing'].room, flush=True)
+        print("My room: "+args['ivr'].room, flush=True)
         print("My name: "+displayName, flush=True)
-        args['browsing'].name = displayName
+        args['ivr'].name = displayName
         browseThread = threading.Thread(target=browse, daemon=True, args=(args,))
         browseThread.start()
 
     if data['type'] == 'CALL_DTMF_START':
         print('Received DTMF:'+ data['param'], flush=True)
-        args['browsing'].userInputs.put(data['param'])
+        args['ivr'].userInputs.put(data['param'])
 
     if data['type'] == 'CALL_CLOSED':
         if (not inputs['from'] or
@@ -117,33 +113,33 @@ def event_handler(data, args):
             return {"command":"quit"}
 
     # Time out expires before a CALL_ESTABLISHED
-    if data['type'] == 'TIME_OUT' and not args['browsing'].name:
+    if data['type'] == 'TIME_OUT' and not args['ivr'].name:
         print(data, flush=True)
         return {"command":"quit"}
 
     if data['type'] == 'VIDEO_DISP':
         print(data, flush=True)
         if data['param'] == 'VIDEO_SLIDES_START':
-            args['browsing'].userInputs.put('s')
-            args['browsing'].screenShared = True
+            args['ivr'].userInputs.put('s')
+            args['ivr'].screenShared = True
         if (data['param'] == 'VIDEO_SLIDES_STOP' and
-            args['browsing'].screenShared == True):
-            args['browsing'].userInputs.put('s')
-            args['browsing'].screenShared = False
+            args['ivr'].screenShared == True):
+            args['ivr'].userInputs.put('s')
+            args['ivr'].screenShared = False
 
     if data['type'] == 'CHAT_INPUT':
         if 'text' in data:
             print('Received chat message: '+ data['text'], flush=True)
-            args['browsing'].chatMsg.put(data['text'])
+            args['ivr'].browsingObj.chatMsg.put(data['text'])
         if 'action' in data:
             print('Received chat action: '+ data['action'], flush=True)
             if data['action'] == 'toggle':
-                args['browsing'].userInputs.put('c')
+                args['ivr'].userInputs.put('c')
 
-argDict = {'browsing':browsingObj(dispWidth, dispHeight, inputs['room'])}
+argDict = {'ivr': ivr}
 
 if os.environ.get('MAIN_APP') != 'baresip':
-    argDict['browsing'].name = os.environ.get('MAIN_APP')
+    argDict['ivr'].name = os.environ.get('MAIN_APP')
     browseThread = threading.Thread(target=browse, args=(argDict,))
     browseThread.start()
 

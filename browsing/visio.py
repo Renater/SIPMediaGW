@@ -19,29 +19,19 @@ class Visio (Browsing):
     def chatHandler(self):
         pass
 
-    def browse(self, driver):
-
-        # IVR
-        try:
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID,"digits")))
-        except:
-            print("Cannot find IVR", flush=True)
-            return
-        room = self.IVR()
-        if not room:
-            return
+    def browse(self):
 
         self.driver.get("https://{}/{}".format(
-            self.config['webrtc_domain'],
-            room['roomName']
+            self.room['config']['webrtc_domain'],
+            self.room['roomName']
         ))
 
         initScript = "visio=new Visio('{}', '{}', '{}', '{}', '{}'); \
-                      window.meeting = visio".format( self.config['webrtc_domain'],
-                                                      room['roomName'],
-                                                      room['displayName'],
-                                                      self.config['lang'],
-                                                      room['roomToken'])
+                      window.meeting = visio".format( self.room['config']['webrtc_domain'],
+                                                      self.room['roomName'],
+                                                      self.room['displayName'],
+                                                      self.room['config']['lang'],
+                                                      self.room['roomToken'])
 
         WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "video"))
@@ -60,7 +50,7 @@ class Visio (Browsing):
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/IVR/menu.js'))
         self.driver.execute_script(menuScript)
 
-        while self.url:
+        while self.room:
             self.interact()
             self.chatHandler()
 

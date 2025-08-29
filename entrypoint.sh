@@ -172,9 +172,8 @@ checkEventSrv
 if [[ -n "$ROOM_NAME" ]]; then
     roomParam="-r "$ROOM_NAME
 fi
-#cp "./browsing/"$BROWSE_FILE src
-DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -b `pwd`"/browsing/"$BROWSE_FILE \
-                                                       -s $VID_SIZE_APP \
+
+DISPLAY=:$SERVERNUM0 exec python3 src/event_handler.py -s $VID_SIZE_APP \
                                                        $roomParam $fromUri \
                           1> >( logParse -p "Event" -i $HISTORY )
 
