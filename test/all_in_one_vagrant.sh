@@ -5,16 +5,11 @@ ENV_FILE="../.env"
 # Load WEBRTC_DOMAINS safely from .env (handles multiline JSON)
 if [ -f "$ENV_FILE" ]; then
     WEBRTC_DOMAINS=$(sed -n '/^WEBRTC_DOMAINS=/,/^'\''/p' "$ENV_FILE" \
-                     | sed -E '1s/^WEBRTC_DOMAINS=.//; $s/.$//' )
-    # Clean and normalize JSON to avoid parse errors
-    WEBRTC_DOMAINS=$(echo "$WEBRTC_DOMAINS" | jq -c .)
+                     | sed -E '1s/^WEBRTC_DOMAINS=.//; $s/.$//')
 else
     echo "File $ENV_FILE not found"
     exit 1
 fi
-
-
-#echo "$WEBRTC_DOMAINS" | jq .
 
 function select_main_application() {
     echo "Please select the gateway role:"
@@ -45,8 +40,10 @@ function select_conferencing_tool() {
     echo "Do you want to pre-select a WebRTC conferencing tool?"
     echo "0) No"
 
-    # Extract keys and names together with jq (tab-separated)
-    mapfile -t entries < <(echo "$WEBRTC_DOMAINS" | jq -r 'to_entries[] | "\(.key)\t\(.value.name)"')
+    # Extract "key → name" pairs from JSON manually (Bash parsing)
+    mapfile -t entries < <(echo "$WEBRTC_DOMAINS" \
+        | grep '"name"' \
+        | sed -E 's/^[[:space:]]*"([^"]+)":.*"name":[[:space:]]*"([^"]+)".*/\1\t\2/')
 
     i=1
     declare -gA mapping
@@ -70,8 +67,6 @@ function select_conferencing_tool() {
     fi
 }
 
-
-
 # Step 1: main application role
 select_main_application
 echo "You selected MAIN_APP: $main_app"
@@ -89,4 +84,3 @@ export MAIN_APP=${main_app}
 export BROWSING=${browsing}
 
 VAGRANT_VAGRANTFILE=test/Vagrantfile vagrant up
-
