@@ -5,6 +5,11 @@ SIPMediaGW is a Docker-based set of open-source components that allow traditiona
 
 The room connector is compatible with all video devices supporting the SIP protocol. It has been tested with major devices from Polycom, Cisco, Huawei, and Aver.
 
+<p align="center">
+<img src="docs/ivr1.png" width="640">
+<img src="docs/ivr2.png" width="640">
+</p>
+
 SIPMediaGW relies on several open-source projects such as [Coturn](https://github.com/coturn/coturn), [Kamailio](https://github.com/kamailio/kamailio), [Homer](https://github.com/sipcapture/homer), [Baresip](https://github.com/baresip/baresip), [FFmpeg](https://github.com/FFmpeg/FFmpeg), [Pulseaudio](https://github.com/pulseaudio/pulseaudio), [ALSA](https://github.com/alsa-project/alsa-lib), [Video4Linux](https://linuxtv.org/), [Fluxbox](http://www.fluxbox.org/).
 
 
