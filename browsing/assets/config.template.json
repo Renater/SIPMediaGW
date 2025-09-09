@@ -9,5 +9,6 @@
         "jwt": "${AUTH_TOKEN}",
         "url": "${TOKEN_API_URL}",
         "secure_room_regexp": "${ROOM_REGEXP}"
-    }
+    },
+    "ivr_tts": "${IVR_TTS}"
 }

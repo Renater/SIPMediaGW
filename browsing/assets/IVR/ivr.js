@@ -17,7 +17,7 @@ const messages = {
         invalid: error => `Le code n'est pas valide ('${error}')`,
         incomplete: (count, expected) => `Le code est trop court (${count}/${expected})`,
         error: reason => `Erreur : ${reason}`,
-        chosenDoamin: (id, name) => `Plateforme sélectionnée (${id}) : ${name}`
+        chosenDomain: (id, name) => `Plateforme sélectionnée (${id}) : ${name}`
     },
     en: {
         valid: code => `Code validated: ${code}`,
@@ -28,11 +28,8 @@ const messages = {
     }
 };
 
-document.getElementById("digits").addEventListener("beforeinput", e => {
-    e.preventDefault();
-});
+document.getElementById("digits").addEventListener("beforeinput", e => e.preventDefault());
 
-// Load config and initialize IVR
 fetch("../config.json")
     .then(res => res.json())
     .then(config => initIVR(config))
@@ -46,7 +43,6 @@ function initIVR(config) {
 
     const lang = config['lang'] || 'fr';
     const expectedLength = parseInt(config['min_ivr_digit_length'], 10) || 0;
-
     const domains = parseDomains(config['webrtc_domains']);
 
     let inputDigits = [];
@@ -54,17 +50,11 @@ function initIVR(config) {
     let selectedDomain = null;
     let pendingRoomId = null;
 
-    // Convert config object into dictionary with id, key, name, domain
     function parseDomains(raw) {
         const dict = {};
         let index = 1;
         for (const [key, obj] of Object.entries(raw)) {
-            dict[index] = {
-                id: index,
-                key: key,
-                name: obj.name,
-                domain: obj.domain
-            };
+            dict[index] = { id: index, key, name: obj.name, domain: obj.domain };
             index++;
         }
         return dict;
@@ -72,14 +62,9 @@ function initIVR(config) {
 
     function updateDisplay() {
         const filled = inputDigits.join(' ');
-        let empty;
-
-        if (stage === "domain") {
-            empty = inputDigits.length === 0 ? "_" : "";
-        } else if (stage === "room") {
-            empty = Array(Math.max(0, expectedLength - inputDigits.length)).fill('_').join(' ');
-        }
-
+        let empty = "";
+        if (stage === "domain") empty = inputDigits.length === 0 ? "_" : "";
+        else if (stage === "room") empty = Array(Math.max(0, expectedLength - inputDigits.length)).fill('_').join(' ');
         digitsEl.textContent = [filled, empty].filter(Boolean).join(' ');
     }
 
@@ -87,27 +72,33 @@ function initIVR(config) {
         statusEl.textContent = msg;
     }
 
+    function playPromptAudio(type, lang) {
+        if (!config.ivr_tts) return;
+        const audio = new Audio(`./${type}_${lang}.mp3`);
+        audio.play();
+    }
+
     function showPrompt() {
+        if (messageEl.innerHTML === prompts[lang][stage]) return;
         if (stage === "domain" && Object.keys(domains).length > 1) {
             messageEl.innerHTML = prompts[lang].domain;
             domainsEl.classList.remove("hidden");
             domainsEl.innerHTML = Object.values(domains)
                 .map(d => `<div class="domain-item"><span class="domain-id">${d.id}:</span> ${d.name}</div>`)
                 .join("");
+            playPromptAudio("platform", lang);
         } else {
             messageEl.innerHTML = prompts[lang].room;
             domainsEl.innerHTML = '';
             domainsEl.classList.add("hidden");
+            playPromptAudio("conference", lang);
         }
     }
 
     function handleInput(char) {
         if (/^[a-zA-Z0-9-]$/.test(char)) {
-            if (stage === "domain") {
-                inputDigits = [char];
-            } else {
-                inputDigits.push(char);
-            }
+            if (stage === "domain") inputDigits = [char];
+            else inputDigits.push(char);
         } else if (char === '*') {
             inputDigits.pop();
         } else if (char === '#') {
@@ -118,16 +109,14 @@ function initIVR(config) {
                     showStatus(messages[lang].chosenDomain(domainId, selectedDomain.name));
                     window.browsing = selectedDomain.key;
                     inputDigits = [];
-                    updateDisplay();
                     stage = "room";
-                    showPrompt();
                     updateDisplay();
-
                     if (pendingRoomId) {
-                        console.log(`Auto-entering pending room: ${pendingRoomId}`);
                         digitsEl.style.visibility = "hidden";
                         (pendingRoomId + '#').split('').forEach(handleInput);
                         pendingRoomId = null;
+                    } else {
+                        showPrompt();
                     }
                 } else {
                     showStatus(messages[lang].invalid(inputDigits.join('')));
@@ -135,10 +124,7 @@ function initIVR(config) {
             } else if (stage === "room") {
                 const roomId = inputDigits.join('');
                 if (expectedLength === 0 || inputDigits.length >= expectedLength) {
-                    const room = new Room({
-                        ...config,
-                        webrtc_domain: selectedDomain.domain
-                    });
+                    const room = new Room({ ...config, webrtc_domain: selectedDomain.domain });
                     room.initRoom(
                         roomId,
                         () => {
@@ -170,8 +156,7 @@ function initIVR(config) {
     }
 
     function keyEvent(e) {
-        const key = e.key;
-        handleInput(key);
+        handleInput(e.key);
     }
     document.addEventListener('keydown', keyEvent);
 
@@ -181,15 +166,14 @@ function initIVR(config) {
     const urlDomainKey = urlParams.get("domainKey");
     const urlRoomId = urlParams.get("roomId");
 
-    // Select domain if domainKey or domainId provided
+    if (urlRoomId && urlRoomId !== '0') pendingRoomId = urlRoomId;
+
     if (urlDomainKey) {
         const found = Object.values(domains).find(d => d.key === urlDomainKey);
         if (found) {
             selectedDomain = found;
             (selectedDomain.id + '#').split('').forEach(handleInput);
-            console.log(`Auto-selected domain (by key): ${selectedDomain.key}`);
             showStatus(messages[lang].chosenDomain(found.id, found.name));
-            showPrompt();
             updateDisplay();
         }
     } else if (urlDomainId && domains[urlDomainId]) {
@@ -197,30 +181,18 @@ function initIVR(config) {
         (selectedDomain.id + '#').split('').forEach(handleInput);
         console.log(`Auto-selected domain (by id): ${selectedDomain.name}`);
         showStatus(messages[lang].chosenDomain(urlDomainId, selectedDomain.name));
-        showPrompt();
         updateDisplay();
     }
 
     if (!selectedDomain && Object.keys(domains).length === 1) {
         selectedDomain = Object.values(domains)[0];
-        digitsEl.style.visibility = "hidden";
         (selectedDomain.id + '#').split('').forEach(handleInput);
         console.log(`Single domain mode: auto-selected ${selectedDomain.name}`);
-        showPrompt();
         updateDisplay();
     }
 
-    if (urlRoomId && urlRoomId !== '0') {
-        if (selectedDomain) {
-            console.log(`Auto-entering room: ${urlRoomId}`);
-            digitsEl.style.visibility = "hidden";
-            (urlRoomId + '#').split('').forEach(handleInput);
-            return;
-        } else {
-            pendingRoomId = urlRoomId;
-        }
+    if (!selectedDomain) {
+        showPrompt();
+        updateDisplay();
     }
-
-    showPrompt();
-    updateDisplay();
 }
