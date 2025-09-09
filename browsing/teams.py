@@ -18,44 +18,17 @@ import traceback
 
 class Teams (Browsing):
 
-    def chatHandler(self):
-        pass
-
-    def browse(self):
-
+    def loadPage(self):
         self.driver.get("https://{}/{}".format(
             self.room['config']['webrtc_domain'],
             self.room['roomName'].replace('-', '?p=')
         ))
-
-        initScript = "teams=new Teams('{}', '{}', '{}', '{}', '{}'); \
-                      window.meeting = teams".format( self.room['config']['webrtc_domain'],
-                                                      self.room['roomName'],
-                                                      self.room['displayName'],
-                                                      self.room['config']['lang'],
-                                                      self.room['roomToken'])
-
         WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "video"))
         )
 
-        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/teams.js'))
-        self.driver.execute_script(initScript)
-        self.driver.execute_script("teams.join();")
-
-        # Teams
-        self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/'),
-                        self.config['lang'])
-        menuScript = "menu=new Menu(); \
-                      menu.img['icon'] = '{}'; \
-                      menu.img['dtmf'] = '{}'; \
-                      menu.show();".format(self.iconB64, self.dtmfB64)
-        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/IVR/menu.js'))
-        self.driver.execute_script(menuScript)
-
-        while self.room:
-            self.interact()
-            self.chatHandler()
+    def chatHandler(self):
+        pass
 
     def unset(self):
         try:

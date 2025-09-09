@@ -108,7 +108,7 @@ class IVR:
                 print("IVR error: {}".format(e), flush=True)
                 return {}
 
-    def browse(self):
+    def attend(self):
         sys.path.append("{}/../browsing".format(os.path.dirname(os.path.abspath(__file__))))
         modName = self.browsing
         print("Browsing mod name: " + modName, flush=True)
@@ -119,9 +119,9 @@ class IVR:
             raise ImportError(f"No class found in {modName}")
         browsingObj = browsingClass[0][1]
         self.browsingObj = browsingObj(self.width, self.height, self.config,
-                                       self.room, self.name,
+                                       self.browsing, self.room, self.name,
                                        self.driver, self.userInputs)
-        self.browsingObj.browse()
+        self.browsingObj.run()
 
     def run(self):
         self.launchBrowser()
@@ -129,7 +129,7 @@ class IVR:
             browsing, room = self.prompt()
             self.room = room
             self.browsing = browsing.lower().replace(" ", "")
-            self.browse()
+            self.attend()
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             print("IVR error: {}".format(e), flush=True)

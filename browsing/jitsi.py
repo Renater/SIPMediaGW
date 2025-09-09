@@ -19,20 +19,8 @@ class Jitsi (Browsing):
         except Exception as e:
             pass
 
-    def browse(self):
-
-        initScript = "jitsi=new Jitsi('{}', '{}', '{}', '{}', '{}'); \
-                      window.meeting = jitsi".format( self.room['config']['webrtc_domain'],
-                                                      self.room['roomName'],
-                                                      self.room['displayName'],
-                                                      self.room['config']['lang'],
-                                                      self.room['roomToken'])
-
-        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/jitsi.js'))
-        self.driver.execute_script(initScript)
-        self.driver.execute_script("jitsi.join();")
-
-        # Jitsi
+    def join(self):
+        super().join()
         try:
             self.driver.switch_to.default_content()
             jitsiUrl = self.driver.execute_script("return window.jitsiApiClient._url;")
@@ -44,19 +32,6 @@ class Jitsi (Browsing):
             except:
                 return
             print("Jitsi URL: "+jitsiUrl, flush=True)
-
-        self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/'),
-                        self.config['lang'])
-        menuScript = "menu=new Menu(); \
-                      menu.img['icon'] = '{}'; \
-                      menu.img['dtmf'] = '{}'; \
-                      menu.show();".format(self.iconB64, self.dtmfB64)
-        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/IVR/menu.js'))
-        self.driver.execute_script(menuScript)
-
-        while self.room:
-            self.interact()
-            self.chatHandler()
 
     def unset(self):
         try:

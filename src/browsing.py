@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import traceback
 import queue
 import base64
 
 class Browsing:
     def __init__(self, width, height, config,
-                 room=None, name=None,
+                 modName=None, room=None, name=None,
                  driver=None, inputs=None):
         self.url = ''
         self.room = room if room else {}
@@ -15,6 +16,8 @@ class Browsing:
         self.width = width
         self.height = height
         self.config = config
+        self.modName =  modName
+        self.initScript = ''
         self.screenShared = False
         self.userInputs = inputs
         self.driver = driver
@@ -31,7 +34,25 @@ class Browsing:
         with open( path + "dtmf_{}.png".format(lang), "rb") as f:
             self.dtmfB64 = "data:image/png;base64,{}".format(base64.b64encode(f.read()).decode("utf-8"))
 
+    def loadPage(self):
+        pass
+
+    def join(self):
+        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),
+                                 '../browsing/assets/{}.js'.format(self.modName)))
+        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}')".format(
+                                                    self.room['config']['webrtc_domain'],
+                                                    self.room['roomName'],
+                                                    self.room['displayName'],
+                                                    self.room['config']['lang'],
+                                                    self.room['roomToken'])
+        self.driver.execute_script(self.initScript)
+        self.driver.execute_script("window.meeting.join();")
+
     def browse(self):
+        pass
+
+    def chatHandler(self):
         pass
 
     def interact(self):
@@ -43,6 +64,22 @@ class Browsing:
 
     def unset(self):
         pass
+
+    def run(self):
+        self.loadPage()
+        self.join()
+        #self.browse()
+        self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
+                        self.config['lang'])
+        menuScript = "menu=new Menu(); \
+                      menu.img['icon'] = '{}'; \
+                      menu.img['dtmf'] = '{}'; \
+                      menu.show();".format(self.iconB64, self.dtmfB64)
+        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
+        self.driver.execute_script(menuScript)
+        while self.room:
+            self.interact()
+            self.chatHandler()
 
     def stop(self):
         try:
