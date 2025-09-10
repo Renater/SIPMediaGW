@@ -49,6 +49,7 @@ function initIVR(config) {
     let stage = "domain"; // 'domain' -> 'room'
     let selectedDomain = null;
     let pendingRoomId = null;
+    let currentAudio = null;
 
     function parseDomains(raw) {
         const dict = {};
@@ -74,8 +75,16 @@ function initIVR(config) {
 
     function playPromptAudio(type, lang) {
         if (!config.ivr_tts) return;
-        const audio = new Audio(`./${type}_${lang}.mp3`);
-        audio.play();
+
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        currentAudio = new Audio(`./${type}_${lang}.mp3`);
+        currentAudio.play();
+        currentAudio.onended = () => {
+            currentAudio = null;
+        };
     }
 
     function showPrompt() {
@@ -174,21 +183,18 @@ function initIVR(config) {
             selectedDomain = found;
             (selectedDomain.id + '#').split('').forEach(handleInput);
             showStatus(messages[lang].chosenDomain(found.id, found.name));
-            updateDisplay();
         }
     } else if (urlDomainId && domains[urlDomainId]) {
         selectedDomain = domains[urlDomainId];
         (selectedDomain.id + '#').split('').forEach(handleInput);
         console.log(`Auto-selected domain (by id): ${selectedDomain.name}`);
         showStatus(messages[lang].chosenDomain(urlDomainId, selectedDomain.name));
-        updateDisplay();
     }
 
     if (!selectedDomain && Object.keys(domains).length === 1) {
         selectedDomain = Object.values(domains)[0];
         (selectedDomain.id + '#').split('').forEach(handleInput);
         console.log(`Single domain mode: auto-selected ${selectedDomain.name}`);
-        updateDisplay();
     }
 
     if (!selectedDomain) {

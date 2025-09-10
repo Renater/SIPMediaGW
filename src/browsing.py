@@ -66,20 +66,22 @@ class Browsing:
         pass
 
     def run(self):
-        self.loadPage()
-        self.join()
-        #self.browse()
-        self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
-                        self.config['lang'])
-        menuScript = "menu=new Menu(); \
-                      menu.img['icon'] = '{}'; \
-                      menu.img['dtmf'] = '{}'; \
-                      menu.show();".format(self.iconB64, self.dtmfB64)
-        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
-        self.driver.execute_script(menuScript)
-        while self.room:
-            self.interact()
-            self.chatHandler()
+        try:
+            self.loadPage()
+            self.join()
+            self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
+                            self.config['lang'])
+            menuScript = "menu=new Menu(); \
+                        menu.img['icon'] = '{}'; \
+                        menu.img['dtmf'] = '{}'; \
+                        menu.show();".format(self.iconB64, self.dtmfB64)
+            self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
+            self.driver.execute_script(menuScript)
+            while self.room:
+                self.interact()
+                self.chatHandler()
+        except Exception as e:
+            print("Error while browsing: {}".format(e), flush=True)
 
     def stop(self):
         try:
