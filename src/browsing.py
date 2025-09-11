@@ -5,6 +5,9 @@ import os
 import traceback
 import queue
 import base64
+import time
+import threading
+import subprocess
 
 class Browsing:
     def __init__(self, width, height, config,
@@ -49,6 +52,33 @@ class Browsing:
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.join();")
 
+    def monitorSingleParticipant(self, thresholdSeconds=300, checkInterval=60):
+        singleStartTime = None
+        def checkLoop():
+            nonlocal singleStartTime
+            while True:
+                try:
+                    participantNum = self.driver.execute_script("return window.meeting.getParticipantNum()")
+                except Exception as e:
+                    print(f"Error getting participant number: {e}", flush=True)
+                    participantNum = None
+
+                if participantNum <= 1:
+                    if singleStartTime is None:
+                        singleStartTime = time.time()
+                    elif time.time() - singleStartTime >= thresholdSeconds:
+                        print(f"Single participant detected for {thresholdSeconds} seconds.", flush=True)
+                        subprocess.run(['echo "/quit" | netcat -q 1 127.0.0.1 5555'], shell=True)
+                        break
+                else:
+                    singleStartTime = None
+
+                time.sleep(checkInterval)
+
+        thread = threading.Thread(target=checkLoop, daemon=True)
+        thread.start()
+        return thread
+
     def browse(self):
         pass
 
@@ -69,6 +99,8 @@ class Browsing:
         try:
             self.loadPage()
             self.join()
+            if os.getenv("ENDING_TIMEOUT"):
+                self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
                             self.config['lang'])
             menuScript = "menu=new Menu(); \

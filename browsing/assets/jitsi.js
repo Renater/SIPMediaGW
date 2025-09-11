@@ -66,6 +66,18 @@ class Jitsi {
         externalAPI.src = "https://" + this.domain + "/external_api.js"
         document.body.appendChild(externalAPI);
     }
+    getParticipantNum() {
+        if (!this.jitsiApiClient) {
+            console.warn("Jitsi API client not initialized");
+            return 0;
+        }
+        try {
+            return this.jitsiApiClient.getNumberOfParticipants();
+        } catch (e) {
+            console.error("Error while requesting the number of participants :", e);
+            return 0;
+        }
+    }
     interact(key) {
         if (key == "1")
             this.jitsiApiClient.executeCommand('toggleAudio');
