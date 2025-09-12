@@ -111,16 +111,21 @@ class Progress:
                 recordElapsed = out.decode()
                 if recordElapsed:
                     resp["recording_duration"] = recordElapsed
-                # Transcript progress
-                gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'ls /var/recording/*.mp4']
+                gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'echo $WITH_TRANSCRIPT']
                 res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = res.communicate()
-                mp4List = out.decode().split()
-                processedPercent = (
-                    f"{(sum(f.endswith('.processed.mp4') for f in mp4List) / len(mp4List) * 100):.0f}%"
-                    if mp4List else "0%"
-                )
-                resp["transcript_progress"] = processedPercent
+                withTranscript = out.decode()
+                if withTranscript == 'true':
+                    # Transcript progress
+                    gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'ls /var/recording/*.mp4']
+                    res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out, err = res.communicate()
+                    mp4List = out.decode().split()
+                    processedPercent = (
+                        f"{(sum(f.endswith('.processed.mp4') for f in mp4List) / len(mp4List) * 100):.0f}%"
+                        if mp4List else "0%"
+                    )
+                    resp["transcript_progress"] = processedPercent
                 return json.dumps(resp)
             except:
                 web.ctx.status = '404 Not Found'
