@@ -53,9 +53,9 @@ class Start:
         if 'transcript' in data and data['transcript']:
             gwSubProc.append('-s')
         if 'apiKey' in data:
-            gwSubProc.extend(['-a', data['apiKey']])
-        if 'userMail' in data:
-            gwSubProc.extend(['-m', data['userMail']])
+            gwSubProc.extend(['-k', data['apiKey']])
+        if 'recipientMail' in data:
+            gwSubProc.extend(['-m', data['recipientMail']])
 
         filePath = os.path.dirname(__file__)
         print(gwSubProc)

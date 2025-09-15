@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 cleanup() {
     flock -u ${lockFd} > /dev/null 2>&1
@@ -7,14 +8,15 @@ trap cleanup SIGINT SIGQUIT SIGTERM
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        -a|--main-app) main_app="$2"; shift 2;;
         -d|--dial-uri) dial_uri="$2"; shift 2;;
         -g|--gw-name) gw_name="$2"; shift 2;;
         -p|--prefix) prefix="$2"; shift 2;;
         -r|--room) room="$2"; shift 2;;
         -t|--timeout) timeout="$2"; shift 2;;
         -u|--rtmp-dst) rtmp_dst="$2"; shift 2;;
-        -a|--api-key) api_key="$2"; shift 2;;
-        -m|--user-mail) user_mail="$2"; shift 2;;
+        -k|--api-key) api_key="$2"; shift 2;;
+        -m|--recipient-mail) recipient_mail="$2"; shift 2;;
         -s|--with-transcript) with_transcript="true"; shift;;
         -w|--webrtc-domain) webrtc_domain="$2"; shift 2;;
         -l|--loop) loop=1; shift;;
@@ -26,11 +28,14 @@ done
 
 shift "$(( OPTIND - 1 ))"
 
-source <(grep = .env)
+MAIN_APP=$(docker compose config 2>/dev/null | awk '/MAIN_APP:/ {print $2}')
+MAIN_APP=${main_app:-$MAIN_APP}
+CPU_PER_GW=$(docker compose config 2>/dev/null | awk '/CPU_PER_GW:/ {print $2}')
 
 lockFilePrefix="sipmediagw"
 
 lockGw() {
+    CPU_PER_GW=$(echo "$CPU_PER_GW" | tr -d '"')
     maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
     i=0
     while [[ "$i" < $maxGwNum ]] ; do
@@ -89,6 +94,7 @@ if [[ "$with_transcript" ]]; then
 fi
 
 ### launch the gateway ###
+MAIN_APP=$main_app \
 RESTART=$restart \
 CHECK_REG=$check_reg \
 HOST_TZ=$(cat /etc/timezone) \
@@ -97,8 +103,8 @@ ROOM=$room \
 GW_NAME=$gw_name \
 DOMAIN=$webrtc_domain \
 RTMP_DST=$rtmp_dst \
-API_KEY=$api_key \
-USER_MAIL=$user_mail \
+FS_API_KEY=$api_key \
+FS_RECIPIENT_MAIL=$recipient_mail \
 WITH_TRANSCRIPT=$with_transcript \
 PREFIX=$prefix \
 ID=$id \
@@ -128,7 +134,7 @@ if [ "$MAIN_APP" == "streaming" ]; then
 fi
 
 if [ "$MAIN_APP" == "recording" ]; then
-    echo "{'res':'ok', 'app': '$MAIN_APP', 'user mail': '$user_mail'}"
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'recipient mail': '$recipient_mail'}"
 fi
 
 # child process => lockFile locked until the container exits + recording post processing

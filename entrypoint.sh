@@ -5,6 +5,11 @@ if [[ -z "$GW_ID" ]]; then
     exit 1
 fi
 
+if [[ -z "$ROOM_NAME" && "$MAIN_APP" != "baresip" ]]; then
+    echo "Must provide ROOM_NAME with $MAIN_APP"
+    exit 1
+fi
+
 ### Init logging ###
 HISTORY="/var/logs/gw"$GW_ID"_history"
 STATE="/var/logs/gw"$GW_ID"_state"
@@ -92,7 +97,7 @@ if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; t
     cd /var/recording
     {
         python3 filesender.py \
-                -u $USER_MAIL -r $USER_MAIL -a $API_KEY \
+                -u $USER_MAIL -r $RECIPIENT_MAIL -a $API_KEY \
                 $FINAL_VIDEO $FINAL_TRANSCRIPT \
                 1> >( logParse -p "FileSender") \
                 2> >( logParse -p "FileSender") && \
