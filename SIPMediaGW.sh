@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 cleanup() {
     flock -u ${lockFd} > /dev/null 2>&1
