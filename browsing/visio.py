@@ -31,7 +31,7 @@ class Visio (Browsing):
     def unset(self):
         try:
             self.driver.execute_script(
-                "if ( visio ) { visio.leave(); }"
+                "if ( window.meeting ) { window.meeting.leave(); }"
             )
         except Exception as e:
             traceback.print_exc(file=sys.stdout)

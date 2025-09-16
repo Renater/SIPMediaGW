@@ -39,7 +39,7 @@ class BigBlueButton (Browsing):
     def unset(self):
         try:
             self.driver.execute_script(
-                "if ( bbb ) { bbb.leave(); }"
+                "if ( window.meeting ) { window.meeting.leave(); }"
             )
             # Waiting for the leaveMeetingDropdown button to disappear (max 10s)
             WebDriverWait(self.driver, 10).until(
