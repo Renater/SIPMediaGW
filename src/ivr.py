@@ -20,7 +20,7 @@ class IVR:
         self.height = height
         self.driver = None
         self.browsingObj = None
-        self.IVRTimeout = int(os.environ.get('IVR_TIMEOUT'))
+        self.IVRTimeout = int(os.environ.get('IVR_TIMEOUT')) if os.environ.get('IVR_TIMEOUT') else None
         self.userInputs = queue.Queue()
         self.service = []
         self.chromeOptions = webdriver.ChromeOptions()
