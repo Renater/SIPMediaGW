@@ -97,7 +97,7 @@ if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; t
     cd /var/recording
     {
         python3 filesender.py \
-                -u $USER_MAIL -r $RECIPIENT_MAIL -a $API_KEY \
+                -u $FS_USER_MAIL -r $FS_RECIPIENT_MAIL -a $FS_API_KEY \
                 $FINAL_VIDEO $FINAL_TRANSCRIPT \
                 1> >( logParse -p "FileSender") \
                 2> >( logParse -p "FileSender") && \
