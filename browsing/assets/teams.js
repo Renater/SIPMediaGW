@@ -63,7 +63,7 @@ class Teams {
         if (key == "5")
             document.querySelector('button[id="roster-button"]').click();
         if (key == "s")
-            document.querySelector('button[id="share-button"]').click();
+            document.querySelector('button#share-button, button#screenshare-button').click();
             var logOutBtn = await this.waitForElement('[data-tid="share-screen-window-or-tab"]', { clickable: true }, 10000);
             logOutBtn.click();
     }
