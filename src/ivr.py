@@ -38,7 +38,7 @@ class IVR:
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
         self.chromeOptions.add_argument('--autoplay-policy=no-user-gesture-required')
-        if os.environ.get('WITH-ALSA') == "true":
+        if os.environ.get('WITH_ALSA') == "true":
             self.chromeOptions.add_argument('--alsa-input-device=hw:1,1')
             self.chromeOptions.add_argument('--alsa-output-device=hw:0,0')
         self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation', 'test-type'])
