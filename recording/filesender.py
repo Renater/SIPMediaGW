@@ -170,6 +170,7 @@ def call(method, path, data, content=None, rawContent=None, options={}):
   bkey = bytearray()
   bkey.extend(map(ord, apikey))
   data['signature'] = hmac.new(bkey, signed, hashlib.sha1).hexdigest()
+  data['remote_user'] = data['remote_user'].replace('+', '%2B')
 
   url = base_url+path+'?'+('&'.join(flatten(data)))
   headers = {
