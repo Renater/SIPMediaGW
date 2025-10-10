@@ -58,9 +58,9 @@ dispHeight = int(inputs['res'].split('x')[1])
 ivr = IVR(
     width=dispWidth,
     height=dispHeight,
-    room=inputs.get('room', ''),
+    roomName=inputs.get('room', ''),
     name='',
-    browsing=os.environ.get('BROWSING')
+    browsingName=os.environ.get('BROWSING')
 )
 
 def browse(args):
@@ -85,18 +85,19 @@ def event_handler(data, args):
         print(data, flush=True)
         displayName = ''
         if 'peerdisplayname' in data:
-            if not args['ivr'].room:
+            if not args['ivr'].roomName:
                 try:
                     roomLen = int(data['peerdisplayname'].split('-', 1)[0])
-                    args['ivr'].room = data['peerdisplayname'].split('-',1)[1][0:roomLen]
+                    args['ivr'].mixedId = data['peerdisplayname'].split('-',1)[1][0:roomLen]
+                    print("Call prefix: "+args['ivr'].mixedId, flush=True)
                     displayName = data['peerdisplayname'].split('-',1)[1][roomLen:]
                 except:
                     displayName = data['peerdisplayname']
             else:
+                print("Room name: "+args['ivr'].roomName, flush=True)
                 displayName = data['peerdisplayname']
         if not displayName:
             displayName = data['peeruri'].split(';')[0].split(':')[1]
-        print("My room: "+args['ivr'].room, flush=True)
         print("My name: "+displayName, flush=True)
         args['ivr'].name = displayName
         browseThread = threading.Thread(target=browse, daemon=True, args=(args,))

@@ -6,15 +6,20 @@ import json
 import time
 import queue
 import traceback
+import urllib.parse
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 
 class IVR:
     def __init__(self, width=None, height=None, 
-                 room=None, name=None, browsing=None):
+                 roomName=None, name=None,
+                 browsingId=None, browsingName=None,
+                 mixedId=None):
         self.url = ''
-        self.browsing = browsing if browsing else ''
-        self.room = room if room else ''
+        self.browsingId = browsingId if browsingId else ''
+        self.mixedId = mixedId if mixedId else ''
+        self.browsingName = browsingName if browsingName else ''
+        self.roomName = roomName if roomName else ''
         self.name = name if name else ''
         self.width = width
         self.height = height
@@ -60,10 +65,14 @@ class IVR:
         IVRPath = "file://"
         IVRPath += os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/index.html')
         self.url = '{}?displayName={}'.format(IVRPath, self.name)
-        if self.room:
-            self.url = '{}&roomId={}'.format(self.url, self.room)
-        if self.browsing:
-            self.url = '{}&domainKey={}'.format(self.url, self.browsing)
+        if self.roomName:
+            self.url = '{}&roomId={}'.format(self.url, self.roomName)
+        if self.browsingId:
+            self.url = '{}&domainId={}'.format(self.url, self.browsingId)
+        if self.browsingName:
+            self.url = '{}&domainKey={}'.format(self.url, self.browsingId)
+        if self.mixedId:
+            self.url = '{}&mixedId={}'.format(self.url, urllib.parse.quote(self.mixedId))
         print("Web browsing URL: "+self.url, flush=True)
 
     def launchBrowser(self):
@@ -89,28 +98,28 @@ class IVR:
 
     def prompt(self):
         startTime = time.time()
-        browsing = ''
+        browsingName = ''
         while True:
             if self.IVRTimeout and time.time() > ( startTime + self.IVRTimeout ):
                 print("IVR Timeout", flush=True)
                 return {}
             try:
-                if not browsing:
-                    browsing = self.driver.execute_script("return window.browsing")
+                if not browsingName:
+                    browsingName = self.driver.execute_script("return window.browsing")
                 else:
                     room = self.driver.execute_script("return window.room")
                     if room:
-                        print("IVR: browsing, room: {}, {}".format(browsing, room['roomName']), flush=True)
-                        return browsing, room
+                        print("IVR: browsing, room: {}, {}".format(browsingName, room['roomName']), flush=True)
+                        return browsingName, room
                 self.interact()
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
                 print("IVR error: {}".format(e), flush=True)
                 return {}
 
-    def attend(self):
+    def attend(self, room):
         sys.path.append("{}/../browsing".format(os.path.dirname(os.path.abspath(__file__))))
-        modName = self.browsing
+        modName = self.browsingName
         print("Browsing mod name: " + modName, flush=True)
         mod = importlib.import_module(modName)
         isClassMember = lambda member: inspect.isclass(member) and member.__module__ == modName
@@ -119,17 +128,17 @@ class IVR:
             raise ImportError(f"No class found in {modName}")
         browsingObj = browsingClass[0][1]
         self.browsingObj = browsingObj(self.width, self.height, self.config,
-                                       self.browsing, self.room, self.name,
+                                       self.browsingName, room, self.name,
                                        self.driver, self.userInputs)
         self.browsingObj.run()
 
     def run(self):
         self.launchBrowser()
         try:
-            browsing, room = self.prompt()
-            self.room = room
-            self.browsing = browsing.lower().replace(" ", "")
-            self.attend()
+            browsingName, room = self.prompt()
+            self.roomName = room['roomName'] if room and 'roomName' in room else ''
+            self.browsingName = browsingName.lower().replace(" ", "")
+            self.attend(room)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
             print("IVR error: {}".format(e), flush=True)
