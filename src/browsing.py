@@ -56,7 +56,7 @@ class Browsing:
         singleStartTime = None
         def checkLoop():
             nonlocal singleStartTime
-            while True:
+            while self.driver.execute_script("return('getParticipantNum' in window.meeting)"):
                 try:
                     participantNum = self.driver.execute_script("return window.meeting.getParticipantNum()")
                 except Exception as e:
