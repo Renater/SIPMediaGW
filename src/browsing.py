@@ -63,7 +63,7 @@ class Browsing:
                     print(f"Error getting participant number: {e}", flush=True)
                     participantNum = None
 
-                if participantNum <= 1:
+                if participantNum  and participantNum <= 1:
                     if singleStartTime is None:
                         singleStartTime = time.time()
                     elif time.time() - singleStartTime >= thresholdSeconds:
