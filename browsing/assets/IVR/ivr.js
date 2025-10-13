@@ -177,16 +177,17 @@ function initIVR(config) {
     const urlMixedId = urlParams.get("mixedId");
 
     if (urlMixedId) {
-        let d, r;
+        let d = null, r = null;
         if (/^[1-9]$/.test(urlMixedId)) {
             d = urlMixedId;
-            r = null;
         } else {
-            const parts = urlMixedId.split('#');
+            // Split on '#' or '.'
+            const parts = urlMixedId.split(/[#.]/);
             if (parts.length === 2) {
                 [d, r] = parts;
+            } else {
+                r = urlMixedId;
             }
-            else{ r = urlMixedId; d = null; }
         }
         if (r && !/^[0-9]$/.test(r)) pendingRoomId = r;
         if (d && /^[1-9]$/.test(d)) {
