@@ -6,10 +6,18 @@ import os
 import json
 import time
 from browsing import Browsing
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 import traceback
 
 
+
 class Jitsi (Browsing):
+
+    def loadPage(self):
+        # fake loading here (external_api.js loaded in jitsi.js)
+        self.driver.get("file:///dev/null")
 
     def chatHandler(self):
         try:

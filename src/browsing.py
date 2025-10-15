@@ -8,11 +8,14 @@ import base64
 import time
 import threading
 import subprocess
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
 class Browsing:
     def __init__(self, width, height, config,
                  modName=None, room=None, name=None,
-                 driver=None, inputs=None):
+                 service=None, chromeOptions=None,
+                 inputs=None):
         self.url = ''
         self.room = room if room else {}
         self.name = name if name else ''
@@ -23,7 +26,8 @@ class Browsing:
         self.initScript = ''
         self.screenShared = False
         self.userInputs = inputs
-        self.driver = driver
+        self.service = service
+        self.chromeOptions = chromeOptions
         self.chatMsg = queue.Queue()
 
     def loadJS(self, jsScript):
@@ -97,6 +101,8 @@ class Browsing:
 
     def run(self):
         try:
+            self.driver = webdriver.Chrome(service=self.service,
+                                           options=self.chromeOptions)
             self.loadPage()
             self.join()
             if os.getenv("ENDING_TIMEOUT"):

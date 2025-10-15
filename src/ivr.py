@@ -43,9 +43,6 @@ class IVR:
         self.chromeOptions.add_argument('--hide-scrollbars')
         self.chromeOptions.add_argument('--disable-notifications')
         self.chromeOptions.add_argument('--autoplay-policy=no-user-gesture-required')
-        if os.environ.get('WITH_ALSA') == "true":
-            self.chromeOptions.add_argument('--alsa-input-device=hw:1,1')
-            self.chromeOptions.add_argument('--alsa-output-device=hw:0,0')
         self.chromeOptions.add_experimental_option("excludeSwitches", ['enable-automation', 'test-type'])
         self.chromeOptions.add_experimental_option('prefs',{'profile.default_content_setting_values.media_stream_mic':1,
                                                             'profile.default_content_setting_values.media_stream_camera':1})
@@ -129,7 +126,8 @@ class IVR:
         browsingObj = browsingClass[0][1]
         self.browsingObj = browsingObj(self.width, self.height, self.config,
                                        self.browsingName, room, self.name,
-                                       self.driver, self.userInputs)
+                                       self.service, self.chromeOptions,
+                                       self.userInputs)
         self.browsingObj.run()
 
     def run(self):
@@ -138,6 +136,10 @@ class IVR:
             browsingName, room = self.prompt()
             self.roomName = room['roomName'] if room and 'roomName' in room else ''
             self.browsingName = browsingName.lower().replace(" ", "")
+            # Close IVR:
+            self.driver.close()
+            self.driver.quit()
+            # Start Meeting:
             self.attend(room)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)

@@ -1,5 +1,6 @@
 class Jitsi {
     constructor(domain, roomName, displayName, lang, token) {
+        document.body.innerHTML = '<div id="jitsi-container" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
         this.mainOptions = {
             roomName: roomName,
             userInfo: {
@@ -44,7 +45,7 @@ class Jitsi {
                 },
                 disableSelfView: false
             },
-            parentNode: document.body,
+            parentNode: document.getElementById("jitsi-container"),
         };
         this.domain = domain;
         document.body.style.margin = '0';
