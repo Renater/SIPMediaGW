@@ -176,6 +176,8 @@ function initIVR(config) {
     const urlRoomId = urlParams.get("roomId");
     const urlMixedId = urlParams.get("mixedId");
 
+    if (urlRoomId && urlRoomId !== '0') pendingRoomId = urlRoomId;
+
     if (urlMixedId) {
         let d = null, r = null;
         if (/^[1-9]$/.test(urlMixedId)) {
@@ -199,8 +201,6 @@ function initIVR(config) {
             }
         }
     }
-
-    if (urlRoomId && urlRoomId !== '0') pendingRoomId = urlRoomId;
 
     if (urlDomainKey) {
         const found = Object.values(domains).find(d => d.key === urlDomainKey);
