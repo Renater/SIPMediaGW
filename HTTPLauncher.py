@@ -8,6 +8,25 @@ import os
 
 allowedToken = '1234'
 
+def sanitize_for_compose_project_name(name: str) -> str:
+    # Lowercase everything
+    name = name.lower()
+
+    # Replace invalid characters with underscores
+    name = re.sub(r'[^a-z0-9_-]+', '_', name)
+
+    # Ensure it starts with a letter or digit
+    if not re.match(r'^[a-z0-9]', name):
+        name = 'p_' + name
+
+    # Trim to max 63 characters
+    name = name[:63]
+
+    # Remove trailing non-alphanumeric characters (for cleanliness)
+    name = re.sub(r'[^a-z0-9]+$', '', name)
+
+    return name
+
 def authorize(func):
     def inner(*args, **kwargs):
         auth = web.ctx.env.get('HTTP_AUTHORIZATION')
@@ -74,8 +93,9 @@ class Progress:
         web.header('Content-Type', 'application/json')
         #ipdb.set_trace()
         if 'room' in data.keys() and data['room'] != '0':
+            projectName = sanitize_for_compose_project_name(data['room'])
             try:
-                gwSubProc = ['docker', 'compose', '-p', data['room'], 'ps', '--format', 'json']
+                gwSubProc = ['docker', 'compose', '-p', projectName, 'ps', '--format', 'json']
                 res = subprocess.Popen(gwSubProc, cwd='.', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = res.communicate()
                 decoded = out.decode('utf-8').strip()
@@ -146,9 +166,10 @@ class Stop:
             res.wait()
             resStr = res.stdout.read().decode('utf-8')
             projects=resStr.splitlines()
-            if data['room'] in projects:
+            projectName = sanitize_for_compose_project_name(data['room'])
+            if projectName in projects:
                 gwSubProc = ['docker', 'compose']
-                gwSubProc.extend(['-p', data['room']])
+                gwSubProc.extend(['-p', projectName])
             else:
                 web.ctx.status = '400 Bad Request'
                 return json.dumps({"Error": "no running container for room={}".format(data['room'])})

@@ -88,9 +88,11 @@ SERVICES="gw"
 COMPOSE_FILE="-f docker-compose.yml"
 if [[ "$with_transcript" ]]; then
 	COMPOSE_FILE="$COMPOSE_FILE -f transcript/docker-compose.yml"
-	ID=$id \
 	SERVICES="$SERVICES transcript"
 fi
+
+COMPOSE_PROJECT_NAME=$(echo "$room" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_-]/_/g' | sed -E 's/^[^a-z0-9]/p_/' | cut -c1-63 | sed -E 's/[^a-z0-9]*$//') \
+
 
 ### launch the gateway ###
 MAIN_APP=$main_app \
@@ -107,7 +109,7 @@ FS_RECIPIENT_MAIL=$recipient_mail \
 WITH_TRANSCRIPT=$with_transcript \
 PREFIX=$prefix \
 ID=$id \
-docker compose -p ${room:-"gw"$id}  $COMPOSE_FILE up \
+docker compose -p ${COMPOSE_PROJECT_NAME:-"gw"$id}  $COMPOSE_FILE up \
                -d --force-recreate --remove-orphans \
                $SERVICES
 
@@ -150,7 +152,7 @@ nohup bash -c 'state="$(docker wait gw$ID)"
                if [[ "$MAIN_APP" == "recording" ]]; then
                    if [[ "$WITH_TRANSCRIPT" ]]; then
                        ID=$ID \
-                       docker compose -p $room  $COMPOSE_FILE up -d \
+                       docker compose -p $COMPOSE_PROJECT_NAME  $COMPOSE_FILE up -d \
                        --force-recreate --remove-orphans transcript
                    fi
                    docker restart gw$ID

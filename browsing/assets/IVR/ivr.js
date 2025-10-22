@@ -105,7 +105,7 @@ function initIVR(config) {
     }
 
     function handleInput(char) {
-        if (/^[a-zA-Z0-9-]$/.test(char)) {
+        if (/^[a-zA-Z0-9-_/]$/.test(char)) {
             if (stage === "domain") inputDigits = [char];
             else inputDigits.push(char);
         } else if (char === '*') {
