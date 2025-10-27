@@ -69,7 +69,7 @@ class Start:
             gwSubProc.extend(['-d', data['dial']])
         if 'loop' in data and data['loop']:
             gwSubProc.append('-l')
-        if 'transcript' in data and data['transcript']:
+        if 'transcript' in data and data['transcript']=='true':
             gwSubProc.append('-s')
         if 'apiKey' in data:
             gwSubProc.extend(['-k', data['apiKey']])
@@ -91,7 +91,6 @@ class Progress:
     def GET(self, args=None):
         data = web.input()
         web.header('Content-Type', 'application/json')
-        #ipdb.set_trace()
         if 'room' in data.keys() and data['room'] != '0':
             projectName = sanitize_for_compose_project_name(data['room'])
             try:
@@ -128,13 +127,13 @@ class Progress:
                               'printf "%02d:%02d:%02d", h, m, s }\'')]
                 res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = res.communicate()
-                recordElapsed = out.decode()
+                recordElapsed = out.decode().strip()
                 if recordElapsed:
                     resp["recording_duration"] = recordElapsed
                 gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'echo $WITH_TRANSCRIPT']
                 res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = res.communicate()
-                withTranscript = out.decode()
+                withTranscript = out.decode().strip()
                 if withTranscript == 'true':
                     # Transcript progress
                     gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'ls /var/recording/*.mp4']
