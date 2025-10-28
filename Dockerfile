@@ -20,8 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && git clone --branch v3.15.0_patch https://github.com/Renater/baresip.git && cd baresip \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && rm -r baresip re \
-    && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
-    && cd /var/UIHelper && git checkout e9e0f0f61e1b28ed6d227c31723cf15b4438f0f5 \
     && apt-get remove --purge -y \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
@@ -33,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 #v=$(curl 'https://packages.debian.org/bookworm/amd64/chromium/download' | grep -o "chromium_.*.deb" | head -1 | cut -d "_" -f 2)
 #https://snapshot.debian.org/archive/debian/20240930T202925Z/pool/main/c/chromium/
-RUN v='141.0.7390.65-1~deb12u1' \
+RUN v='141.0.7390.122-1~deb12u1' \
    && url='http://security.debian.org/debian-security/pool/updates/main/c/chromium/' \
    && wget $url'chromium_'$v'_amd64.deb' \
    && wget $url'chromium-common_'$v'_amd64.deb' \
@@ -49,10 +47,6 @@ RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip3 install --no-cache-dir --upgrade pip
 RUN pip3 install --no-cache-dir selenium requests pynetstring psutil
-
-RUN pip3 install --no-cache-dir gTTS pydub \
-    && python3 /var/UIHelper/scripts/generate_tts_files.py -i /var/UIHelper/src/assets/lang/ -o /var/UIHelper/src/assets/lang/files/ \
-    && pip3 uninstall -y gTTS pydub
 
 COPY entrypoint.sh /var/
 COPY pulseaudio/init.sh /var/pulseaudio_init.sh
