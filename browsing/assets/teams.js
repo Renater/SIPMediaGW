@@ -1,5 +1,5 @@
 class Teams {
-    constructor(domain, roomName, displayName, lang, token) {
+    constructor(domain, roomName, displayName, lang, token, audioOnly) {
         this.domain = domain;
         this.roomName = roomName;
         this.displayName = displayName;

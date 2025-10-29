@@ -28,6 +28,9 @@ class Browsing:
         self.userInputs = inputs
         self.service = service
         self.chromeOptions = chromeOptions
+        if os.environ.get('AUDIO_ONLY') == "true":
+            self.chromeOptions.add_argument('--headless=new')
+            self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.chatMsg = queue.Queue()
 
     def loadJS(self, jsScript):
@@ -47,12 +50,13 @@ class Browsing:
     def join(self):
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),
                                  '../browsing/assets/{}.js'.format(self.modName)))
-        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}')".format(
+        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}')".format(
                                                     self.room['config']['webrtc_domain'],
                                                     self.room['roomName'],
                                                     self.room['displayName'],
                                                     self.room['config']['lang'],
-                                                    self.room['roomToken'])
+                                                    self.room['roomToken'],
+                                                    os.environ.get('AUDIO_ONLY'))
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.join();")
 

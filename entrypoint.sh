@@ -128,39 +128,41 @@ else
                           2> >( logParse -p "Pulse")
 fi
 
-### Configure video display ###
-VID_FPS="30"
-PIX_DEPTH="24"
+if [[ "$AUDIO_ONLY" != "true" ]]; then
+    ### Configure video display ###
+    VID_FPS="30"
+    PIX_DEPTH="24"
 
-IFS="x" read -r VID_W_SIP VID_H_SIP <<<$VID_SIZE_APP
-VID_WX2_SIP=$(( 2*$VID_W_SIP ))
+    IFS="x" read -r VID_W_SIP VID_H_SIP <<<$VID_SIZE_APP
+    VID_WX2_SIP=$(( 2*$VID_W_SIP ))
 
-mkdir -p /tmp/.X11-unix
-sudo chmod 1777 /tmp/.X11-unix
-sudo chown root /tmp/.X11-unix/
+    mkdir -p /tmp/.X11-unix
+    sudo chmod 1777 /tmp/.X11-unix
+    sudo chown root /tmp/.X11-unix/
 
-SERVERNUM0=99
-echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb"
-Xvfb :$SERVERNUM0 -screen 0 \
-      $VID_WX2_SIP"x"$VID_H_SIP"x"$PIX_DEPTH \
-     +extension RANDR -noreset | logParse -p "Xvfb" &
+    SERVERNUM0=99
+    echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb"
+    Xvfb :$SERVERNUM0 -screen 0 \
+        $VID_WX2_SIP"x"$VID_H_SIP"x"$PIX_DEPTH \
+        +extension RANDR -noreset | logParse -p "Xvfb" &
 
-SERVERNUM1=100
-echo "Server 1 Number= " $SERVERNUM1 | logParse -p "Xvfb"
-Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH \
-     +extension RANDR -noreset| logParse -p "Xvfb" &
+    SERVERNUM1=100
+    echo "Server 1 Number= " $SERVERNUM1 | logParse -p "Xvfb"
+    Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH \
+        +extension RANDR -noreset| logParse -p "Xvfb" &
 
-### Check if Xvfb server is ready ###
-checkXvfb $SERVERNUM0
-checkXvfb $SERVERNUM1
+    ### Check if Xvfb server is ready ###
+    checkXvfb $SERVERNUM0
+    checkXvfb $SERVERNUM1
 
-DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen0 \
-        $VID_W_SIP"/640x"$VID_H_SIP"/360+0+0" screen | logParse -p "xrandr"
-DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen1 \
-        $VID_W_SIP"/640x"$VID_H_SIP"/360+"$VID_W_SIP"+0" none | logParse -p "xrandr"
+    DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen0 \
+            $VID_W_SIP"/640x"$VID_H_SIP"/360+0+0" screen | logParse -p "xrandr"
+    DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen1 \
+            $VID_W_SIP"/640x"$VID_H_SIP"/360+"$VID_W_SIP"+0" none | logParse -p "xrandr"
 
-DISPLAY=:$SERVERNUM0 fluxbox | logParse -p "fluxbox" &
-DISPLAY=:$SERVERNUM0 unclutter -idle 1 &
+    DISPLAY=:$SERVERNUM0 fluxbox | logParse -p "fluxbox" &
+    DISPLAY=:$SERVERNUM0 unclutter -idle 1 &
+fi
 
 ### Main application ###
 source $MAIN_APP"/"$MAIN_APP".sh"

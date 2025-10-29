@@ -16,6 +16,7 @@ while [[ $# -gt 0 ]]; do
         -u|--rtmp-dst) rtmp_dst="$2"; shift 2;;
         -k|--api-key) api_key="$2"; shift 2;;
         -m|--recipient-mail) recipient_mail="$2"; shift 2;;
+        -o|--audio-only) audio_only="true"; shift 2;;
         -s|--with-transcript) with_transcript="true"; shift;;
         -w|--webrtc-domain) webrtc_domain="$2"; shift 2;;
         -l|--loop) loop=1; shift;;
@@ -75,12 +76,16 @@ fi
 
 restart="no"
 check_reg="no"
+video_dev="null"
 if [[ "$MAIN_APP" == "baresip" ]]; then
 	if [[ "$loop" ]]; then
 		restart="unless-stopped"
 	else
 		check_reg="yes"
 	fi
+    if [ "$audio_only" != "true" ]; then
+        video_dev="video$id"
+    fi
 fi
 
 docker container prune --force > /dev/null
@@ -109,6 +114,8 @@ FS_RECIPIENT_MAIL=$recipient_mail \
 WITH_TRANSCRIPT=$with_transcript \
 PREFIX=$prefix \
 ID=$id \
+AUDIO_ONLY=$audio_only \
+VIDEO_DEV=$video_dev \
 docker compose -p ${COMPOSE_PROJECT_NAME:-"gw"$id}  $COMPOSE_FILE up \
                -d --force-recreate --remove-orphans \
                $SERVICES

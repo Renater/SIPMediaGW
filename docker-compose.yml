@@ -17,7 +17,7 @@ services:
     volumes:
       - ./logs:/var/logs
     devices:
-      - /dev/${ID:+video}${ID:-null}:/dev/video0
+      - /dev/${VIDEO_DEV}:/dev/video0
       - /dev/snd:/dev/snd
     shm_size: '2gb'
     logging:

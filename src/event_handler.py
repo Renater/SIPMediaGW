@@ -83,6 +83,8 @@ def event_handler(data, args):
 
     if data['type'] == 'CALL_ESTABLISHED':
         print(data, flush=True)
+        if data['remotevideodir'] == 'inactive':
+            os.environ['AUDIO_ONLY'] = 'true'
         displayName = ''
         if 'peerdisplayname' in data:
             try:

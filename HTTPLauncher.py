@@ -71,6 +71,8 @@ class Start:
             gwSubProc.append('-l')
         if 'transcript' in data and data['transcript']=='true':
             gwSubProc.append('-s')
+        if 'audioOnly' in data and data['audioOnly']=='true':
+            gwSubProc.append('-o')
         if 'apiKey' in data:
             gwSubProc.extend(['-k', data['apiKey']])
         if 'recipientMail' in data:

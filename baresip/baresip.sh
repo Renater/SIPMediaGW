@@ -33,16 +33,18 @@ checkV4l2() {
     fi
 }
 
-### Start default video capture ###
-echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
-     logParse -p "FFMPEG"
-ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
-       -draw_mouse 0 -threads 0 \
-       -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
-       -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &
+if [[ "$AUDIO_ONLY" != "true" ]]; then
+    ### Start default video capture ###
+    echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
+        logParse -p "FFMPEG"
+    ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
+        -draw_mouse 0 -threads 0 \
+        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
+        -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &
 
-### Check if video device is ready ###
-checkV4l2 "/dev/video0"
+    ### Check if video device is ready ###
+    checkV4l2 "/dev/video0"
+fi
 
 ### Start SIP capture (HEP) ###
 if [[ "$HEPLIFY_SRV" ]]; then
@@ -62,6 +64,9 @@ if [[ "$TURN_SRV" ]] && [[ "$TURN_USER" ]]  ; then
     if [[ "$SDP_IN_IP4" ]]; then
         PUBLIC_IP=$SDP_IN_IP4
     fi
+fi
+if [[ "$AUDIO_ONLY" == "true" ]]; then
+    sipAccount+=";video_codecs=''"
 fi
 if [[ "$MEDIAENC" ]] ; then
     sipAccount+=";mediaenc="$MEDIAENC

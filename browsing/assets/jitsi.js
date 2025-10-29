@@ -1,6 +1,8 @@
 class Jitsi {
-    constructor(domain, roomName, displayName, lang, token) {
+    constructor(domain, roomName, displayName, lang, token, audioOnly) {
         document.body.innerHTML = '<div id="jitsi-container" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
+        this.audioOnly = audioOnly === "true"
+        debugger;
         this.mainOptions = {
             roomName: roomName,
             userInfo: {
@@ -18,8 +20,8 @@ class Jitsi {
                 defaultLanguage: lang,
                 toolbarButtons: ['security'],
                 startWithAudioMuted: false,
-                startWithVideoMuted: false,
-                startAudioOnly: false,
+                startWithVideoMuted: this.audioOnly,
+                startAudioOnly: this.audioOnly,
                 enableNoisyMicDetection: false,
                 prejoinPageEnabled: false,
                 videoQuality: {

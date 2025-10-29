@@ -29,6 +29,9 @@ class IVR:
         self.userInputs = queue.Queue()
         self.service = []
         self.chromeOptions = webdriver.ChromeOptions()
+        if os.environ.get('AUDIO_ONLY') == "true":
+            self.chromeOptions.add_argument('--headless=new')
+            self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.chromeOptions.add_argument('--no-sandbox')
         self.chromeOptions.add_argument('--disable-web-security')
         self.chromeOptions.add_argument('--disable-site-isolation-trials')
