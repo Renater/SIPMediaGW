@@ -42,12 +42,6 @@ class Teams {
             nativeInputValueSetter.call(nameInput, this.displayName);
             nameInput.dispatchEvent(new Event('input', { bubbles: true }));
 
-            const deviceSettings = await this.waitForElement("[id='prejoin-devicesettings-button']", { clickable: true }, 60000);
-            deviceSettings.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            const noiseSuppression = await this.waitForElement("[data-tid='background-suppression-switch']",
-                                                               { clickable: true }, 60000);
-            noiseSuppression.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-
             console.log('[INFO] Submitting join form...');
             const joinButton = await this.waitForElement("[data-tid='prejoin-join-button']", { clickable: true }, 60000);
             joinButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
