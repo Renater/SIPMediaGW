@@ -6,6 +6,7 @@ export class Room {
         this.roomToken = null;
         this.mappedDomain = null;
         this.meeting = null;
+        this.mailOwner = null;
         this.overlayTimeouts = {};
     }
 
@@ -38,10 +39,12 @@ export class Room {
         const mapperURL = confMapper.url;
         const timeout = 5000;
         const authURL = this.config['auth_token']['url'];
-
         try {
             if (mapperURL) {
                 await this.getConferenceName(mapperURL, timeout, onError);
+            }
+            if(!this.mailOwner) {
+                this.roomToken = '';
             }
             if (authURL) {
                 await this.getConferenceToken(authURL, timeout, onError);
@@ -63,6 +66,9 @@ export class Room {
                     if (data.conference) {
                         this.roomName = data['url'] || data['conference'].split('@')[0];
                         this.mappedDomain = data['meeting_instance'] || data['conference'].split('@conference.')[1];
+                        if("mail_owner" in data) {
+                            this.mailOwner = data['mail_owner'];
+                        }
                         resolve();
                     } else {
                         onError(data);
