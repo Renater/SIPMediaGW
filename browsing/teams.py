@@ -29,7 +29,7 @@ class Teams(Browsing):
             self.room['config']['webrtc_domain'],
             self.room['roomName'].replace('-', '?p=')
         ))
-        WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located((By.TAG_NAME, "video"))
         )
 
