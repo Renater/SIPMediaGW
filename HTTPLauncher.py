@@ -63,6 +63,8 @@ class Start:
             gwSubProc.extend(['-p', data['prefix']])
         if 'domain' in data:
             gwSubProc.extend(['-w', data['domain']])
+        if 'mainApp' in data:
+            gwSubProc.extend(['-a', data['mainApp']])
         if 'rtmpDst' in data:
             gwSubProc.extend(['-u', data['rtmpDst']])
         if 'dial' in data:
