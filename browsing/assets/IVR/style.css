@@ -78,7 +78,7 @@ body {
   color: #0f0;
   border: 1px dashed #0f0;
   padding: 0.8em 1em;
-  max-width: 700px;
+  max-width: 750px;
 }
 
 #domains .domain-item {
@@ -89,4 +89,18 @@ body {
   color: #cccc33;
   font-weight: bold;
   margin-right: 0.5em;
+}
+
+#domain-status {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  text-align: center;
+  color: #cccc33;
+  font-weight: bold;
+  font-size: 1.1em;
+  background: rgba(0,0,0,0.8);
+  padding: 0.5em 0;
+  z-index: 100;
 }
