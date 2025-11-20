@@ -75,9 +75,8 @@ def main():
                     getLogsData ('{}\n'.format(line.split('URL: ',1)[1]),
                                  'url', historyFile)
 
-                if 'Jitsi URL:' in line:
-                    getLogsData ('{}\n'.format(line.split('#',1)[0].
-                                               rsplit("/",1)[1]),
+                if 'room:' in line:
+                    getLogsData ('{}\n'.format(line.split('room: ', 1)[1]),
                                  'room', historyFile)
 
                 if pref == "Baresip":
