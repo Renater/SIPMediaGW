@@ -70,7 +70,7 @@ class IVR:
         if self.browsingId:
             self.url = '{}&domainId={}'.format(self.url, self.browsingId)
         if self.browsingName:
-            self.url = '{}&domainKey={}'.format(self.url, self.browsingId)
+            self.url = '{}&domainKey={}'.format(self.url, self.browsingName)
         if self.mixedId:
             self.url = '{}&mixedId={}'.format(self.url, urllib.parse.quote(self.mixedId))
         print("Web browsing URL: "+self.url, flush=True)
