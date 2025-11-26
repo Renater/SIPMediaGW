@@ -25,6 +25,7 @@ class BigBlueButton (Browsing):
             print("Cannot enter meeting", flush=True)
             return
 
+        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/uihelper.js'))
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'./assets/bigbluebutton.js'))
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.browse();")

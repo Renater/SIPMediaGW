@@ -1,42 +1,24 @@
-class Bigbluebutton {
+class Bigbluebutton extends UIHelper {
     constructor(domain, roomName, displayName, lang, token, audioOnly) {
+        super();
         this.domain = domain;
         this.roomName = roomName;
         this.displayName = displayName;
         this.lang = lang;
         this.token = token;
-    }
-
-    // Utility: Wait for an element to be clickable
-    async waitForElement(selector, { visible = false, clickable = false } = {}, timeout = 20000) {
-        const start = Date.now();
-
-        return new Promise((resolve, reject) => {
-            const interval = setInterval(() => {
-                const el = document.querySelector(selector);
-                if (!el) return;
-                const style = window.getComputedStyle(el);
-                const isVisible = style.display !== 'none' && style.visibility !== 'hidden' && el.offsetHeight > 0 && el.offsetWidth > 0;
-                const isEnabled = !el.disabled;
-                if (
-                    (!visible || isVisible) &&
-                    (!clickable || (isVisible && isEnabled))
-                ) {
-                    clearInterval(interval);
-                    resolve(el);
-                }
-                if (Date.now() - start > timeout) {
-                    clearInterval(interval);
-                    reject(new Error(`Timeout: ${selector} not matching criteria`));
-                }
-            }, 100);
-        });
+        this.joined = false;
     }
 
     async tryClickWhileVisible(selector, retries = 5, delay = 1000) {
         for (let i = 0; i < retries; i++) {
             try {
-                const el = await this.waitForElement(selector, { clickable: true }, delay);
+                let el;
+                try {
+                    el = await this.waitForElement(selector, { clickable: true }, delay);
+                } catch (e) {
+                    console.warn(`[!] waitForElement failed for ${selector}: ${e.message}`);
+                    continue;
+                }
                 el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
                 console.log(`[~] Click ${i + 1}/${retries} on ${selector}`);
 
@@ -58,14 +40,27 @@ class Bigbluebutton {
     async join() {
         try {
             console.log('[INFO] Waiting for display name input...');
-            const nameInput = await this.waitForElement('#joinFormName', { visible: true });
+            let nameInput;
+            try {
+                nameInput = await this.waitForElement('#joinFormName', { visible: true });
+            } catch (e) {
+                console.error('[✗] Name field not found:', e);
+                return;
+            }
             const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
             nativeInputValueSetter.call(nameInput, this.displayName);
             nameInput.dispatchEvent(new Event('input', { bubbles: true }));
             console.log('[✓] Name field detected and filled');
             console.log('[INFO] Submitting join form...');
-            const joinButton = await this.waitForElement("button[type='submit']", { clickable: true });
+            let joinButton;
+            try {
+                joinButton = await this.waitForElement("button[type='submit']", { clickable: true });
+            } catch (e) {
+                console.error('[✗] Join button not found:', e);
+                return;
+            }
             joinButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            this.joined = true;
             console.log('[✓] Join form submitted');
         } catch (error) {
             console.error('[✗] Prejoin process failed:', error);
@@ -73,31 +68,59 @@ class Bigbluebutton {
     }
 
     async startVideo() {
-        console.log('[INFO] Activating camera...');
-        const cameraBtn = await this.waitForElement("[data-test='joinVideo']", { clickable: true });
-        cameraBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        console.log('[✓] Camera button clicked');
+        try {
+            console.log('[INFO] Activating camera...');
+            let cameraBtn;
+            try {
+                cameraBtn = await this.waitForElement("[data-test='joinVideo']", { clickable: true });
+            } catch (e) {
+                console.error('[✗] Camera button not found:', e);
+                return;
+            }
+            cameraBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            console.log('[✓] Camera button clicked');
 
-        console.log('[INFO] Setting video quality...');
-        const captureVideoQuality = "medium"; // or "low", "high"
-        const qualityDropdown = await this.waitForElement("#setQuality", { clickable: true });
-        qualityDropdown.value = captureVideoQuality;
-        qualityDropdown.dispatchEvent(new Event("change", { bubbles: true }));
-        console.log(`[✓] Video quality set: ${captureVideoQuality}`);
+            console.log('[INFO] Setting video quality...');
+            const captureVideoQuality = "medium"; // or "low", "high"
+            let qualityDropdown;
+            try {
+                qualityDropdown = await this.waitForElement("#setQuality", { clickable: true });
+            } catch (e) {
+                console.error('[✗] Quality dropdown not found:', e);
+                return;
+            }
+            qualityDropdown.value = captureVideoQuality;
+            qualityDropdown.dispatchEvent(new Event("change", { bubbles: true }));
+            console.log(`[✓] Video quality set: ${captureVideoQuality}`);
 
-        console.log('[INFO] Starting webcam sharing...');
-        await this.tryClickWhileVisible('[data-test="startSharingWebcam"]');
+            console.log('[INFO] Starting webcam sharing...');
+            await this.tryClickWhileVisible('[data-test="startSharingWebcam"]');
+        } catch (error) {
+            console.error('[✗] startVideo failed:', error);
+        }
     }
 
     async browse() {
         try {
             console.log('[INFO] Enabling microphone...');
-            const micDetails = await this.waitForElement("[data-test='audioModal']", { visible: true });
+            let micDetails;
+            try {
+                micDetails = await this.waitForElement("[data-test='audioModal']", { visible: true });
+            } catch (e) {
+                console.error('[✗] Microphone modal not found:', e);
+                return;
+            }
             micDetails.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
             await this.tryClickWhileVisible('[data-test="joinEchoTestButton"]');
 
             console.log('[INFO] Closing session details modal...');
-            var sessionDetails = await this.waitForElement("[data-test='sessionDetailsModal']", { visible: true });
+            let sessionDetails;
+            try {
+                sessionDetails = await this.waitForElement("[data-test='sessionDetailsModal']", { visible: true });
+            } catch (e) {
+                console.error('[✗] Session details modal not found:', e);
+                return;
+            }
             var closeBtn = sessionDetails.querySelector("[data-test='closeModal']");
             closeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
             console.log('[✓] Modal closed');
