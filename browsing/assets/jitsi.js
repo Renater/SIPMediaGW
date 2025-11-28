@@ -69,7 +69,6 @@ class Jitsi extends UIHelper{
 
     async join() {
         var externalAPI = document.createElement('script');
-
         externalAPI.onload = async () => {
             let subDomain = this.domain;
             this.jitsiApiClient = new JitsiMeetExternalAPI(subDomain, this.mainOptions);
