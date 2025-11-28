@@ -4,17 +4,6 @@ class Menu {
         this.overlayTimeouts = {};
         this.img = { "icon": null,
                      "dtmf": null};
-        const blocker = document.createElement('div');
-        blocker.id = 'blocker';
-        blocker.tabIndex = 0;
-        blocker.style.position = 'fixed';
-        blocker.style.top = '0';
-        blocker.style.left = '0';
-        blocker.style.width = '100vw';
-        blocker.style.height = '100vh';
-        blocker.style.zIndex = '9999';
-        document.body.appendChild(blocker);
-        this.blocker = blocker;
     }
 
     fetchWithTimeout(resource, options = {}, timeout = 5000, onError = null) {
@@ -101,12 +90,6 @@ class Menu {
     async show() {
         this.createOverlayImage('icon', '20px', '20px')
         this.createOverlayImage('dtmf', '10px', '10px', 5000)
-
-        this.blocker.focus();
-        this.blocker.addEventListener('blur', () => {
-          setTimeout(() => this.blocker.focus(), 0);
-        });
-
         try {
             document.addEventListener('keydown', (e) => {
                 const key = e.key;

@@ -1,8 +1,8 @@
-class Jitsi {
+class Jitsi extends UIHelper{
     constructor(domain, roomName, displayName, lang, token, audioOnly) {
         document.body.innerHTML = '<div id="jitsi-container" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
+        super();
         this.audioOnly = audioOnly === "true"
-        debugger;
         this.mainOptions = {
             roomName: roomName,
             userInfo: {
@@ -57,14 +57,88 @@ class Jitsi {
         document.body.style.overflow = 'hidden';
         this.participantsPaneVisible = false;
         this.jitsiApiClient = null;
+        this.joined = false;
     }
-    join() {
+
+    getDocumentContent(){
+        if(this.jitsiApiClient) {
+            return this.jitsiApiClient.getIFrame().contentDocument;
+        }
+        super.getDocumentContent();
+    }
+
+    async join() {
         var externalAPI = document.createElement('script');
 
-        externalAPI.onload = () => {
+        externalAPI.onload = async () => {
             let subDomain = this.domain;
             this.jitsiApiClient = new JitsiMeetExternalAPI(subDomain, this.mainOptions);
             window.jitsiApiClient = this.jitsiApiClient;
+            let passInput = null;
+            let waitingHost = null;
+
+            try {
+                passInput = await this.waitForElement('#required-password-input',
+                                                      { clickable: true },
+                                                      10000);
+            } catch (e) {
+                debugger;
+                console.warn("Password input not found or not clickable:", e);
+                passInput = null;
+            }
+
+            if(passInput){
+                this.overlay.style.display = "flex";
+                try{
+                    passInput.addEventListener('keydown', async (e) => {
+                        const key = e.key;
+                        if ( key === '#' ) {
+                            e.preventDefault();
+                            let okButton = await this.waitForElement('#modal-dialog-ok-button',
+                                                      { clickable: true },
+                                                      1000);
+                            okButton.click();
+                        }
+                        if ( key === '*' ) {
+                            e.preventDefault();
+                            passInput.value = passInput.value.slice(0, -1);
+                        }
+                    }, {capture: true});
+                } catch (err) {
+                    console.error("Error during Menu setup:", err);
+                    onError(err);
+                }
+            }
+
+            // Wait until password input disappears or is disabled
+            while (passInput) {
+                passInput.focus();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                passInput = this.jitsiApiClient.getIFrame().contentDocument.querySelector('#required-password-input');
+                if (!passInput) break;
+                console.log("Waiting for password input to disappear or be disabled");
+            }
+            // Hide overlay when done
+            this.overlay.style.display = "none";
+
+            // Look for CGU input and wait until it disappears
+            try {
+                waitingHost = await this.waitForElement("[data-focus-lock-disabled='false']",
+                                                        { clickable: true },
+                                                        4000);
+            } catch (e) {
+                console.warn("CGU notification not found:", e);
+                passInput = null;
+            }
+            while (waitingHost) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                waitingHost = this.jitsiApiClient.getIFrame().contentDocument.querySelector("[data-focus-lock-disabled='false']");
+                if (!waitingHost) break;
+                console.log("Waiting for CGU input to disappear or be disabled");
+            }
+
+            this.blockInteract()
+            this.joined = true;
         };
         externalAPI.src = "https://" + this.domain + "/external_api.js"
         document.body.appendChild(externalAPI);
