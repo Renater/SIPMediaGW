@@ -1,5 +1,4 @@
 {
-    "lang": "${IVR_LANG}",
     "min_ivr_digit_length": "${IVR_DIGIT_LENGTH}",
     "webrtc_domains": ${WEBRTC_DOMAINS},
     "conf_mapper": {
@@ -10,5 +9,16 @@
         "url": "${TOKEN_API_URL}",
         "secure_room_regexp": "${ROOM_REGEXP}"
     },
-    "ivr_tts": "${IVR_TTS}"
+    "ivr_tts": "${IVR_TTS}",
+    "lang": "${IVR_LANG}",
+    "ivr_prompts" : {
+        "fr": {
+            "domain": "Veuillez entrer le numéro de la plateforme suivi de #<br>(utilisez * pour corriger)",
+            "room": "Veuillez entrer le numéro de votre conférence suivi de #<br>(utilisez * pour corriger)"
+        },
+        "en": {
+            "domain": "Please enter the platform number followed by #<br>(use * to correct)",
+            "room": "Please enter your conference number followed by #<br>(use * to correct)"
+        }
+    }
 }

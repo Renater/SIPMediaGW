@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="160" viewBox="0 0 700 160">
+
+  <!-- Touches SIP -->
+  <g font-family="Ubuntu Mono, monospace" font-size="72" font-weight="700">
+
+    <!-- S -->
+    <rect x="40" y="25" width="80" height="95" rx="6" fill="none" stroke="#1E62D0" stroke-width="6"></rect>
+    <text x="80" y="72.5" fill="#1E62D0" text-anchor="middle" dominant-baseline="middle">S</text>
+
+    <!-- I -->
+    <rect x="130" y="25" width="60" height="95" rx="6" fill="none" stroke="#1E62D0" stroke-width="6"></rect>
+    <text x="160" y="72.5" fill="#1E62D0" text-anchor="middle" dominant-baseline="middle">I</text>
+
+    <!-- P -->
+    <rect x="200" y="25" width="80" height="95" rx="6" fill="none" stroke="#1E62D0" stroke-width="6"></rect>
+    <text x="240" y="72.5" fill="#1E62D0" text-anchor="middle" dominant-baseline="middle">P</text>
+
+  </g>
+
+  <!-- MediaGW (attaché) -->
+  <text x="285" y="95" font-family="Ubuntu Mono, monospace" font-size="72" letter-spacing="-2" font-weight="700">
+
+    <tspan fill="#1FA45B">Media</tspan><tspan fill="#E67E22">GW</tspan>
+
+  </text>
+
+</svg>

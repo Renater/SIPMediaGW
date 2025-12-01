@@ -6,13 +6,51 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- SPLASH SCREEN -->
+  <div id="bg"></div>
+  <div id="splash">
+    <img src="logo.svg" alt="logo" id="splash-logo">
+  </div>
 
-  <div id="message"></div>
-  <div id="domains" class="hidden"></div>
-  <div id="digits" contenteditable="true" spellcheck="false">_____</div>
-  <div id="status"></div>
-  <div id="domain-status"></div>
+  <!-- MAIN UI -->
+  <div id="main" class="hidden ">
+    <div id="message"></div>
+    <div id="domains" class="hidden"></div>
+    <div id="digits" contenteditable="true" spellcheck="false">_____</div>
+    <div id="status"></div>
+    <div id="domain-status"></div>
+  </div>
 
-  <script type="module" src="ivr.js"></script>
+  <script>
+  // Splash → logo → main UI
+  setTimeout(() => {
+    const splash = document.getElementById("splash");
+    const logo   = document.getElementById("splash-logo");
+    const main   = document.getElementById("main");
+
+    // Move logo to the corner
+    logo.classList.add("move-to-corner");
+
+    // Fade-in background
+    document.getElementById("bg").classList.add("visible");
+
+    setTimeout(() => {
+      main.classList.remove("hidden");
+      main.classList.add("fade-in");
+    }, 500);
+
+    // Load ivr.js
+    const script = document.createElement("script");
+    script.src = "ivr.js";
+    script.type = "module";
+    script.onload = () => {
+      splash.style.background = "transparent";
+      splash.style.pointerEvents = "none";
+    };
+    document.body.appendChild(script);
+
+  }, 2200);
+  </script>
+
 </body>
 </html>

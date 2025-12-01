@@ -1,16 +1,5 @@
 import { Room } from './room.js';
 
-const prompts = {
-    fr: {
-        domain: "Veuillez entrer le numéro de la plateforme suivi de #<br>(utilisez * pour corriger)",
-        room: "Veuillez entrer le numéro de votre conférence suivi de #<br>(utilisez * pour corriger)"
-    },
-    en: {
-        domain: "Please enter the platform number followed by #<br>(use * to correct)",
-        room: "Please enter your conference number followed by #<br>(use * to correct)"
-    }
-};
-
 const messages = {
     fr: {
         valid: code => `Code validé : ${code}`,
@@ -41,6 +30,7 @@ function initIVR(config) {
     const statusEl = document.getElementById("status");
     const domainsEl = document.getElementById("domains");
 
+    const prompts = config['ivr_prompts'];
     const lang = config['lang'] || 'fr';
     const expectedLength = parseInt(config['min_ivr_digit_length'], 10) || 0;
     const domains = parseDomains(config['webrtc_domains']);
@@ -97,7 +87,7 @@ function initIVR(config) {
             messageEl.innerHTML = prompts[lang].domain;
             domainsEl.classList.remove("hidden");
             domainsEl.innerHTML = Object.values(domains)
-                .map(d => `<div class="domain-item"><span class="domain-id">${d.id}:</span> ${d.name}</div>`)
+                .map(d => `<div class="domain-item"><span class="domain-id">${d.id}</span> ${d.name}</div>`)
                 .join("");
             playPromptAudio("platform", lang);
         } else {
@@ -108,7 +98,17 @@ function initIVR(config) {
         }
     }
 
+    let firstDigitEntered = false;
+
+    function activateDigitsHalo() {
+        if (!firstDigitEntered) {
+            digitsEl.classList.add("active");
+            firstDigitEntered = true;
+        }
+    }
+
     function handleInput(char) {
+        activateDigitsHalo()
         if (/^[a-zA-Z0-9-_/]$/.test(char)) {
             if (stage === "domain") inputDigits = [char];
             else inputDigits.push(char);
@@ -120,10 +120,12 @@ function initIVR(config) {
                 if (!isNaN(domainId) && domains[domainId]) {
                     selectedDomain = domains[domainId];
                     showDomainStatus(messages[lang].chosenDomain(domainId, selectedDomain.name));
+                    document.getElementById("domain-status").style.display = "block";
                     window.browsing = selectedDomain.key;
                     inputDigits = [];
                     stage = "room";
                     updateDisplay();
+                    if (stage === "room") digitsEl.classList.add("room-mode");
                     if (pendingRoomId) {
                         digitsEl.style.visibility = "hidden";
                         (pendingRoomId + '#').split('').forEach(handleInput);

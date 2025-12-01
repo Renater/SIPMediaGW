@@ -1,106 +1,242 @@
+/* ============================
+   Global Layout & Typography
+   ============================ */
+
 body {
-  background: #000;
-  color: #0f0;
-  font-family: monospace, monospace;
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  font-size: 1.5em;
-  margin: 0;
-  padding: 20px;
-  user-select: none;
+
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  color: #2a3550;
 }
+
+#bg {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+      180deg,
+      rgb(245, 247, 251) 0%,
+      rgb(223, 230, 245) 40%,
+      rgb(247, 248, 252) 100%
+  );
+  z-index: 0;           /* behind everything */
+  opacity: 0;           /* invisible at start */
+  transition: opacity 2s ease;
+}
+
+#bg.visible {
+  opacity: 1;           /* fade-in */
+}
+
+/* ============================
+   Main message
+   ============================ */
 
 #message {
-  margin-bottom: 1.2em;
+  max-width: 620px;
   text-align: center;
-  max-width: 600px;
-  font-size: 1.2em;
-  line-height: 1.4em;
+  margin-bottom: 1.4rem;
+
+  font-size: 1.35rem;
+  line-height: 1.65rem;
+  font-weight: 600;
+  color: #1b2640;
 }
+
+/* ============================
+   Digits input
+   ============================ */
 
 #digits {
-  letter-spacing: 0.4em;
-  margin-bottom: 1.5em;
-  min-width: 12ch;
-  text-align: center;
-  font-size: 2em;
-  color: #0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  min-width: 2ch;
+  max-width: 2ch;
+  font-family: "Roboto Mono", monospace;
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  padding: 0.55rem;
+  padding-left: 1.2rem;
+  padding-right: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid #ccd5e4;
+  background: white;
+  color: #1b2640;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   caret-color: transparent;
   user-select: none;
+  transition: all 0.25s ease;
 }
 
-#digits:focus {
-  outline: none;
-  box-shadow: none;
-  background: transparent;
+/* When switching to ROOM mode, the field widens */
+#digits.room-mode {
+  min-width: 14ch !important;
+  max-width: 30ch;
 }
+
+/* Glow */
+#digits.active {
+  border-color: #6c79b8;
+  box-shadow:
+      0 0 8px rgba(108,121,184,0.4),
+      0 0 2px rgba(108,121,184,0.8);
+}
+
+/* ============================
+   Status text
+   ============================ */
 
 #status {
-  color: #cccc33;
-  font-weight: normal;
-  font-size: 1em;
+  margin-top: 0.5rem;
+  min-height: 1.3rem;
+
+  font-size: 1rem;
+  color: #6b7390;
   text-align: center;
-  min-height: 1.5em;
-  margin-top: 0.5em;
-  opacity: 0.8;
 }
 
-.overlay-img {
-  position: fixed;
-  z-index: 9999;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-#menu_dtmf {
-  bottom: 20px;
-  left: 20px;
-}
-
-#menu_icon {
-  bottom: 20px;
-  left: 20px;
-}
-
-.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+/* ============================
+   Domains list
+   ============================ */
 
 #domains {
-  margin-bottom: 1.5em;
+  max-width: 680px;
+  padding: 1rem 1.2rem;
+
+  background: rgba(255,255,255,0.6);
+  border: 1px solid #c8d1e0;
+  border-radius: 10px;
+
+  margin-bottom: 1.6rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+
   text-align: left;
-  font-size: 1em;
-  line-height: 1.4em;
-  color: #0f0;
-  border: 1px dashed #0f0;
-  padding: 0.8em 1em;
-  max-width: 750px;
 }
 
 #domains .domain-item {
-  margin: 0.2em 0;
+  padding: 0.35rem 0;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #2a3550;
+
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 #domains .domain-id {
-  color: #cccc33;
-  font-weight: bold;
-  margin-right: 0.5em;
+  background: #6c79b8;
+  color: white;
+
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+
+  min-width: 1.8rem;
+  text-align: center;
 }
 
+/* ============================
+   Bottom selected-domain bar
+   ============================ */
+
 #domain-status {
+  display: none; /* HIDDEN BY DEFAULT */
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
+
+  padding: 0.75rem;
   text-align: center;
-  color: #cccc33;
-  font-weight: bold;
-  font-size: 1.1em;
-  background: rgba(0,0,0,0.8);
-  padding: 0.5em 0;
-  z-index: 100;
+
+  background: rgba(255,255,255,0.9);
+  border-top: 1px solid #c9d2e3;
+
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #445077;
+
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+}
+
+/* Utility */
+.hidden {
+  visibility: hidden;   /* invisible but already rendered */
+  opacity: 0;           /* visually invisible */
+}
+
+/* Container fade-in animation */
+.fade-in {
+  animation: fadeIn 0.35s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================
+   Splash Screen
+   ============================ */
+#splash {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: white;
+  z-index: 9999;
+
+  transition: opacity 0.7s ease;
+}
+
+#splash-logo {
+  width: 500px;
+  opacity: 0;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+
+  animation: splashIn 1.4s ease forwards;
+  transition: all 0.7s ease;
+  z-index: 1000;
+}
+
+@keyframes splashIn {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Move to top left corner without affecting main layout */
+#splash-logo.move-to-corner {
+  width: 300px;
+  position: fixed;
+  top: 100px;
+  left: 200px;
+  transform: scale(0.5);
+}
+
+/* Hide splash white background but keep logo */
+#splash.hidden {
+  background: transparent;
+  pointer-events: none;
+  opacity: 0; /* optional, for fade-out */
 }
