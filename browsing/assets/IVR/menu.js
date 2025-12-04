@@ -37,7 +37,12 @@ class Menu {
           img.style.bottom = bt;
           img.style.left = left;
           img.style.zIndex = "9999";
-          document.body.appendChild(img);
+          let wrapper = document.getElementById("wrapper")
+          if (!wrapper) {
+              wrapper = document.createElement("div");
+              wrapper.id = "wrapper";
+          }
+          wrapper.appendChild(img);
         } else {
           existing.style.display = "block";
         }

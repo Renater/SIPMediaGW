@@ -9,6 +9,8 @@ import subprocess
 import signal
 import threading
 import urllib.parse
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../src")
 from ivr import IVR
@@ -84,7 +86,9 @@ def exitHandler():
 def browse(ivr):
     ivr.chromeOptions.arguments.remove('--start-fullscreen')
     ivr.chromeOptions.arguments.remove('--kiosk')
+    #ivr.chromeOptions.add_argument('--app=file:///dev/null')
     ivr.run()
+    print('Exit IVR')
 
 atexit.register(exitHandler)
 signal.signal(signal.SIGTERM, exitHandler)
@@ -113,12 +117,52 @@ with open(configPath, "w") as file:
     config = json.loads(envsubst(content))
     file.write(json.dumps(config, indent=4))
 
+def loadJS(driver, jsScript):
+    with open(jsScript, "r", encoding="utf-8") as f:
+        js_code = f.read()
+    driver.execute_script(js_code)
+
 # Launch IVR
 # os.environ['AUDIO_ONLY'] = "true"
 # mixedRoomDomainId = '1.2483803751'
-ivr = IVR(width='1280', height='720', roomName='myroom', name='myname', mixedId='')
+demoMode = True
+
+ivr = IVR(width='1536', height='864', browsingName='', roomName='', name='Meeting Room')
 browseThread = threading.Thread(target=browse, args=(ivr,))
 browseThread.start()
+
+if demoMode:
+    while not ivr.driver:
+        time.sleep(0.1)
+    loadJS(ivr.driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/screen.js'))
+    time.sleep(1)
+    driver = ivr.driver
+    loadJS(ivr.driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/demo.js'))
+    ivr.driver.execute_script("""window.onclick = async function(){
+                                await dialer.pressSequence(["1", "#"], 1000);
+                                await new Promise(r => setTimeout(r, 1000));
+                                await dialer.pressSequence(["1","2","3","4","5","#"], 1000);};""")
+    #while ivr.driver == driver:
+    while not ivr.browsingObj:
+        time.sleep(0.1)
+    while not ivr.browsingObj.driver :
+        time.sleep(0.1)
+
+    driver = ivr.browsingObj.driver
+    while not driver.execute_script("return document.querySelector('#menu_icon');"):
+        time.sleep(1)
+
+    loadJS(driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/screen.js'))
+    loadJS(driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/demo.js'))
+    driver.execute_script("""window.onclick = async function(){
+                                await dialer.pressSequence(["1","1"], 1500);
+                                await dialer.pressSequence(["2","2"], 1500);
+                                await dialer.pressSequence(["3","3"], 1500);
+                                await dialer.pressSequence(["4","4"], 1500);
+                                await dialer.pressSequence(["5","5"], 5000);
+                                await new Promise(r => setTimeout(r, 1000));
+                                await dialer.pressKey("3");
+                            };""")
 
 while True:
     time.sleep(1)

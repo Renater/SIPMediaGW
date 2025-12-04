@@ -1,6 +1,6 @@
 class Jitsi extends UIHelper{
     constructor(domain, roomName, displayName, lang, token, audioOnly) {
-        document.body.innerHTML = '<div id="jitsi-container" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
+        document.body.innerHTML = '<div id="wrapper" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
         super();
         this.audioOnly = audioOnly === "true"
         this.mainOptions = {
@@ -47,7 +47,7 @@ class Jitsi extends UIHelper{
                 },
                 disableSelfView: false
             },
-            parentNode: document.getElementById("jitsi-container"),
+            parentNode: document.getElementById("wrapper"),
         };
         this.domain = domain;
         document.body.style.margin = '0';
@@ -79,9 +79,8 @@ class Jitsi extends UIHelper{
             try {
                 passInput = await this.waitForElement('#required-password-input',
                                                       { clickable: true },
-                                                      10000);
+                                                      2000);
             } catch (e) {
-                debugger;
                 console.warn("Password input not found or not clickable:", e);
                 passInput = null;
             }
@@ -124,7 +123,7 @@ class Jitsi extends UIHelper{
             try {
                 waitingHost = await this.waitForElement("[data-focus-lock-disabled='false']",
                                                         { clickable: true },
-                                                        4000);
+                                                        2000);
             } catch (e) {
                 console.warn("CGU notification not found:", e);
                 passInput = null;
@@ -136,7 +135,7 @@ class Jitsi extends UIHelper{
                 console.log("Waiting for CGU input to disappear or be disabled");
             }
 
-            this.blockInteract()
+            this.blockerFocus()
             this.joined = true;
         };
         externalAPI.src = "https://" + this.domain + "/external_api.js"

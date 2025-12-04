@@ -32,6 +32,7 @@ class Browsing:
             self.chromeOptions.add_argument('--headless=new')
             self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.chatMsg = queue.Queue()
+        self.driver = None
 
     def loadJS(self, jsScript):
         with open(jsScript, "r", encoding="utf-8") as f:
@@ -120,9 +121,9 @@ class Browsing:
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
                             self.config['lang'])
             menuScript = "menu=new Menu(); \
-                        menu.img['icon'] = '{}'; \
-                        menu.img['dtmf'] = '{}'; \
-                        menu.show();".format(self.iconB64, self.dtmfB64)
+                          menu.img['icon'] = '{}'; \
+                          menu.img['dtmf'] = '{}'; \
+                          menu.show();".format(self.iconB64, self.dtmfB64)
             self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
             self.driver.execute_script(menuScript)
             while self.room:

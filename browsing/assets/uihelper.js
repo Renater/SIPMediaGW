@@ -73,7 +73,7 @@ class UIHelper {
         });
 }
 
-    blockInteract(){
+    blockerFocus(){
         this.blocker.focus();
         this.blocker.addEventListener('blur', () => {
             setTimeout(() => this.blocker.focus(), 0);

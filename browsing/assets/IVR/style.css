@@ -3,8 +3,9 @@
    ============================ */
 
 body {
+  display: block;
   margin: 0;
-  padding: 20px;
+  padding: 0px;
   min-height: 100vh;
 
   display: flex;
@@ -155,7 +156,7 @@ body {
 
 #domain-status {
   display: none; /* HIDDEN BY DEFAULT */
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
