@@ -1,17 +1,11 @@
 # SIPMediaGW
-SIPMediaGW is a Docker-based set of open-source components that allow traditional video conferencing rooms to join Jitsi, Big Blue Button or LiveKit web conferences using SIP and RTP protocols.
-
-<img src="docs/architecture.png">
-
+SIPMediaGW is an open-source set of components that allows traditional meeting rooms with conferencing systems to join any modern platform (like Jitsi, BigBlueButton, LiveKit — and even Teams).
+<br><br><br>
+![sipmediagw_demo](https://github.com/user-attachments/assets/4da15b2f-026e-4a5f-acae-7b5c9085714d)
+<br><br><br>
 The room connector is compatible with all video devices supporting the SIP protocol. It has been tested with major devices from Polycom, Cisco, Huawei, and Aver.
 
-<p align="center">
-<img src="docs/ivr1.png" width="640">
-<img src="docs/ivr2.png" width="640">
-</p>
-
-SIPMediaGW relies on several open-source projects such as [Coturn](https://github.com/coturn/coturn), [Kamailio](https://github.com/kamailio/kamailio), [Homer](https://github.com/sipcapture/homer), [Baresip](https://github.com/baresip/baresip), [FFmpeg](https://github.com/FFmpeg/FFmpeg), [Pulseaudio](https://github.com/pulseaudio/pulseaudio), [ALSA](https://github.com/alsa-project/alsa-lib), [Video4Linux](https://linuxtv.org/), [Fluxbox](http://www.fluxbox.org/).
-
+<img src="docs/architecture.png">
 
 ## Features
 
@@ -22,14 +16,9 @@ SIPMediaGW relies on several open-source projects such as [Coturn](https://githu
 - Content sharing via BFCP (Binary Floor Control Protocol)
 - Streaming capabilities via RTMP (Real-Time Messaging Protocol)
 
-## Usage
+## Get started
 ### Installation
 - [Development environment](./docs/install_dev_env.md) 
-- [Production environment](./docs/install_prod_env.md)
-
-After installation, ensure that your firewall permits the following network traffic :
-
-<img src="./docs/firewall_rules.jpeg" alt="Firewall rules">
 
 ### Configuration
 - [SIPMediaGW](./.env)
@@ -62,6 +51,9 @@ docker compose -f deploy/docker-compose.yml up -d --force-recreate heplify_serve
 ## Documentation
 
 See the [Documentation index](./docs/README.md) for details.
+
+SIPMediaGW relies on several open-source projects such as [Coturn](https://github.com/coturn/coturn), [Kamailio](https://github.com/kamailio/kamailio), [Homer](https://github.com/sipcapture/homer), [Baresip](https://github.com/baresip/baresip), [FFmpeg](https://github.com/FFmpeg/FFmpeg), [Pulseaudio](https://github.com/pulseaudio/pulseaudio), [ALSA](https://github.com/alsa-project/alsa-lib), [Video4Linux](https://linuxtv.org/), [Fluxbox](http://www.fluxbox.org/).
+
 
 ## License
 
