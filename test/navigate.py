@@ -125,7 +125,7 @@ def loadJS(driver, jsScript):
 # Launch IVR
 # os.environ['AUDIO_ONLY'] = "true"
 # mixedRoomDomainId = '1.2483803751'
-demoMode = True
+demoMode = False
 
 ivr = IVR(width='1536', height='864', browsingName='', roomName='', name='Meeting Room')
 browseThread = threading.Thread(target=browse, args=(ivr,))
