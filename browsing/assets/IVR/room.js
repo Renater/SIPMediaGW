@@ -30,6 +30,16 @@ export class Room {
             });
     }
 
+    generateRandomString(length = 5) {
+        const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            result += characters.charAt(randomIndex);
+        }
+        return result;
+    }
+
     async initRoom(roomId, onSuccess = () => {}, onError = () => {}) {
         this.roomId = roomId;
         this.roomName = roomId;
@@ -49,7 +59,12 @@ export class Room {
             if (authURL) {
                 await this.getConferenceToken(authURL, timeout, onError);
             }
-            this.displayName = new URLSearchParams(window.location.search).get("displayName");
+            let name = new URLSearchParams(window.location.search).get("displayName");
+            const ipRegex = /^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}$/;
+            if (ipRegex.test(name)){
+                name = "Meeting Room "+ context.generateRandomString(6);
+            }
+            this.displayName = name;
             onSuccess();
         } catch (err) {
             console.error("Error during Meeting room setup:", err);
