@@ -1,5 +1,5 @@
 class Bigbluebutton extends UIHelper {
-    constructor(domain, roomName, displayName, lang, token, audioOnly) {
+    constructor(domain, roomName, displayName, lang, prompts, token, audioOnly) {
         super();
         this.domain = domain;
         this.roomName = roomName;
@@ -7,6 +7,7 @@ class Bigbluebutton extends UIHelper {
         this.lang = lang;
         this.token = token;
         this.joined = false;
+        this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
     }
 
     async tryClickWhileVisible(selector, retries = 5, delay = 1000) {

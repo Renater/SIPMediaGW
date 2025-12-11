@@ -14,11 +14,13 @@
     "ivr_prompts" : {
         "fr": {
             "domain": "Veuillez entrer le numéro de la plateforme suivi de #<br>(utilisez * pour corriger)",
-            "room": "Veuillez entrer le numéro de votre conférence suivi de #<br>(utilisez * pour corriger)"
+            "room": "Veuillez entrer le numéro de votre conférence suivi de #<br>(utilisez * pour corriger)",
+            "password": "Veuillez entrer le mot de passe suivi de #<br>(utilisez * pour corriger)"
         },
         "en": {
             "domain": "Please enter the platform number followed by #<br>(use * to correct)",
-            "room": "Please enter your conference number followed by #<br>(use * to correct)"
+            "room": "Please enter your conference number followed by #<br>(use * to correct)",
+            "password": "Please enter the password followed by #<br>(use * to correct)"
         }
     }
 }

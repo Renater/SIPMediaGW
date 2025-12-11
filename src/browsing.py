@@ -5,6 +5,7 @@ import os
 import traceback
 import queue
 import base64
+import json
 import time
 import threading
 import subprocess
@@ -35,6 +36,9 @@ class Browsing:
         self.driver = None
 
     def loadJS(self, jsScript):
+        cssPath = os.path.join(os.path.dirname(jsScript),
+                               "IVR/style.css")
+        self.driver.execute_script(f"window.cssPath = 'file://{cssPath}';")
         with open(jsScript, "r", encoding="utf-8") as f:
             js_code = f.read()
         self.driver.execute_script(js_code)
@@ -58,6 +62,7 @@ class Browsing:
                                                     self.room['roomName'],
                                                     self.room['displayName'],
                                                     self.room['config']['lang'],
+                                                    json.dumps(self.room['config']['ivr_prompts']),
                                                     self.room['roomToken'],
                                                     os.environ.get('AUDIO_ONLY'))
         self.driver.execute_script(self.initScript)

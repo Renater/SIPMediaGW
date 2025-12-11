@@ -241,3 +241,53 @@ body {
   pointer-events: none;
   opacity: 0; /* optional, for fade-out */
 }
+
+/* ============================
+    UI Helper
+   ============================ */
+#blocker {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+}
+
+/* ===== Overlay fullscreen ===== */
+#overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9999;
+
+    display: none;        /* hidden by default */
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    font-family: inherit;
+    font-size: 1.5rem;
+    color: #1b2640;
+    text-align: center;
+
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+/* Show overlay */
+#overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* ===== Inner white box ===== */
+#overlay .overlay-inner {
+    background: white;
+    padding: 2rem 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    max-width: 90vw;
+}

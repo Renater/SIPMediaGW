@@ -1,42 +1,24 @@
 class UIHelper {
     constructor() {
+
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = window.cssPath;
+        document.head.appendChild(link);
+
         const blocker = document.createElement('div');
         blocker.id = 'blocker';
         blocker.tabIndex = 0;
-        blocker.style.position = 'fixed';
-        blocker.style.top = '0';
-        blocker.style.left = '0';
-        blocker.style.width = '100vw';
-        blocker.style.height = '100vh';
-        blocker.style.zIndex = '9999';
         document.body.appendChild(blocker);
         this.blocker = blocker;
 
-       // Inject overlay for password prompt
+        // Inject overlay
         const overlay = document.createElement('div');
-        overlay.style.display = "none";
-        overlay.style.position = "fixed";
-        overlay.style.top = "0";
-        overlay.style.left = "0";
-        overlay.style.width = "100vw";
-        overlay.style.height = "100vh";
-        overlay.style.background = "rgba(0,0,0,0.45)";
-        overlay.style.zIndex = "9999";
-        overlay.style.alignItems = "center";
-        overlay.style.justifyContent = "center";
-        overlay.style.flexDirection = "column";
-        overlay.style.fontFamily = "inherit";
-        overlay.style.fontSize = "1.5rem";
-        overlay.style.color = "#1b2640";
-        overlay.style.textAlign = "center";
+        overlay.id = "overlay";
         this.overlay = overlay;
 
         const inner = document.createElement('div');
-        inner.style.background = "white";
-        inner.style.padding = "2rem 2.5rem";
-        inner.style.borderRadius = "12px";
-        inner.style.boxShadow = "0 4px 24px rgba(0,0,0,0.15)";
-        inner.textContent = "Enter the password and press # to validate";
+        inner.className = "overlay-inner";
 
         overlay.appendChild(inner);
         document.body.appendChild(overlay);
@@ -44,6 +26,12 @@ class UIHelper {
 
     getDocumentContent(){
         return document;
+    }
+
+    setPromptMessage(msg){
+        let innerEl = this.overlay.querySelector('.overlay-inner');
+        innerEl.innerHTML = msg;
+
     }
 
     async waitForElement(selector, { visible = false, clickable = false } = {}, timeout = 20000) {

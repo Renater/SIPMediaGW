@@ -1,5 +1,5 @@
 class Teams extends UIHelper {
-    constructor(domain, roomName, displayName, lang, token, audioOnly) {
+    constructor(domain, roomName, displayName, lang, prompts, token, audioOnly) {
         super();
         this.domain = domain;
         this.roomName = roomName;
@@ -7,6 +7,7 @@ class Teams extends UIHelper {
         this.lang = lang;
         this.token = token;
         this.joinded = false;
+        this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
     }
 
     async join() {

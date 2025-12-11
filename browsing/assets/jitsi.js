@@ -1,5 +1,5 @@
 class Jitsi extends UIHelper{
-    constructor(domain, roomName, displayName, lang, token, audioOnly) {
+    constructor(domain, roomName, displayName, lang, prompts, token, audioOnly) {
         document.body.innerHTML = '<div id="wrapper" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
         super();
         this.audioOnly = audioOnly === "true"
@@ -58,6 +58,7 @@ class Jitsi extends UIHelper{
         this.participantsPaneVisible = false;
         this.jitsiApiClient = null;
         this.joined = false;
+        this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
     }
 
     getDocumentContent(){
@@ -79,14 +80,15 @@ class Jitsi extends UIHelper{
             try {
                 passInput = await this.waitForElement('#required-password-input',
                                                       { clickable: true },
-                                                      2000);
+                                                      5000);
             } catch (e) {
                 console.warn("Password input not found or not clickable:", e);
                 passInput = null;
             }
 
             if(passInput){
-                this.overlay.style.display = "flex";
+                this.setPromptMessage(this.passwordPrompt);
+                this.overlay.classList.add("active");
                 try{
                     passInput.addEventListener('keydown', async (e) => {
                         const key = e.key;
@@ -117,7 +119,7 @@ class Jitsi extends UIHelper{
                 console.log("Waiting for password input to disappear or be disabled");
             }
             // Hide overlay when done
-            this.overlay.style.display = "none";
+            this.overlay.classList.remove("active");
 
             // Look for CGU input and wait until it disappears
             try {
