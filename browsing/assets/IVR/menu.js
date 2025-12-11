@@ -87,18 +87,22 @@ class Menu {
         if(key == "#"){
             this.toggleOverlayImage('menu_dtmf', 5000);
         } 
+        else if(key == "*"){
+            this.toggleOverlayImage('menu_icon', 5000);
+        }
         else {
             this.meeting.interact(key);
         }
     }
 
     async show() {
-        this.createOverlayImage('icon', '20px', '20px')
+        this.createOverlayImage('icon', '20px', '20px', 30000)
         this.createOverlayImage('dtmf', '10px', '10px', 5000)
         try {
             document.addEventListener('keydown', (e) => {
                 const key = e.key;
-                if ((key >= '0' && key <= '9') || key === '#' || key === 's') {
+                if ((key >= '0' && key <= '9') ||
+                     key === '#' || key === 's' || key === '*') {
                     e.preventDefault();
                     this.interact(key);
                 }
