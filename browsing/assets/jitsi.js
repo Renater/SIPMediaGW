@@ -1,7 +1,18 @@
 class Jitsi extends UIHelper{
     constructor(domain, roomName, displayName, lang, prompts, token, audioOnly) {
-        document.body.innerHTML = '<div id="wrapper" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>';
+        const wrapper = document.createElement('div');
+        wrapper.id = 'wrapper';
+        wrapper.style.cssText = `
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            pointer-events: none;
+        `;
+        document.body.appendChild(wrapper);
         super();
+        this.wrapper = wrapper;
         this.audioOnly = audioOnly === "true"
         this.mainOptions = {
             roomName: roomName,
@@ -61,11 +72,34 @@ class Jitsi extends UIHelper{
         this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
     }
 
-    getDocumentContent(){
-        if(this.jitsiApiClient) {
-            return this.jitsiApiClient.getIFrame().contentDocument;
-        }
-        super.getDocumentContent();
+    waitForPasswordRequired(timeoutMs = 5000) {
+        return new Promise((resolve, reject) => {
+            let timeoutId;
+
+            const onPasswordRequired = () => {
+                cleanup(this.jitsiApiClient);
+                resolve(true);
+            };
+
+            const onConferenceJoined = () => {
+                cleanup(this.jitsiApiClient);
+                resolve(false);
+            };
+
+            function cleanup(jitsiApi) {
+                clearTimeout(timeoutId);
+                jitsiApi.removeEventListener('passwordRequired', onPasswordRequired);
+                jitsiApi.removeEventListener('videoConferenceJoined', onConferenceJoined);
+            }
+
+            this.jitsiApiClient.addEventListener('passwordRequired', onPasswordRequired);
+            this.jitsiApiClient.addEventListener('videoConferenceJoined', onConferenceJoined);
+
+            timeoutId = setTimeout(() => {
+                cleanup(this.jitsiApiClient);
+                reject(new Error('Timeout waiting for passwordRequired'));
+            }, timeoutMs);
+        });
     }
 
     async join() {
@@ -74,69 +108,60 @@ class Jitsi extends UIHelper{
             let subDomain = this.domain;
             this.jitsiApiClient = new JitsiMeetExternalAPI(subDomain, this.mainOptions);
             window.jitsiApiClient = this.jitsiApiClient;
-            let passInput = null;
-            let waitingHost = null;
+            let passInput = false;
 
             try {
-                passInput = await this.waitForElement('#required-password-input',
-                                                      { clickable: true },
-                                                      5000);
+                passInput = await this.waitForPasswordRequired(10000);
             } catch (e) {
                 console.warn("Password input not found or not clickable:", e);
                 passInput = null;
             }
-
             if(passInput){
+                this.overlay.style.display = "flex";
                 this.setPromptMessage(this.passwordPrompt);
-                this.overlay.classList.add("active");
-                try{
-                    passInput.addEventListener('keydown', async (e) => {
-                        const key = e.key;
-                        if ( key === '#' ) {
-                            e.preventDefault();
-                            let okButton = await this.waitForElement('#modal-dialog-ok-button',
-                                                      { clickable: true },
-                                                      1000);
-                            okButton.click();
+                this.passwordInput.value = "";
+                this.passwordInput.focus();
+
+                let passwordBuffer = "";
+
+                const keyHandler = (e) => {
+                    const key = e.key;
+                    if (key === '#') {
+                        e.preventDefault();
+                        if (passwordBuffer.length > 0 && this.jitsiApiClient) {
+                            this.jitsiApiClient.executeCommand('password', passwordBuffer);
                         }
-                        if ( key === '*' ) {
-                            e.preventDefault();
-                            passInput.value = passInput.value.slice(0, -1);
-                        }
-                    }, {capture: true});
-                } catch (err) {
-                    console.error("Error during Menu setup:", err);
-                    onError(err);
+                        this.setPasswordDisplay("");
+                        passwordBuffer = "";
+                    } else if (key === '*' || key === 'Backspace') {
+                        e.preventDefault();
+                        passwordBuffer = passwordBuffer.slice(0, -1);
+                        this.setPasswordDisplay(passwordBuffer);
+                    } else if (/^[a-zA-Z0-9]$/.test(key)) {
+                        e.preventDefault();
+                        passwordBuffer += key;
+                        this.setPasswordDisplay(passwordBuffer);
+                    }
+                };
+
+                document.addEventListener('keydown', keyHandler, true);
+                this.setPasswordDisplay(passwordBuffer);
+                this.passwordInput.focus();
+            }
+
+            const onConferenceJoined = () => {
+                debugger;
+                this.overlay.style.display = "none";
+                this.joined = true
+                if (keyHandler === "function") {
+                    document.removeEventListener('keydown', keyHandler, true);
                 }
-            }
-
-            // Wait until password input disappears or is disabled
-            while (passInput) {
-                passInput.focus();
+            };
+            this.jitsiApiClient.addEventListener('videoConferenceJoined', onConferenceJoined);
+            while (!this.joined) {
                 await new Promise(resolve => setTimeout(resolve, 500));
-                passInput = this.jitsiApiClient.getIFrame().contentDocument.querySelector('#required-password-input');
-                if (!passInput) break;
-                console.log("Waiting for password input to disappear or be disabled");
+                console.log("Waiting to join...");
             }
-            // Hide overlay when done
-            this.overlay.classList.remove("active");
-
-            // Look for CGU input and wait until it disappears
-            try {
-                waitingHost = await this.waitForElement("[data-focus-lock-disabled='false']",
-                                                        { clickable: true },
-                                                        2000);
-            } catch (e) {
-                console.warn("CGU notification not found:", e);
-                passInput = null;
-            }
-            while (waitingHost) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                waitingHost = this.jitsiApiClient.getIFrame().contentDocument.querySelector("[data-focus-lock-disabled='false']");
-                if (!waitingHost) break;
-                console.log("Waiting for CGU input to disappear or be disabled");
-            }
-
             this.blockerFocus()
             this.joined = true;
         };

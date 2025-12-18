@@ -36,8 +36,8 @@ class Browsing:
         self.driver = None
 
     def loadJS(self, jsScript):
-        cssPath = os.path.join(os.path.dirname(jsScript),
-                               "IVR/style.css")
+        cssPath = os.path.join(os.path.dirname(__file__),
+                               "../browsing/assets/IVR/style.css")
         self.driver.execute_script(f"window.cssPath = 'file://{cssPath}';")
         with open(jsScript, "r", encoding="utf-8") as f:
             js_code = f.read()
@@ -71,6 +71,7 @@ class Browsing:
             joined = self.driver.execute_script("return window.meeting.joined")
             if joined:
                 break
+            self.interact()
 
     def monitorSingleParticipant(self, thresholdSeconds=300, checkInterval=60):
         singleStartTime = None

@@ -246,48 +246,66 @@ body {
     UI Helper
    ============================ */
 #blocker {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
 }
 
 /* ===== Overlay fullscreen ===== */
 #overlay {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 9999;
-
-    display: none;        /* hidden by default */
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-
-    font-family: inherit;
-    font-size: 1.5rem;
-    color: #1b2640;
-    text-align: center;
-
-    opacity: 0;
-    transition: opacity 0.35s ease;
-}
-
-/* Show overlay */
-#overlay.active {
-    display: flex;
-    opacity: 1;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(30, 34, 60, 0.85);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ===== Inner white box ===== */
 #overlay .overlay-inner {
-    background: white;
-    padding: 2rem 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-    max-width: 90vw;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  padding: 2.5em 2.5em 2em 2.5em;
+  min-width: 340px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.overlay-message {
+  font-size: 1.25em;
+  color: #1b2640;
+  margin-bottom: 1.2em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.overlay-password-input {
+  margin-top: 0;
+  font-size: 1.6em;
+  font-family: monospace;
+  text-align: center;
+  letter-spacing: 0.3em;
+  border-radius: 8px;
+  border: 1.5px solid #6c79b8;
+  padding: 0.5em 1.2em;
+  background: #f7f8fa;
+  color: #1b2640;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(108,121,184,0.08);
+  width: 100%;
+  max-width: 260px;
+  transition: border-color 0.2s;
+}
+
+.overlay-password-input:focus {
+  border-color: #445077;
+  background: #fff;
 }

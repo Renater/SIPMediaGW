@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 #v=$(curl 'https://packages.debian.org/bookworm/amd64/chromium/download' | grep -o "chromium_.*.deb" | head -1 | cut -d "_" -f 2)
 #https://snapshot.debian.org/archive/debian/20240930T202925Z/pool/main/c/chromium/
-RUN v='141.0.7390.122-1~deb12u1' \
+RUN v='143.0.7499.109-1~deb12u1' \
    && url='http://security.debian.org/debian-security/pool/updates/main/c/chromium/' \
    && wget $url'chromium_'$v'_amd64.deb' \
    && wget $url'chromium-common_'$v'_amd64.deb' \
