@@ -70,33 +70,39 @@ class Jitsi extends UIHelper{
         this.jitsiApiClient = null;
         this.joined = false;
         this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
+        this.keyHandler = null;
     }
+
+    onConferenceJoined = () => {
+        this.overlay.style.display = "none";
+        this.wrapper.style.display = 'block';
+        this.joined = true;
+        if (this.keyHandler && typeof this.keyHandler === "function") {
+            document.removeEventListener('keydown', this.keyHandler, true);
+        }
+        if (this.jitsiApiClient) {
+            this.jitsiApiClient.removeEventListener('videoConferenceJoined', this.onConferenceJoined);
+        }
+    };
 
     waitForPasswordRequired(timeoutMs = 5000) {
         return new Promise((resolve, reject) => {
             let timeoutId;
 
             const onPasswordRequired = () => {
-                cleanup(this.jitsiApiClient);
+                clearTimeout(timeoutId);
+                if (this.jitsiApiClient) {
+                    this.jitsiApiClient.removeEventListener('passwordRequired', onPasswordRequired);
+                }
                 resolve(true);
             };
 
-            const onConferenceJoined = () => {
-                cleanup(this.jitsiApiClient);
-                resolve(false);
-            };
-
-            function cleanup(jitsiApi) {
-                clearTimeout(timeoutId);
-                jitsiApi.removeEventListener('passwordRequired', onPasswordRequired);
-                jitsiApi.removeEventListener('videoConferenceJoined', onConferenceJoined);
-            }
-
             this.jitsiApiClient.addEventListener('passwordRequired', onPasswordRequired);
-            this.jitsiApiClient.addEventListener('videoConferenceJoined', onConferenceJoined);
 
             timeoutId = setTimeout(() => {
-                cleanup(this.jitsiApiClient);
+                if (this.jitsiApiClient) {
+                    this.jitsiApiClient.removeEventListener('passwordRequired', onPasswordRequired);
+                }
                 reject(new Error('Timeout waiting for passwordRequired'));
             }, timeoutMs);
         });
@@ -109,6 +115,8 @@ class Jitsi extends UIHelper{
             this.jitsiApiClient = new JitsiMeetExternalAPI(subDomain, this.mainOptions);
             window.jitsiApiClient = this.jitsiApiClient;
             let passInput = false;
+
+            this.jitsiApiClient.addEventListener('videoConferenceJoined', this.onConferenceJoined);
 
             try {
                 passInput = await this.waitForPasswordRequired(10000);
@@ -124,7 +132,7 @@ class Jitsi extends UIHelper{
 
                 let passwordBuffer = "";
 
-                const keyHandler = (e) => {
+                this.keyHandler = (e) => {
                     const key = e.key;
                     if (key === '#') {
                         e.preventDefault();
@@ -144,7 +152,7 @@ class Jitsi extends UIHelper{
                     }
                 };
 
-                document.addEventListener('keydown', keyHandler, true);
+                document.addEventListener('keydown', this.keyHandler, true);
                 this.setPasswordDisplay(passwordBuffer);
                 this.passwordInput.focus();
             }
