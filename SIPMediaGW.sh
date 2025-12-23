@@ -20,6 +20,7 @@ while [[ $# -gt 0 ]]; do
         -s|--with-transcript) with_transcript="true"; shift;;
         -w|--webrtc-domain) webrtc_domain="$2"; shift 2;;
         -l|--loop) loop=1; shift;;
+        -x|--display) display="$2"; shift 2;;
         *)
             echo 'Error in command line parsing' >&2
             exit 1
@@ -31,6 +32,10 @@ shift "$(( OPTIND - 1 ))"
 MAIN_APP=$(docker compose config 2>/dev/null | awk '/MAIN_APP:/ {print $2}')
 MAIN_APP=${main_app:-$MAIN_APP}
 CPU_PER_GW=$(docker compose config 2>/dev/null | awk '/CPU_PER_GW:/ {print $2}')
+
+if [[ -n "$display" ]]; then
+    DISPLAY=:$display xhost +local:docker
+fi
 
 lockFilePrefix="sipmediagw"
 
@@ -87,6 +92,9 @@ if [[ "$MAIN_APP" == "baresip" ]]; then
         video_dev="video$id"
     fi
 fi
+if [[ -n "$display" ]]; then
+    video_dev="video$id"
+fi
 
 docker container prune --force > /dev/null
 SERVICES="gw"
@@ -116,6 +124,7 @@ PREFIX=$prefix \
 ID=$id \
 AUDIO_ONLY=$audio_only \
 VIDEO_DEV=$video_dev \
+DISPLAY=$DISPLAY \
 docker compose -p ${COMPOSE_PROJECT_NAME:-"gw"$id}  $COMPOSE_FILE up \
                -d --force-recreate --remove-orphans \
                $SERVICES
