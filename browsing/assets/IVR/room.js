@@ -62,7 +62,7 @@ export class Room {
             let name = new URLSearchParams(window.location.search).get("displayName");
             const ipRegex = /^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}$/;
             if (ipRegex.test(name)){
-                name = "Meeting Room "+ context.generateRandomString(6);
+                name = "Meeting Room "+ this.generateRandomString(6);
             }
             this.displayName = name;
             onSuccess();
