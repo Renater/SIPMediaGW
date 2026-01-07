@@ -4,7 +4,7 @@ import json
 import importlib
 import base64
 from ipaddress import ip_address
-from manageInstance import ManageInstance
+from deploy.scaler.src.manageInstance import ManageInstance
 
 class Outscale(ManageInstance):
 

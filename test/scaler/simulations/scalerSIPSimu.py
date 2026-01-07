@@ -11,11 +11,14 @@ import os
 import json
 from contextlib import closing
 import mysql.connector as mysqlcon
-from Scaler import Scaler
+
 import matplotlib.pyplot as plt
 
-sys.path.append('fakescale')
-from fakescale import Fakescale
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')));
+print(sys.path);
+
+from deploy.scaler.src.ScalerSIP import ScalerSIP
+from deploy.scaler.src.providers.fakescale.fakescale import Fakescale
 
 def kamDbInsert(config, gwName, recv):
     try:
@@ -152,15 +155,15 @@ class Simuscale(Fakescale):
 vcpuCostPerHour = 0.216/4
 simuFreq = 60 # in seconds
 
-scalerConfigFile = "config/scaler.json"
+scalerConfigFile = "deploy/scaler/config/scaler.json"
 csp = Simuscale(scalerConfigFile, 60)
-csp.configureInstance("{}/{}".format("fakescale", "config/sipmediagw_sample.json"))
-scaler = Scaler(csp)
+csp.configureInstance("deploy/scaler/src/providers/fakescale/config/sipmediagw_sample.json")
+scaler = ScalerSIP(csp)
 scaler.configure(scalerConfigFile)
 
 cleanLocationTable(scaler.config)
 
-with open('17112020.csv', "r") as csvfile:
+with open('test/scaler/simulations/17112020.csv', "r") as csvfile:
     callsList = pd.read_csv(csvfile, header=None,  parse_dates=[0, 1])
 
 callsList.drop(callsList[callsList[1]-callsList[0] < pd.Timedelta('1 minutes')].index,
@@ -286,5 +289,11 @@ ax[1].plot(x[::step], yCost[::step], linewidth=2.0,
 for a in ax:
     a.legend(loc='upper left')
     a.xaxis.set_ticks(x[::step*int(len(x[::step])/6)])
+
+# display the plot
+plt.show()
+# save the plot
+fig.savefig("scaler_simulation.png")
+
 
 print("end")

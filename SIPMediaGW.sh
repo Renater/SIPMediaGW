@@ -4,7 +4,7 @@ cleanup() {
     flock -u ${lockFd} > /dev/null 2>&1
 }
 trap cleanup SIGINT SIGQUIT SIGTERM
-
+init=''
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -a|--main-app) main_app="$2"; shift 2;;
@@ -20,6 +20,7 @@ while [[ $# -gt 0 ]]; do
         -s|--with-transcript) with_transcript="true"; shift;;
         -w|--webrtc-domain) webrtc_domain="$2"; shift 2;;
         -l|--loop) loop=1; shift;;
+        -i|--init) init=1; shift;;
         *)
             echo 'Error in command line parsing' >&2
             exit 1
@@ -67,11 +68,24 @@ checkGwStatus() {
 }
 
 ### get an ID and lock the corresponding file ###
-lockGw
+
+# If gw_name is provided use it to get the ID
+if [[ -n $gw_name ]]; then
+    id=$(docker compose -p $gw_name ps -a --format '{{json .Name}}'| tr -cd '0-9')
+else
+    lockGw
+fi
 
 if [[ -z "$id" ]]; then
-    echo "{'res':'error','type':'No free resources found'}"
-    exit 1
+    CPU_PER_GW=$(echo "$CPU_PER_GW" | tr -d '"')
+    maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
+    if [ -e "/tmp/${lockFilePrefix}$(($maxGwNum - 1)).lock" ]; then
+        echo "{'res':'error','type':'All gateways were started : $maxGwNum'}"
+        exit 1
+    else 
+        echo "{'res':'error','type':'No resources available to start the gateway'}"
+        exit 1
+    fi
 fi
 
 restart="no"
@@ -86,9 +100,10 @@ if [[ "$MAIN_APP" == "baresip" ]]; then
     if [ "$audio_only" != "true" ]; then
         video_dev="video$id"
     fi
+    docker container prune --force > /dev/null
 fi
 
-docker container prune --force > /dev/null
+
 SERVICES="gw"
 COMPOSE_FILE="-f docker-compose.yml"
 if [[ "$with_transcript" ]]; then
@@ -96,17 +111,21 @@ if [[ "$with_transcript" ]]; then
 	SERVICES="$SERVICES transcript"
 fi
 
-COMPOSE_PROJECT_NAME=$(echo "$room" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_-]/_/g' | sed -E 's/^[^a-z0-9]/p_/' | cut -c1-63 | sed -E 's/[^a-z0-9]*$//') \
-
+if [[ -z "$gw_name" ]]; then
+    GW_NAME=$(tr -dc 'a-z0-9' </dev/urandom | head -c 24)
+else
+    GW_NAME=$gw_name
+fi
 
 ### launch the gateway ###
-MAIN_APP=$main_app \
+
+MAIN_APP=$MAIN_APP \
 RESTART=$restart \
 CHECK_REG=$check_reg \
 HOST_TZ=$(cat /etc/timezone) \
 HOST_IP=${HOST_IP:-$(hostname -I | awk '{print $1}')} \
 ROOM=$room \
-GW_NAME=$gw_name \
+GW_NAME=$GW_NAME \
 DOMAIN=$webrtc_domain \
 RTMP_DST=$rtmp_dst \
 FS_API_KEY=$api_key \
@@ -114,15 +133,16 @@ FS_RECIPIENT_MAIL=$recipient_mail \
 WITH_TRANSCRIPT=$with_transcript \
 PREFIX=$prefix \
 ID=$id \
+INIT=$init \
 AUDIO_ONLY=$audio_only \
 VIDEO_DEV=$video_dev \
-docker compose -p ${COMPOSE_PROJECT_NAME:-"gw"$id}  $COMPOSE_FILE up \
-               -d --force-recreate --remove-orphans \
+docker compose -p ${GW_NAME:-"gw"$id} $COMPOSE_FILE up \
+               -d --force-recreate  \
                $SERVICES
 
-checkGwStatus "gw"$id ${timeout:-10}
-
-MAIN_APP=$(docker exec gw0 sh -c 'echo $MAIN_APP')
+if [ "$MAIN_APP" == "baresip" ]; then
+    checkGwStatus "gw"$id ${timeout:-10}
+fi
 
 if [ "$MAIN_APP" == "baresip" ]; then
     sipUri=$(docker exec gw$id sh -c 'cat /var/.baresip/accounts |
@@ -137,7 +157,6 @@ if [ "$MAIN_APP" == "baresip" ]; then
 fi
 
 if [ "$MAIN_APP" == "streaming" ]; then
-    GW_PROXY=$(docker exec gw0 sh -c 'echo $GW_PROXY')
     echo "{'res':'ok', 'app': '$MAIN_APP', 'uri': '$rtmp_dst'}"
 fi
 
@@ -145,24 +164,30 @@ if [ "$MAIN_APP" == "recording" ]; then
     echo "{'res':'ok', 'app': '$MAIN_APP', 'recipient mail': '$recipient_mail'}"
 fi
 
-# child process => lockFile locked until the container exits + recording post processing
-ID=$id \
-LOOP=$loop \
-MAIN_APP=$MAIN_APP \
-WITH_TRANSCRIPT=$with_transcript \
-COMPOSE_FILE=$COMPOSE_FILE \
-room=$room \
-nohup bash -c 'state="$(docker wait gw$ID)"
-               while [[ "$state" == "0" && $LOOP && "$MAIN_APP" == "baresip" ]] ; do
-                   state="$(docker wait gw$ID)"
-               done
-               if [[ "$MAIN_APP" == "recording" ]]; then
-                   if [[ "$WITH_TRANSCRIPT" ]]; then
-                       ID=$ID \
-                       docker compose -p $COMPOSE_PROJECT_NAME  $COMPOSE_FILE up -d \
-                       --force-recreate --remove-orphans transcript
-                   fi
-                   docker restart gw$ID
-                   docker wait gw$ID
-                   docker stop transcript$ID
-               fi' &> /dev/null &
+
+# Wait for init mode
+if [[  "$init"  &&  "$MAIN_APP" != "baresip" ]]; then
+    nohup bash -c "docker wait gw$id" &> /dev/null &
+else 
+    # child process => lockFile locked until the container exits + recording post processing
+    ID=$id \
+    LOOP=$loop \
+    MAIN_APP=$MAIN_APP \
+    WITH_TRANSCRIPT=$with_transcript \
+    COMPOSE_FILE=$COMPOSE_FILE \
+    room=$room \
+    nohup bash -c 'state="$(docker wait gw$ID)"
+                while [[ "$state" == "0" && $LOOP && "$MAIN_APP" == "baresip" ]] ; do
+                    state="$(docker wait gw$ID)"
+                done
+                if [[ "$MAIN_APP" == "recording" ]]; then
+                    if [[ "$WITH_TRANSCRIPT" ]]; then
+                        ID=$ID \
+                        docker compose -p $GW_NAME $COMPOSE_FILE up -d \
+                        --force-recreate transcript
+                    fi
+                    docker restart gw$ID
+                    docker wait gw$ID
+                    docker stop transcript$ID
+                fi' &> /dev/null &
+fi
