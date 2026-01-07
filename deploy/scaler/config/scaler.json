@@ -16,6 +16,7 @@
         "root_password": "dbrootpw"
     },
     "cleaner_blacklist": {},
-    "api_token": "1234"
+    "api_token": "1234",
+    "cleanup_threshold_seconds": 600
 }
 
