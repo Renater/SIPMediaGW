@@ -1,0 +1,141 @@
+# SIP Media Gateway API
+
+This project exposes a simple HTTP API for controlling **SIP Media Gateways (GW)** using a lightweight HTTP launcher.
+
+The goal is to provide:
+
+* An endpoint to **start** a gateway in a specific mode
+* An endpoint to **stop** a gateway
+* A **status** endpoint to retrieve ongoing tasks
+* A flexible **command** endpoint for custom actions
+* A **minimal FastAPI implementation** (single file)
+* Associated **unit tests** for validation
+
+---
+
+## 🚀 Installation
+
+### 1. Install dependencies
+
+```bash
+pip install fastapi uvicorn pytest
+```
+
+### 2. Run the API
+
+```bash
+uvicorn HTTPLauncher:app --reload
+```
+
+Available at:
+
+* Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+* OpenAPI spec: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+
+---
+
+## 📡 Available Endpoints
+
+### ▶️ **Start a Gateway**
+
+`POST /gateway/start`
+
+Parameters:
+
+Mandatory :
+* `type`: Record | Streaming | SIP
+* `room`: conference name
+* `webrtc_domain`: videoconference domain in json format like : {"renavisio_visio_plus": { "name": "Jitsi Meet (meet.jit.si)", "domain": "meet.jit.si" }}
+* `gw_id`: gateway identifier
+Optional :
+* `fromId`: caller ID
+* `prefix`: dial prefix
+* `domain`: SIP domain
+* `rtmpDst`: RTMP destination
+* `dial`: dial string
+* `loop`: enable loop
+* `transcript`: enable transcript
+* `audioOnly`: enable audio only
+* `apiKey`: API key
+* `recipientMail`: recipient email
+
+Response: 
+* `processing_state`: stopped | finalising or an error message.
+
+---
+
+### ⏹️ **Stop a Gateway**
+
+`POST /gateway/stop`
+
+Parameter:
+
+* `gw_id`: gateway identifier
+
+Response:
+
+* `processing_state`: stopped | finalising or an error message.
+
+---
+
+### 📊 **Gateway Status**
+
+`GET /gateway/status`
+
+Parameter:
+
+* `gw_id`: gateway identifier
+
+Returns:
+
+* current task (`record`, `record_transcript`, `sip`, ...)
+* recording time
+* transcript progress
+
+---
+
+### 📨 **Send a Command to a Gateway**
+
+`POST /gateway/command`
+
+Parameter:
+
+* `gw_id`: gateway identifier
+
+JSON payload can contain any command expected by your GW.
+
+Response: ACK with echoed input.
+
+---
+
+## 🧪 Unit Tests
+
+The file `test_gateway_api.py` contains simple unit tests using FastAPI's `TestClient`.
+
+Run the tests with:
+
+```bash
+pytest -q
+```
+
+Tests cover:
+
+* `/gateway/start`
+* `/gateway/stop`
+* `/gateway/status`
+* `/gateway/command`
+
+These tests validate HTTP flow and launcher behavior.
+
+---
+
+## 📁 Minimal Project Structure
+
+```
+project/
+│
+├── HTTPLauncher.py               # FastAPI single-file API
+└── test_gateway_api.py   # Unit tests
+```
+
+---

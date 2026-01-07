@@ -7,12 +7,15 @@ import inspect
 import re
 import web
 import json
-from Scaler import Scaler
+from deploy.scaler.src.ScalerSIP  import ScalerSIP
+from deploy.scaler.src.ScalerMedia import ScalerMedia
 
 scalerConfigFile = os.environ.get("SCALER_CONFIG_FILE", "scaler.json")
 cspName =  os.environ.get("CSP_NAME", "outscale")
 cspConfigFile = os.environ.get("CSP_CONFIG_FILE", "sipmediagw_sample.json")
 cspProfile = os.environ.get("CSP_PROFILE", "visio-dev")
+
+scalerType = os.environ.get("SCALER_TYPE", "SIP")
 
 def authorize(func):
     def inner(*args, **kwargs):
@@ -50,7 +53,12 @@ class Scaling:
         csp = cspObj(cspProfile)
         #initData = {}
         #csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
-        self.scaler = Scaler(csp)
+        
+        if scalerType.upper() == "SIP":
+            self.scaler = ScalerSIP(csp)
+        else:
+            self.scaler = ScalerMedia(csp)
+
         self.scaler.configure("config/{}".format(scalerConfigFile))
 
     @authorize

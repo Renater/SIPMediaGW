@@ -15,6 +15,7 @@
         "host": "127.0.0.1",
         "root_password": "dbrootpw"
     },
-    "api_token": "1234"
+    "api_token": "1234",
+    "cleanup_threshold_seconds": 600
 }
 
