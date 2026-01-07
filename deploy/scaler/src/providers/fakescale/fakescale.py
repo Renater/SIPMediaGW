@@ -9,7 +9,7 @@ import inspect
 import mysql.connector as mysqlcon
 import queue
 import ipaddress
-from manageInstance import ManageInstance
+from ...manageInstance import ManageInstance
 
 class Fakescale(ManageInstance):
 

@@ -130,6 +130,7 @@ services:
       CSP_NAME: "outscale"
       CSP_CONFIG_FILE: "sipmediagw_staging.json"
       CSP_PROFILE: "visio-dev"
+      SCALER_TYPE: "SIP" # SIP or MEDIA
     entrypoint:
       - "/bin/sh"
       - "-c"
