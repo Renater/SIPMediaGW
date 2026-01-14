@@ -35,11 +35,11 @@ checkV4l2() {
 
 if [[ "$AUDIO_ONLY" != "true" ]]; then
     ### Start default video capture ###
-    echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i :"$SERVERNUM1" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
+    echo "ffmpeg -s " $VID_SIZE_WEBRTC" -r "$VID_FPS" -draw_mouse 0 -f x11grab -i "$DISPLAY_APP" -pix_fmt yuv420p -f v4l2 /dev/video0" | \
         logParse -p "FFMPEG"
     ffmpeg -r $VID_FPS -s $VID_SIZE_WEBRTC \
         -draw_mouse 0 -threads 0 \
-        -f x11grab -i :$SERVERNUM1 -pix_fmt yuv420p \
+        -f x11grab -i $DISPLAY_APP -pix_fmt yuv420p \
         -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Event") &
 
     ### Check if video device is ready ###
@@ -90,11 +90,11 @@ if [[ "$PUBLIC_IP" ]]; then
 fi
 sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_APP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
-sed -i 's/.*video_source.*/video_source\t\tx11grab,:'$SERVERNUM0'/' .baresip/config
-sed -i 's/.*x11_main.*/x11_main\t\t:'$SERVERNUM1','$VID_SIZE_WEBRTC'+0+0/' .baresip/config
-sed -i 's/.*x11_slides.*/x11_slides\t\t:'$SERVERNUM0','$VID_SIZE_APP'+'$VID_W_SIP'+0/' .baresip/config
-echo "DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip" | logParse -p "SIP client"
-DISPLAY=:$SERVERNUM1 LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESIP_ARGS \
+sed -i 's/.*video_source.*/video_source\t\tx11grab,'$DISPLAY_WEB'/' .baresip/config
+sed -i 's/.*x11_main.*/x11_main\t\t'$DISPLAY_APP','$VID_SIZE_WEBRTC'+0+0/' .baresip/config
+sed -i 's/.*x11_slides.*/x11_slides\t\t'$DISPLAY_APP','$VID_SIZE_APP'+'$VID_W_APP'+0/' .baresip/config
+echo "DISPLAY=$DISPLAY_APP LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip" | logParse -p "SIP client"
+DISPLAY=$DISPLAY_APP LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESIP_ARGS \
                      1> >( logParse -p "Baresip" -i $HISTORY ) \
                      2> >( logParse -p "Baresip" -i $HISTORY ) &
                      # "sed -u 's/\[..." => to remove already printed \r characters...

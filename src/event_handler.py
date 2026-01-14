@@ -59,7 +59,7 @@ ivr = IVR(
     width=dispWidth,
     height=dispHeight,
     roomName=inputs.get('room', ''),
-    name='',
+    name=os.environ.get('USER_NAME'),
     browsingName=os.environ.get('BROWSING')
 )
 
@@ -140,7 +140,8 @@ def event_handler(data, args):
 argDict = {'ivr': ivr}
 
 if os.environ.get('MAIN_APP') != 'baresip':
-    argDict['ivr'].name = os.environ.get('MAIN_APP')
+    if not argDict['ivr'].name:
+        argDict['ivr'].name = os.environ.get('MAIN_APP')
     browseThread = threading.Thread(target=browse, args=(argDict,))
     browseThread.start()
 
