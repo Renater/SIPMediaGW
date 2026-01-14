@@ -15,7 +15,7 @@ if [[ -n "$GW_PROXY" &&  -n "$INIT" ]]; then
     echo "Registration response: $resp" | logParse -p "RegisterGW"
 fi
 
-if [[ -z "$ROOM_NAME" && "$MAIN_APP" != "baresip" ]]; then
+if [[ -z "$ROOM_NAME" && ( "$MAIN_APP" == "recording" || "$MAIN_APP" == "streaming" ) ]]; then
     echo "Must provide ROOM_NAME with $MAIN_APP"
     exit 1
 fi
@@ -42,18 +42,18 @@ if [[ -n "$ASSETS_URL" ]]; then
     wget -qO- "$ASSETS_URL" | tar xvJ -C /var/browsing/assets | logParse -p "Assets"
 fi
 
-checkXvfb() {
+checkX() {
     # 5 seconds timeout before exit
     timeOut=5
     timer=0
-    state=$(xdpyinfo -display ":$1" >/dev/null 2>&1; echo $?)
+    state=$(xdpyinfo -display "$1" >/dev/null 2>&1; echo $?)
     while [[ ($state == "1") && ($timer -lt $timeOut) ]]; do
         timer=$(($timer + 1))
         sleep 1
-        state=$(xdpyinfo -display ":$1" >/dev/null 2>&1; echo $?)
+        state=$(xdpyinfo -display "$1" >/dev/null 2>&1; echo $?)
     done
     if [ $timer -eq $timeOut ]; then
-        echo "Xvfb :$1 failed to launch" | logParse -p "Xvfb"
+        echo "Xvfb $1 failed to launch" | logParse -p "Xvfb"
         exit 1
     fi
 }
@@ -126,56 +126,61 @@ else
 fi
 
 ### Configure audio devices ###
-# if [ "$WITH_ALSA" == "true" ]; then
-#     ALSA_DEV='plug:baresip'
-#     HW0=$(( 2*$GW_ID ))
-#     (($HW0)) || HW0=""
-#     HW1=$(( 2*$GW_ID + 1 ))
-#     ALSA_CARD0="Loopback"${HW0:+'_'$HW0}
-#     ALSA_CARD1="Loopback"${HW1:+'_'$HW1}
-#     sed -i 's/Loopback,/'$ALSA_CARD0',/g' /etc/asound.conf
-#     sed -i 's/Loopback_1,/'$ALSA_CARD1',/g' /etc/asound.conf
-# else
-#     ./pulseaudio_init.sh  1> >( logParse -p "Pulse") \
-#                           2> >( logParse -p "Pulse")
-# fi
+if [[ -z "$DISPLAY" ]]; then
+    if [ -z "${PULSE_SERVER+x}" ] || [ -z "$PULSE_SERVER" ]; then
+        unset PULSE_SERVER
+    fi
+    if [ "$WITH_ALSA" == "true" ]; then
+        ALSA_DEV='plug:baresip'
+        HW0=$(( 2*$GW_ID ))
+        (($HW0)) || HW0=""
+        HW1=$(( 2*$GW_ID + 1 ))
+        ALSA_CARD0="Loopback"${HW0:+'_'$HW0}
+        ALSA_CARD1="Loopback"${HW1:+'_'$HW1}
+        sed -i 's/Loopback,/'$ALSA_CARD0',/g' /etc/asound.conf
+        sed -i 's/Loopback_1,/'$ALSA_CARD1',/g' /etc/asound.conf
+    else
+        ./pulseaudio_init.sh  1> >( logParse -p "Pulse") \
+                              2> >( logParse -p "Pulse")
+    fi
+fi
 
 if [[ "$AUDIO_ONLY" != "true" ]]; then
     ### Configure video display ###
     VID_FPS="30"
     PIX_DEPTH="24"
 
-    IFS="x" read -r VID_W_SIP VID_H_SIP <<<$VID_SIZE_APP
-    VID_WX2_SIP=$(( 2*$VID_W_SIP ))
+    IFS="x" read -r VID_W_APP VID_H_APP <<<$VID_SIZE_APP
+    VID_WX2_APP=$(( 2*$VID_W_APP ))
 
     mkdir -p /tmp/.X11-unix
     sudo chmod 1777 /tmp/.X11-unix
     sudo chown root /tmp/.X11-unix/
 
-    # SERVERNUM0=99
-    # echo "Server 0 Number= " $SERVERNUM0 | logParse -p "Xvfb"
-    # Xvfb :$SERVERNUM0 -screen 0 \
-    #     $VID_WX2_SIP"x"$VID_H_SIP"x"$PIX_DEPTH \
-    #     +extension RANDR -noreset | logParse -p "Xvfb" &
+    DISPLAY_WEB=${DISPLAY:-":99"}
+    DISPLAY_APP=:100
 
-    #SERVERNUM0=100
-    # echo "Server 1 Number= " $SERVERNUM1 | logParse -p "Xvfb"
-    # Xvfb :$SERVERNUM1 -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH \
-    #     +extension RANDR -noreset| logParse -p "Xvfb" &
+    if [[ -z "$DISPLAY" ]]; then
+        echo "Display ID, web browser " $DISPLAY_WEB | logParse -p "Xvfb"
+        Xvfb $DISPLAY_WEB -screen 0 \
+            $VID_WX2_APP"x"$VID_H_APP"x"$PIX_DEPTH \
+            +extension RANDR -noreset | logParse -p "Xvfb" &
+        checkX $DISPLAY_WEB
+        DISPLAY=$DISPLAY_WEB xrandr --setmonitor screen0 \
+                $VID_W_APP"/640x"$VID_H_APP"/360+0+0" screen | logParse -p "xrandr"
+        DISPLAY=$DISPLAY_WEB xrandr --setmonitor screen1 \
+                $VID_W_APP"/640x"$VID_H_APP"/360+"$VID_W_APP"+0" none | logParse -p "xrandr"
 
+        DISPLAY=$DISPLAY_WEB fluxbox | logParse -p "fluxbox" &
+        DISPLAY=$DISPLAY_WEB unclutter -idle 1 &
+    else
+        DISPLAY=$DISPLAY_WEB xrandr -s $VID_SIZE_APP | logParse -p "xrandr"
+    fi
 
-    ### Check if Xvfb server is ready ###
-    # checkXvfb $SERVERNUM0
-    # checkXvfb $SERVERNUM1
-
-
-    #DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen0 \
-    #        $VID_W_SIP"/640x"$VID_H_SIP"/360+0+0" screen | logParse -p "xrandr"
-    #DISPLAY=:$SERVERNUM0 xrandr --setmonitor screen1 \
-    #        $VID_W_SIP"/640x"$VID_H_SIP"/360+"$VID_W_SIP"+0" none | logParse -p "xrandr"
-
-    #DISPLAY=:$SERVERNUM0 fluxbox | logParse -p "fluxbox" &
-    #DISPLAY=:$SERVERNUM0 unclutter -idle 1 &
+    echo "Display ID, main application " $DISPLAY_APP | logParse -p "Xvfb"
+    Xvfb $DISPLAY_APP -screen 0 $VID_SIZE_WEBRTC"x"$PIX_DEPTH \
+        +extension RANDR -noreset| logParse -p "Xvfb" &
+    checkX $DISPLAY_APP
 fi
 
 
@@ -202,8 +207,7 @@ if [[ -n "$ROOM_NAME" ]]; then
     roomParam="-r "$ROOM_NAME
 fi
 
-
-exec python3 src/event_handler.py -s $VID_SIZE_APP \
-                                                      $roomParam $fromUri \
+DISPLAY=$DISPLAY_WEB exec python3 src/event_handler.py -s $VID_SIZE_APP \
+                                  $roomParam $fromUri \
                          1> >( logParse -p "Event" -i $HISTORY )
 
