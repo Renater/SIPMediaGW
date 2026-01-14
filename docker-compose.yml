@@ -16,17 +16,10 @@ services:
       - /tmp
     volumes:
       - ./logs:/var/logs
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - /run/user/1000/pulse/native:/tmp/pulse/native
-      - ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro
-      - ./entrypoint.sh:/var/entrypoint.sh
-      - ./browsing/assets:/var/browsing/assets
     devices:
       - /dev/${VIDEO_DEV}:/dev/video0
       - /dev/snd:/dev/snd
     shm_size: '2gb'
-    stdin_open: true
-    tty: true
     logging:
       driver: syslog
       options:

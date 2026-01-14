@@ -16,6 +16,7 @@ while [[ $# -gt 0 ]]; do
         -u|--rtmp-dst) rtmp_dst="$2"; shift 2;;
         -k|--api-key) api_key="$2"; shift 2;;
         -m|--recipient-mail) recipient_mail="$2"; shift 2;;
+        -n|--user-name) user_name="$2"; shift 2;;
         -o|--audio-only) audio_only="true"; shift 2;;
         -s|--with-transcript) with_transcript="true"; shift;;
         -w|--webrtc-domain) webrtc_domain="$2"; shift 2;;
@@ -35,6 +36,8 @@ CPU_PER_GW=$(docker compose config 2>/dev/null | awk '/CPU_PER_GW:/ {print $2}')
 
 if [[ -n "$display" ]]; then
     DISPLAY=:$display xhost +local:docker
+    pulse_server=unix:/tmp/pulse/native
+    with_alsa="false"
 fi
 
 lockFilePrefix="sipmediagw"
@@ -103,6 +106,9 @@ if [[ "$with_transcript" ]]; then
 	COMPOSE_FILE="$COMPOSE_FILE -f transcript/docker-compose.yml"
 	SERVICES="$SERVICES transcript"
 fi
+if [[ "$display" ]]; then
+	COMPOSE_FILE="$COMPOSE_FILE -f x11/docker-compose.yml"
+fi
 
 COMPOSE_PROJECT_NAME=$(echo "$room" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_-]/_/g' | sed -E 's/^[^a-z0-9]/p_/' | cut -c1-63 | sed -E 's/[^a-z0-9]*$//') \
 
@@ -124,7 +130,10 @@ PREFIX=$prefix \
 ID=$id \
 AUDIO_ONLY=$audio_only \
 VIDEO_DEV=$video_dev \
-DISPLAY=$DISPLAY \
+DISPLAY=${display:+:$display} \
+PULSE_SERVER=$pulse_server \
+WITH_ALSA=$with_alsa \
+USER=$user_name \
 docker compose -p ${COMPOSE_PROJECT_NAME:-"gw"$id}  $COMPOSE_FILE up \
                -d --force-recreate --remove-orphans \
                $SERVICES

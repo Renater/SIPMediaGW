@@ -18,7 +18,7 @@ else
 fi
 
 if [ "$AUDIO_ONLY" != "true" ]; then
-    VIDEO_IN=( -f x11grab -r 30 -draw_mouse 0 -s "$VID_SIZE_APP"  -i :"$SERVERNUM0" )
+    VIDEO_IN=( -f x11grab -r 30 -draw_mouse 0 -s "$VID_SIZE_APP"  -i "$DISPLAY_WEB" )
     VIDEO_CODEC=( -c:v libx264 -preset ultrafast -minrate:v 500K -maxrate:v 4M -bufsize:v 4M -x264-params keyint=90 -pix_fmt yuv420p  )
     STREAMS_MAPPING='-map 0:v:0 -map 1:a:0'
 fi
