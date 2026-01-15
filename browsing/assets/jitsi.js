@@ -90,6 +90,7 @@ class Jitsi extends UIHelper{
             let timeoutId;
 
             const onPasswordRequired = () => {
+                this.wrapper.style.display = "none";
                 clearTimeout(timeoutId);
                 if (this.jitsiApiClient) {
                     this.jitsiApiClient.removeEventListener('passwordRequired', onPasswordRequired);
