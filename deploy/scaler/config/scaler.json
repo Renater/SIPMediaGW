@@ -15,6 +15,7 @@
         "host": "127.0.0.1",
         "root_password": "dbrootpw"
     },
+    "cleaner_blacklist": {},
     "api_token": "1234"
 }
 
