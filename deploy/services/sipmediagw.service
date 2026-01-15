@@ -8,24 +8,10 @@ Requires=network-online.target
 [Service]
 Type=forking
 EnvironmentFile=/etc/environment
-ExecStart=/bin/bash -c \
-          'cd /sipmediagw && \
-           /bin/python3 HTTPLauncher.py 80  2>&1 | logger -t HTTPLauncher & \n\
-           modprobe -r v4l2loopback && modprobe  v4l2loopback \n\
-           pref=$(hostname -I | awk "{print $1}" | cut -d" "  -f1) \n\
-           until [ "$?" == 1 ]; do \n\
-              cd /sipmediagw && \
-              /bin/bash ./SIPMediaGW.sh -p $pref -l \n\
-          done \n\
-          exit 0'
 
-ExecStop=/bin/bash -c \
-         'i=0 \n\
-         until [ "$?" == 1 ]; do \n\
-             docker container stop gw$i && \
-             i=$(($i + 1)) \n\
-         done \n\
-         exit 0'
+ExecStart=/bin/bash /sipmediagw/deploy/services/start_all_gateways.bash
+
+ExecStop=/bin/bash /sipmediagw/deploy/services/stop_all_gateways.bash
 
 [Install]
 WantedBy=multi-user.target

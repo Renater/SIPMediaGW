@@ -119,7 +119,7 @@ def getGatewayStatusFromRedis(gw_id: str):
     return {
         "status": "success",
         "data": {
-            "gw_id": gwIp,
+            "gw_id": gw_id,
             "gw_state": state,
             "room": room,
             "media_duration": media_duration,
@@ -393,8 +393,8 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
         )
 
 @app.api_route("/command", methods=["GET", "POST"])
-async def commandGateway(request: Request, gw_id: str = None):
-    """GET/POST /command?gw_id=gatewayName - Send command to gateway"""
+async def commandGateway(request: Request):
+    """GET/POST /command - Send command to gateway"""
     if not authorize(request):
         return Response(
             json.dumps({"error": "authorization error"}),
@@ -402,7 +402,10 @@ async def commandGateway(request: Request, gw_id: str = None):
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             media_type="application/json"
         )
-    
+
+    body = await request.json()
+    gw_id = body.get("gw_id")
+
     if not gw_id:
         raise HTTPException(status_code=400, detail="Missing 'gw_id' parameter")
     
