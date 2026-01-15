@@ -13,19 +13,17 @@ def getSeconds(stringHMS):
    return timedeltaObj.total_seconds()
 
 # Media Scaler class using Redis to track room assignments and gateway states
-# Redis keys:
-#   gateway:<gateway_id> -> <gateway_ip>|<state>|<type>|<start_time>|<last_status_update_time>
-# States:
-#   Gateway states: started, working, stopping
-#   Type: recorder,streamer, sip
-#   Room states: started, stopped
+
 
 
 class ScalerMedia(Scaler):
 
     def __init__(self, cspObj):
-        self.redisClient = redis.Redis(host="127.0.0.1", port=6379, decode_responses=True)
         super().__init__(cspObj)
+
+    def configure(self, configFile):
+        super().configure(configFile)
+        self.redisClient = redis.Redis(host=self.config["redis"]["host"], port=self.config["redis"]["port"], decode_responses=True)
 
     # Downscale function
     def downScale(self, numGW):
