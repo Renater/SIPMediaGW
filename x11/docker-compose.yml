@@ -4,5 +4,9 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /run/user/1000/pulse/native:/tmp/pulse/native
       - ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro
+      - ./entrypoint.sh:/var/entrypoint.sh
+      - ./browsing/assets:/var/browsing/assets
+      - ./src:/var/src
+      - ./baresip:/var/baresip
     stdin_open: true
     tty: true
