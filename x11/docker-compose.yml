@@ -1,0 +1,8 @@
+services:
+  gw:
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /run/user/1000/pulse/native:/tmp/pulse/native
+      - ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro
+    stdin_open: true
+    tty: true
