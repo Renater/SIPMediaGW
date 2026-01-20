@@ -1,8 +1,6 @@
 #!/bin/bash
 # Start the HTTP API Launcher and the SIPMediaGW in a loop
 
-MAIN_APP=$(docker compose config 2>/dev/null | awk '/MAIN_APP:/ {print $2}')
-
 # get script directory
 SIPMEDIAGW_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." >/dev/null 2>&1 && pwd )"
 cd $SIPMEDIAGW_DIR
@@ -28,7 +26,7 @@ if [ "$MAIN_APP" == "baresip" ]; then
     echo "Starting SIPMediaGW in a loop"
     until [ "$?" == 1 ]; do 
         cd $SIPMEDIAGW_DIR
-        /bin/bash ./SIPMediaGW.sh -p $pref:$GW_PORT -i -l
+        /bin/bash ./SIPMediaGW.sh -p $pref -i -l
     done
 else
     echo "MAIN_APP is not baresip so start them once as Media gateway"
@@ -37,14 +35,10 @@ else
     maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
     for i in $(seq 0 $((maxGwNum - 1))); do
         echo "Starting gateway number $i"
-        /bin/bash ./SIPMediaGW.sh -p $pref:$GW_PORT -i -l
+        /bin/bash ./SIPMediaGW.sh -p $pref -i -l
         sleep 1
         exec {lockFd}>"/tmp/"${lockFilePrefix}$i".lock"
         flock -x -n $lockFd
-    done
-    for i in $(seq 0 $((maxGwNum - 1))); do
-        #docker kill gw$i >/dev/null 2>&1;
-        echo "Lala"
     done
 fi
 exit 0

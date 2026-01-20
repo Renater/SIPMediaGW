@@ -8,7 +8,7 @@ curl -s -H "Authorization: Bearer 1234" -H "Content-Type: application/json" \
 "type": "recording",
 "transcript": "false",
 "audio_only": "false",
-"recipient_mail": "dfetis@gmail.com"}' | jq
+"recipient_mail": "toto@test.fr"}' | jq
 
 
 
