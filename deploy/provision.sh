@@ -19,9 +19,10 @@ sudo apt-get update
 sudo apt-get install -y \
     ca-certificates \
     curl \
-    python3-webpy \
+    python3-pip \
     gnupg \
     lsb-release
+pip install fastapi uvicorn
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
 echo \
