@@ -34,7 +34,7 @@ class Teams extends UIHelper {
             }
             joinButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
             console.log('[✓] Join form submitted');
-            this.blockInteract()
+            this.blockerFocus()
             this.joined = true;
         } catch (error) {
             console.error('[✗] Prejoin process failed:', error);

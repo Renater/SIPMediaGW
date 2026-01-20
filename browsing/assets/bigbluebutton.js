@@ -61,7 +61,7 @@ class Bigbluebutton extends UIHelper {
                 return;
             }
             joinButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            this.blockInteract()
+            this.blockerFocus();
             this.joined = true;
             console.log('[✓] Join form submitted');
         } catch (error) {
