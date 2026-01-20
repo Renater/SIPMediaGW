@@ -1,6 +1,40 @@
 {
     "min_ivr_digit_length": "${IVR_DIGIT_LENGTH}",
     "webrtc_domains": ${WEBRTC_DOMAINS},
+    "menus": {
+        "jitsi": {"options": [
+        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
+        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
+        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
+        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
+        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"},
+        { "dtmf": 6, "en": "Show / hide tile view", "fr": "Activer / Désactiver la vue mosaïque", "icon": "mosaic_icon"},
+        { "dtmf": 7, "en": "Activate / Desactivate the lobby", "fr": "Activer / Désactiver la salle d'attente", "icon": "lobby_icon"},
+        { "dtmf": 8, "en": "Mute everyone", "fr": "Couper tous les micros", "icon": "muteall_icon"}
+        ]},
+        "bigbluebutton": {"options": [
+        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
+        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
+        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
+        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
+        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"},
+        { "dtmf": 6, "en": "Accept recording", "fr": "Accepter l'enregistrement", "icon": "accept_icon"}
+        ]},
+        "visio": {"options": [
+        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
+        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
+        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
+        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
+        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"}
+        ]},
+        "teams": {"options": [
+        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
+        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
+        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
+        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
+        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"}
+        ]}
+    },
     "conf_mapper": {
         "url": "${CONFMAPPER}"
     },

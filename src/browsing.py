@@ -44,10 +44,30 @@ class Browsing:
         self.driver.execute_script(js_code)
 
     def loadImages(self, path, lang):
-        with open(path + "icon.png", "rb") as f:
-            self.iconB64 = "data:image/png;base64,{}".format(base64.b64encode(f.read()).decode("utf-8"))
-        with open( path + "dtmf_{}.png".format(lang), "rb") as f:
-            self.dtmfB64 = "data:image/png;base64,{}".format(base64.b64encode(f.read()).decode("utf-8"))
+        with open(os.path.join(path, "icon.png"), "rb") as f:
+            self.iconB64 = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
+
+        with open(os.path.join(path, f"dtmf_{lang}.png"), "rb") as f:
+            self.dtmfB64 = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
+
+        icons_path = os.path.join(path, "IVR/images/menu-icons")
+        icons = {}
+
+        for filename in os.listdir(icons_path):
+            if not filename.lower().endswith(".png"):
+                continue
+
+            key = os.path.splitext(filename)[0]
+            file_path = os.path.join(icons_path, filename)
+
+            with open(file_path, "rb") as f:
+                icons[key] = (
+                    "data:image/png;base64,"
+                    + base64.b64encode(f.read()).decode("utf-8")
+                )
+
+        self.menuIcons = icons
+
 
     def loadPage(self):
         pass
@@ -126,10 +146,14 @@ class Browsing:
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
                             self.config['lang'])
-            menuScript = "menu=new Menu(); \
+            menuScript = "menu=new Menu({}, {}); \
                           menu.img['icon'] = '{}'; \
                           menu.img['dtmf'] = '{}'; \
-                          menu.show();".format(self.iconB64, self.dtmfB64)
+                          menu.img['icons'] = {}; \
+                          menu.show();".format(
+                            json.dumps(self.room['config']['menus'][self.modName]),
+                            json.dumps(self.room['config']['lang']),
+                            self.iconB64, self.dtmfB64, json.dumps(self.menuIcons))
             self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
             self.driver.execute_script(menuScript)
             while self.room:
