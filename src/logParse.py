@@ -423,7 +423,7 @@ def build_payload_from_lines(lines: List[str], post_url: str) -> Dict[str, Any]:
         "mediaStats": media_stats,
     }
 
-    json_body = {"body": {"call": call_obj}}
+    json_body = {"call": call_obj}
     return json_body
 
 
