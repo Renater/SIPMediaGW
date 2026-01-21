@@ -31,6 +31,8 @@ shift "$(( OPTIND - 1 ))"
 
 MAIN_APP=$(docker compose config 2>/dev/null | awk '/MAIN_APP:/ {print $2}')
 MAIN_APP=${main_app:-$MAIN_APP}
+FS_API_KEY=${api_key:-$FS_API_KEY}
+
 CPU_PER_GW=$(docker compose config 2>/dev/null | awk '/CPU_PER_GW:/ {print $2}')
 
 lockFilePrefix="sipmediagw"
@@ -128,7 +130,7 @@ ROOM=$room \
 GW_NAME=$GW_NAME \
 DOMAIN=$webrtc_domain \
 RTMP_DST=$rtmp_dst \
-FS_API_KEY=$api_key \
+FS_API_KEY=$FS_API_KEY \
 FS_RECIPIENT_MAIL=$recipient_mail \
 WITH_TRANSCRIPT=$with_transcript \
 PREFIX=$prefix \

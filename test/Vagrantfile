@@ -1,4 +1,4 @@
-HOST = "192.168.75.13"
+HOST = "192.168.56.13"
 
 Vagrant.configure(2) do |config|
 
