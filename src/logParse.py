@@ -18,23 +18,23 @@ import requests
 
 ### Config ###
 
-POST_URL = os.environ.get("LOG_PUSH_URL", "").strip()
+postUrl = os.environ.get("LOG_PUSH_URL", "").strip()
 
 ### Regex ###
 
-ANSI_ESCAPE_REGEX = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+ansiEscapeRegex = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
-BARESIP_REGEX = re.compile(r"^sip:(?P<dest_user>[^@]+)@(?P<dest_dom>[^:]+):\s*Call with\s*sip:(?P<src_user>[^@]+)@(?P<src_dom>\S+)")
+baresipRegex = re.compile(r"^sip:(?P<dest_user>[^@]+)@(?P<dest_dom>[^:]+):\s*Call with\s*sip:(?P<src_user>[^@]+)@(?P<src_dom>\S+)")
 
-DTMF_REGEX = re.compile(r"^(?:Event:\s*)?Received DTMF:(?P<input>.+)$")
+dtmfRegex = re.compile(r"^(?:Event:\s*)?Received DTMF:(?P<input>.+)$")
 
-STAT_HEADER_REGEX = re.compile(r"^(?P<media>audio|video)(?:\s+(?P<stream>\d+))?\s+Transmit:\s*Receive:\s*$")
+statHeaderRegex = re.compile(r"^(?P<media>audio|video)(?:\s+(?P<stream>\d+))?\s+Transmit:\s*Receive:\s*$")
 
-STAT_VALUE_REGEX = re.compile(r"^(?P<label>[^:]+):\s*(?P<rest>.+)$")
+statValueRegex = re.compile(r"^(?P<label>[^:]+):\s*(?P<rest>.+)$")
 
-NUM_REGEX = re.compile(r"[-+]?\d+(?:\.\d+)?")
+numRegex = re.compile(r"[-+]?\d+(?:\.\d+)?")
 
-FIELD_MAP = {
+fieldMap = {
     "packets": "packets",
     "errors": "errors",
     "pkt.report": "packetReports",
@@ -46,17 +46,17 @@ FIELD_MAP = {
 
 ### Time functions ###
 
-def utc_now() -> datetime:
+def utcNow() -> datetime:
     return datetime.now(timezone.utc)
 
-def iso_z(dt: datetime, *, ms: bool = False) -> str:
+def isoZ(dt: datetime, *, ms: bool = False) -> str:
     s = dt.astimezone(timezone.utc).isoformat(timespec="milliseconds" if ms else "seconds")
     return s.replace("+00:00", "Z")
 
-def raw_timestamp(dt: datetime) -> str:
+def rawTimestamp(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%b %d %H:%M:%S")
 
-def parse_iso(timestamp: str) -> Optional[datetime]:
+def parseIso(timestamp: str) -> Optional[datetime]:
     if not timestamp:
         return None
     try:
@@ -67,7 +67,7 @@ def parse_iso(timestamp: str) -> Optional[datetime]:
     except Exception:
         return None
 
-def to_number(s: str) -> int | float:
+def toNumber(s: str) -> int | float:
     return float(s) if "." in s else int(s)
 
 
@@ -75,33 +75,33 @@ def to_number(s: str) -> int | float:
 
 ### Add sip: prefix to parse it better later ###
 
-def normalize_sip_uri(uri: str) -> str:
-    clean_uri = (uri or "").strip()
-    if not clean_uri:
+def normalizeSipUri(uri: str) -> str:
+    cleanUri = (uri or "").strip()
+    if not cleanUri:
         return ""
-    if clean_uri.startswith("sip:"):
-        return clean_uri
-    if "@" in clean_uri:
-        return "sip:" + clean_uri
-    return clean_uri
+    if cleanUri.startswith("sip:"):
+        return cleanUri
+    if "@" in cleanUri:
+        return "sip:" + cleanUri
+    return cleanUri
 
 ### Remove sip: prefix ###
-def strip_sip_prefix(uri: str) -> str:
-    clean_uri = (uri or "").strip()
-    return clean_uri[4:] if clean_uri.startswith("sip:") else clean_uri
+def stripSipPrefix(uri: str) -> str:
+    cleanUri = (uri or "").strip()
+    return cleanUri[4:] if cleanUri.startswith("sip:") else cleanUri
 
 
-### Split prefix ### 
-def split_uri(uri: str) -> Tuple[str, str]:
-    clean_uri = strip_sip_prefix(uri)
-    if "@" not in clean_uri:
+### Split prefix ###
+def splitUri(uri: str) -> Tuple[str, str]:
+    cleanUri = stripSipPrefix(uri)
+    if "@" not in cleanUri:
         return "", ""
-    user, dom = clean_uri.split("@", 1)
+    user, dom = cleanUri.split("@", 1)
     return user, dom
 
 ### Get displayName & mixedId from URL ###
 
-def parse_call_url_details(url: str) -> dict[str, str]:
+def parseCallUrlDetails(url: str) -> dict[str, str]:
     url = (url or "").strip()
     if not url:
         return {}
@@ -109,19 +109,19 @@ def parse_call_url_details(url: str) -> dict[str, str]:
     parts = urlsplit(url)
     params = parse_qs(parts.query or "", keep_blank_values=True)
 
-    source_name = (params.get("displayName", [""])[0] or "").strip()
-    destination_room_name = (params.get("mixedId", [""])[0] or "").strip()
+    sourceName = (params.get("displayName", [""])[0] or "").strip()
+    destinationRoomName = (params.get("mixedId", [""])[0] or "").strip()
 
     details: dict[str, str] = {}
-    if source_name:
-        details["sourceName"] = source_name
-    if destination_room_name:
-        details["destinationRoomName"] = destination_room_name
+    if sourceName:
+        details["sourceName"] = sourceName
+    if destinationRoomName:
+        details["destinationRoomName"] = destinationRoomName
     return details
 
 ### Parse Event logs ###
 
-def parse_event_dict(line: str) -> Optional[Dict[str, Any]]:
+def parseEventDict(line: str) -> Optional[Dict[str, Any]]:
     text = (line or "").strip()
     if text.startswith("Event:"):
         text = text.split("Event:", 1)[1].strip()
@@ -147,17 +147,17 @@ def parse_event_dict(line: str) -> Optional[Dict[str, Any]]:
 
 ### Add to history file ###
 
-def append_history(history_path: str, record_type: str, record_obj: Dict[str, Any]) -> None:
+def appendHistory(historyPath: str, recordType: str, recordObj: Dict[str, Any]) -> None:
 
-    if not history_path:
+    if not historyPath:
         return
 
-    line = f"{record_type}:{json.dumps(record_obj, ensure_ascii=False)}\n"
+    line = f"{recordType}:{json.dumps(recordObj, ensure_ascii=False)}\n"
 
     try:
         import fcntl
 
-        with open(history_path, "a", encoding="utf-8") as f:
+        with open(historyPath, "a", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.write(line)
             f.flush()
@@ -166,33 +166,33 @@ def append_history(history_path: str, record_type: str, record_obj: Dict[str, An
         print("Failed to write history:", exc, file=sys.stderr, flush=True)
 
 
-def read_history_stable(history_path: str, *, max_wait_s: float = 5.0) -> List[str]:
+def readHistoryStable(historyPath: str, *, maxWaitS: float = 5.0) -> List[str]:
 
-    if not history_path:
+    if not historyPath:
         return []
 
     try:
         import fcntl
 
-        previous_sig: Optional[Tuple[int, str]] = None
-        stable_count = 0
+        previousSig: Optional[Tuple[int, str]] = None
+        stableCount = 0
 
-        deadline = time.time() + max_wait_s
+        deadline = time.time() + maxWaitS
         while time.time() < deadline:
-            with open(history_path, "a+", encoding="utf-8") as f:
+            with open(historyPath, "a+", encoding="utf-8") as f:
                 fcntl.flock(f, fcntl.LOCK_EX)
                 f.seek(0)
                 lines = f.readlines()
                 sig = (len(lines), lines[-1] if lines else "")
                 fcntl.flock(f, fcntl.LOCK_UN)
 
-            if sig == previous_sig:
-                stable_count += 1
+            if sig == previousSig:
+                stableCount += 1
             else:
-                stable_count = 0
-            previous_sig = sig
+                stableCount = 0
+            previousSig = sig
 
-            if stable_count >= 2:
+            if stableCount >= 2:
                 return lines
 
             time.sleep(0.2)
@@ -201,19 +201,19 @@ def read_history_stable(history_path: str, *, max_wait_s: float = 5.0) -> List[s
 
     except Exception:
         try:
-            with open(history_path, "r", encoding="utf-8") as f:
+            with open(historyPath, "r", encoding="utf-8") as f:
                 return f.readlines()
         except Exception:
             return []
 
 
-def truncate_history(history_path: str) -> None:
-    if not history_path:
+def truncateHistory(historyPath: str) -> None:
+    if not historyPath:
         return
     try:
         import fcntl
 
-        with open(history_path, "a+", encoding="utf-8") as f:
+        with open(historyPath, "a+", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.seek(0)
             f.truncate(0)
@@ -226,221 +226,224 @@ def truncate_history(history_path: str) -> None:
 
 @dataclass
 class MediaStats:
-    audio_tx: Dict[str, Any] = field(default_factory=dict)
-    audio_rx: Dict[str, Any] = field(default_factory=dict)
-    video_streams: Dict[int, Dict[str, Any]] = field(default_factory=dict)
+    audioTx: Dict[str, Any] = field(default_factory=dict)
+    audioRx: Dict[str, Any] = field(default_factory=dict)
+    videoStreams: Dict[int, Dict[str, Any]] = field(default_factory=dict)
 
 
-def build_payload_from_lines(lines: List[str], post_url: str) -> Dict[str, Any]:
+def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
 
-    room_type = "IVR"
-    main_app = ""
+    roomType = "IVR"
+    mainApp = ""
 
-    call_start_raw = ""
-    call_start_timestamp = ""
-    call_end_raw = ""
-    call_end_timestamp = ""
-    call_url = ""
+    callStartRaw = ""
+    callStartTimestamp = ""
+    callEndRaw = ""
+    callEndTimestamp = ""
+    callUrl = ""
 
-    call_id = ""
-    peer_display = ""
-    close_reason = ""
-    last_event_type = ""
+    callId = ""
+    peerDisplay = ""
+    closeReason = ""
+    lastEventType = ""
 
 
-    source_uri = ""
-    destination_uri = ""
-    destination_domain = ""
-    destination_uri_raw = ""
+    sourceUri = ""
+    destinationUri = ""
+    destinationDomain = ""
+    destinationUriRaw = ""
+    destinationRoomName = ""
 
-    room_line_value = ""
-    source_name = ""
-    dtmf_events: List[Dict[str, str]] = []
+    roomLineValue = ""
+    sourceName = ""
+    dtmfEvents: List[Dict[str, str]] = []
     media = MediaStats()
 
-    have_final_call_closed = False
+    haveFinalCallClosed = False
 
-    for history_line in lines:
-        history_line = history_line.strip()
-        if not history_line or ":" not in history_line:
+    for historyLine in lines:
+        historyLine = historyLine.strip()
+        if not historyLine or ":" not in historyLine:
             continue
 
-        record_type, record_payload = history_line.split(":", 1)
-        record_type = record_type.strip()
+        recordType, recordPayload = historyLine.split(":", 1)
+        recordType = recordType.strip()
 
-        if record_type == "main_app":
-            main_app = (record_payload or "").strip()
+        if recordType == "main_app":
+            mainApp = (recordPayload or "").strip()
             continue
 
         try:
-            record_data = json.loads(record_payload)
+            recordData = json.loads(recordPayload)
         except Exception:
             continue
 
-        if record_type == "call_start":
-            call_start_raw = call_start_raw or (record_data.get("raw") or "")
-            call_start_timestamp = call_start_timestamp or (record_data.get("timestamp") or "")
-            if record_data.get("url"):
-                call_url = record_data.get("url") or ""
+        if recordType == "call_start":
+            callStartRaw = callStartRaw or (recordData.get("raw") or "")
+            callStartTimestamp = callStartTimestamp or (recordData.get("timestamp") or "")
+            if recordData.get("url"):
+                callUrl = recordData.get("url") or ""
 
-        elif record_type == "call_end":
-            if record_data.get("raw"):
-                call_end_raw = record_data.get("raw") or ""
-            if record_data.get("timestamp"):
-                call_end_timestamp = record_data.get("timestamp") or ""
+        elif recordType == "call_end":
+            if recordData.get("raw"):
+                callEndRaw = recordData.get("raw") or ""
+            if recordData.get("timestamp"):
+                callEndTimestamp = recordData.get("timestamp") or ""
 
-        elif record_type == "room":
-            room_line_value = (record_data.get("value") or "").strip()
+        elif recordType == "room":
+            roomLineValue = (recordData.get("value") or "").strip()
 
-        elif record_type == "destination":
-            if record_data.get("destinationURI"):
-                destination_uri = (record_data.get("destinationURI") or "").strip()
-            if record_data.get("destinationDomain"):
-                destination_domain = (record_data.get("destinationDomain") or "").strip()
+        elif recordType == "destination":
+            if recordData.get("destinationURI"):
+                destinationUri = (recordData.get("destinationURI") or "").strip()
+            if recordData.get("destinationDomain"):
+                destinationDomain = (recordData.get("destinationDomain") or "").strip()
 
-        elif record_type == "call_closed":
-            event_type = (record_data.get("lastEventType") or "").strip()
-            is_final = event_type == "CALL_CLOSED"
+        elif recordType == "call_closed":
+            eventType = (recordData.get("lastEventType") or "").strip()
+            isFinal = eventType == "CALL_CLOSED"
 
-            if have_final_call_closed and not is_final:
+            if haveFinalCallClosed and not isFinal:
                 continue
-            if is_final:
-                have_final_call_closed = True
+            if isFinal:
+                haveFinalCallClosed = True
 
-            call_id = record_data.get("callId") or call_id
-            peer_display = (record_data.get("peerDisplayName") or peer_display).strip()
-            close_reason = record_data.get("closeReason") or close_reason
-            last_event_type = event_type or last_event_type
+            callId = recordData.get("callId") or callId
+            peerDisplay = (recordData.get("peerDisplayName") or peerDisplay).strip()
+            closeReason = recordData.get("closeReason") or closeReason
+            lastEventType = eventType or lastEventType
 
-            if record_data.get("sourceURI"):
-                source_uri = normalize_sip_uri(record_data["sourceURI"])
-            if record_data.get("destinationURI"):
-                destination_uri_raw = normalize_sip_uri(record_data["destinationURI"])
+            if recordData.get("sourceURI"):
+                sourceUri = normalizeSipUri(recordData["sourceURI"])
+            if recordData.get("destinationURI"):
+                destinationUriRaw = normalizeSipUri(recordData["destinationURI"])
 
-        elif record_type == "dtmf":
-            ts = record_data.get("timestamp") or ""
-            inp = (record_data.get("input") or "").strip()
+        elif recordType == "dtmf":
+            ts = recordData.get("timestamp") or ""
+            inp = (recordData.get("input") or "").strip()
             if ts and inp:
-                dtmf_events.append({"timestamp": ts, "input": inp})
+                dtmfEvents.append({"timestamp": ts, "input": inp})
 
-        elif record_type == "stats_value":
-            media_type = (record_data.get("media") or "").strip().lower()
-            field = (record_data.get("field") or "").strip()
-            tx = record_data.get("tx")
-            rx = record_data.get("rx")
-            if not media_type or not field:
+        elif recordType == "stats_value":
+            mediaType = (recordData.get("media") or "").strip().lower()
+            field = (recordData.get("field") or "").strip()
+            tx = recordData.get("tx")
+            rx = recordData.get("rx")
+            if not mediaType or not field:
                 continue
 
-            if media_type == "audio":
+            if mediaType == "audio":
                 if tx is not None:
-                    media.audio_tx[field] = tx
+                    media.audioTx[field] = tx
                 if rx is not None:
-                    media.audio_rx[field] = rx
+                    media.audioRx[field] = rx
 
-            elif media_type == "video":
-                stream_idx_val = record_data.get("streamIndex")
+            elif mediaType == "video":
+                streamIdxVal = recordData.get("streamIndex")
                 try:
-                    stream_idx = int(stream_idx_val) if stream_idx_val is not None else 0
+                    streamIdx = int(streamIdxVal) if streamIdxVal is not None else 0
                 except Exception:
-                    stream_idx = 0
+                    streamIdx = 0
 
-                stream_stats = media.video_streams.setdefault(
-                    stream_idx, {"streamIndex": stream_idx, "tx": {}, "rx": {}}
+                streamStats = media.videoStreams.setdefault(
+                    streamIdx, {"streamIndex": streamIdx, "tx": {}, "rx": {}}
                 )
                 if tx is not None:
-                    stream_stats["tx"][field] = tx
+                    streamStats["tx"][field] = tx
                 if rx is not None:
-                    stream_stats["rx"][field] = rx
+                    streamStats["rx"][field] = rx
 
     ### Get sourceName & destinationRoomName from URL ###
-    url_details = parse_call_url_details(call_url)
-    if url_details.get("sourceName"):
-        source_name = url_details["sourceName"]
-    if url_details.get("destinationRoomName"):
-        destination_room_name = url_details["destinationRoomName"]
+    urlDetails = parseCallUrlDetails(callUrl)
+    if urlDetails.get("sourceName"):
+        sourceName = urlDetails["sourceName"]
+    if urlDetails.get("destinationRoomName"):
+        destinationRoomName = urlDetails["destinationRoomName"]
 
-    source_uri = normalize_sip_uri(source_uri)
+    sourceUri = normalizeSipUri(sourceUri)
 
     ### Destination RAW data ###
-    raw_aor = strip_sip_prefix(destination_uri_raw)
-    raw_dest_alias, raw_dest_alias_domain = split_uri(destination_uri_raw)
-    destination_domain_ip = raw_dest_alias_domain or ""
-    destination_gw = raw_dest_alias or ""
+    rawAor = stripSipPrefix(destinationUriRaw)
+    rawDestAlias, rawDestAliasDomain = splitUri(destinationUriRaw)
+    destinationDomainIp = rawDestAliasDomain or ""
+    destinationGw = rawDestAlias or ""
 
     ### Remove sip: prefix ###
-    destination_uri = strip_sip_prefix(destination_uri)
-    source_number, source_domain = split_uri(source_uri)
+    destinationUri = stripSipPrefix(destinationUri)
+    sourceNumber, sourceDomain = splitUri(sourceUri)
 
     ### Duration ###
-    total_seconds = 0
-    total_ms = 0
-    total_raw = "00:00:00"
+    totalSeconds = 0
+    totalMs = 0
+    totalRaw = "00:00:00"
 
-    start_date = parse_iso(call_start_timestamp)
-    end_date = parse_iso(call_end_timestamp)
-    if start_date and end_date and end_date >= start_date:
-        dur = end_date - start_date
+    startDate = parseIso(callStartTimestamp)
+    endDate = parseIso(callEndTimestamp)
+    if startDate and endDate and endDate >= startDate:
+        dur = endDate - startDate
         sec = int(dur.total_seconds())
-        total_seconds = sec
-        total_ms = sec * 1000
-        total_raw = f"{sec // 3600:02d}:{(sec % 3600) // 60:02d}:{sec % 60:02d}"
+        totalSeconds = sec
+        totalMs = sec * 1000
+        totalRaw = f"{sec // 3600:02d}:{(sec % 3600) // 60:02d}:{sec % 60:02d}"
 
-    media_stats = {
-        "audio": {"tx": media.audio_tx, "rx": media.audio_rx},
-        "video": [media.video_streams[i] for i in sorted(media.video_streams)] if media.video_streams else [],
+    mediaStats = {
+        "audio": {"tx": media.audioTx, "rx": media.audioRx},
+        "video": [media.videoStreams[i] for i in sorted(media.videoStreams)] if media.videoStreams else [],
     }
 
-    call_obj = {
-        "roomType": room_type,
-        "mainApp": main_app,
+    callObj = {
+        "mainApp": mainApp,
+        "callUrl": callUrl,
+        "room":roomLineValue,
+        "roomType": roomType,
         "callSession": {
-            "callStart": {"raw": call_start_raw, "timestamp": call_start_timestamp},
-            "callEnd": {"raw": call_end_raw, "timestamp": call_end_timestamp},
-            "totalTime": {"seconds": total_seconds, "milliseconds": total_ms, "raw": total_raw},
+            "callStart": {"raw": callStartRaw, "timestamp": callStartTimestamp},
+            "callEnd": {"raw": callEndRaw, "timestamp": callEndTimestamp},
+            "totalTime": {"seconds": totalSeconds, "milliseconds": totalMs, "raw": totalRaw},
         },
         "details": {
-            "callId": call_id,
+            "callId": callId,
             "source": {
-                "sourceURI": strip_sip_prefix(source_uri),
-                "sourceName": source_name,
-                "sourceNumber": source_number,
-                "sourceDomain": source_domain,
+                "sourceURI": stripSipPrefix(sourceUri),
+                "sourceName": sourceName,
+                "sourceNumber": sourceNumber,
+                "sourceDomain": sourceDomain,
             },
             "destination": {
-                "destinationURI": destination_uri,
-                "destinationRoomName": destination_room_name,
-                "destinationDomain": destination_domain,
+                "destinationURI": destinationUri,
+                "destinationRoomName": destinationRoomName,
+                "destinationDomain": destinationDomain,
 
-                "destinationDomainRaw": raw_aor,
-                "destinationGw": destination_gw,
-                "destinationDomainIp": destination_domain_ip,
-                "peerDisplayName": peer_display,
+                "destinationDomainRaw": rawAor,
+                "destinationGw": destinationGw,
+                "destinationDomainIp": destinationDomainIp,
+                "peerDisplayName": peerDisplay,
             },
-            "closeReason": close_reason,
-            "lastEventType": last_event_type,
+            "closeReason": closeReason,
+            "lastEventType": lastEventType,
         },
-        "dtmfEvents": dtmf_events,
-        "mediaStats": media_stats,
+        "dtmfEvents": dtmfEvents,
+        "mediaStats": mediaStats,
     }
 
-    json_body = {"call": call_obj}
-    return json_body
+    jsonBody = {"call": callObj}
+    return jsonBody
 
 
 ### Post ###
-def push_history(history_path: str) -> None:
+def pushHistory(historyPath: str) -> None:
 
-    if not history_path or not POST_URL:
+    if not historyPath or not postUrl:
         return
 
     try:
-        lines = read_history_stable(history_path, max_wait_s=5.0)
+        lines = readHistoryStable(historyPath, maxWaitS=5.0)
         if not lines:
             return
 
-        payload = build_payload_from_lines(lines, POST_URL)
+        payload = buildPayloadFromLines(lines, postUrl)
         resp = requests.post(
-            POST_URL,
+            postUrl,
             json=payload,
             headers={"Accept": "text/plain"},
             timeout=10,
@@ -450,7 +453,7 @@ def push_history(history_path: str) -> None:
             print(f"POST failed status={resp.status_code} body={resp.text!r}", file=sys.stderr, flush=True)
             return
 
-        truncate_history(history_path)
+        truncateHistory(historyPath)
 
     except Exception as exc:
         print("Failed to post call history:", exc, file=sys.stderr, flush=True)
@@ -460,162 +463,171 @@ def push_history(history_path: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Log parser")
-    parser.add_argument("-p", "--pref", required=True, help="log prefix (e.g. Event, Baresip)")
+    parser.add_argument("-p", "--pref", required=True, help="log prefix")
     parser.add_argument("-i", "--history", required=False, help="history file path")
     args = parser.parse_args()
 
     pref: str = args.pref
-    history_file: str = args.history or ""
+    historyFile: str = args.history or ""
 
-    current_media: Optional[str] = None
-    current_stream: Optional[int] = None
-    video_auto_index = -1
-    last_final_call_id: Optional[str] = None
+    currentMedia: Optional[str] = None
+    currentStream: Optional[int] = None
+    videoAutoIndex = -1
+    lastFinalCallId: Optional[str] = None
 
-    for raw_input_line in sys.stdin:
-        line = ANSI_ESCAPE_REGEX.sub("", raw_input_line.rstrip())
-        if not line:
-            continue
+    callStartLogged = False
 
-        print(f"{pref}: {line}", flush=True)
+    for raw in sys.stdin:
+        cleaned = ansiEscapeRegex.sub("", raw)
+        cleaned = cleaned.replace("\b", "").replace("\r", "\n")
 
-        if not history_file:
-            continue
-
-        try:
-            ### Call start ###
-            if "Web browsing URL:" in line:
-                dt = utc_now()
-                url = ""
-                if "URL:" in line:
-                    url = line.split("URL:", 1)[1].strip()
-                append_history(
-                    history_file,
-                    "call_start",
-                    {"raw": raw_timestamp(dt), "timestamp": iso_z(dt), "url": url},
-                )
+        for line in cleaned.splitlines():
+            line = line.strip()
+            if not line:
                 continue
 
-            ### Room ###
-            if "room:" in line:
-                append_history(history_file, "room", {"value": line.split("room:", 1)[1].strip()})
+            print(f"{pref}: {line}", flush=True)
+
+            if not historyFile:
                 continue
 
-            ### Event ###
-            if pref == "Event":
-                dtmf_match = DTMF_REGEX.match(line.strip())
-                if dtmf_match:
-                    dt = utc_now()
-                    append_history(
-                        history_file,
-                        "dtmf",
-                        {"timestamp": iso_z(dt, ms=True), "input": dtmf_match.group("input").strip()},
+            try:
+                ### Call start ###
+                if (not callStartLogged) and ("Web browsing URL:" in line):
+                    dt = utcNow()
+                    url = ""
+                    if "URL:" in line:
+                        url = line.split("URL:", 1)[1].strip()
+
+                    appendHistory(
+                        historyFile,
+                        "call_start",
+                        {"raw": rawTimestamp(dt), "timestamp": isoZ(dt), "url": url},
                     )
+                    callStartLogged = True
                     continue
 
-                event_dict = parse_event_dict(line)
-                if event_dict and event_dict.get("class") == "call":
-                    last_type = str(event_dict.get("type") or "").strip()
-                    if last_type != "CALL_CLOSED":
+                ### Room ###
+                if "room:" in line:
+                    room = ""
+                    appendHistory(historyFile, "room", {"value": line.split("room:", 1)[1].strip()})
+                    continue
+
+                ### Event ###
+                if pref == "Event":
+                    dtmfMatch = dtmfRegex.match(line.strip())
+                    if dtmfMatch:
+                        dt = utcNow()
+                        appendHistory(
+                            historyFile,
+                            "dtmf",
+                            {"timestamp": isoZ(dt, ms=True), "input": dtmfMatch.group("input").strip()},
+                        )
                         continue
 
-                    call_id = str(event_dict.get("id") or "").strip()
-                    if call_id and call_id == last_final_call_id:
-                        continue
-                    if call_id:
-                        last_final_call_id = call_id
+                    eventDict = parseEventDict(line)
+                    if eventDict and eventDict.get("class") == "call":
+                        lastType = str(eventDict.get("type") or "").strip()
+                        if lastType != "CALL_CLOSED":
+                            continue
 
-                    peeruri = str(event_dict.get("peeruri") or "").strip()
-                    accountaor = str(event_dict.get("accountaor") or "").strip()
-                    peerdisplay = str(event_dict.get("peerdisplayname") or "").strip()
-                    close_reason = str(event_dict.get("param") or "").strip()
+                        callId = str(eventDict.get("id") or "").strip()
+                        if callId and callId == lastFinalCallId:
+                            continue
+                        if callId:
+                            lastFinalCallId = callId
 
-                    append_history(
-                        history_file,
-                        "call_closed",
-                        {
-                            "callId": call_id,
-                            "peerDisplayName": peerdisplay,
-                            "closeReason": close_reason,
-                            "lastEventType": last_type,
-                            "sourceURI": normalize_sip_uri(peeruri),
-                            "destinationURI": normalize_sip_uri(accountaor),
-                        },
-                    )
+                        peeruri = str(eventDict.get("peeruri") or "").strip()
+                        accountaor = str(eventDict.get("accountaor") or "").strip()
+                        peerdisplay = str(eventDict.get("peerdisplayname") or "").strip()
+                        closeReason = str(eventDict.get("param") or "").strip()
 
-                    dt = utc_now()
-                    append_history(history_file, "call_end", {"raw": raw_timestamp(dt), "timestamp": iso_z(dt)})
-
-                    push_history(history_file)
-                    continue
-
-            ### Baresip ###
-            if pref == "Baresip":
-                call_line_match = BARESIP_REGEX.match(line.strip())
-                if call_line_match:
-                    dest_user = call_line_match.group("dest_user")
-                    dest_dom = call_line_match.group("dest_dom")
-                    append_history(
-                        history_file,
-                        "destination",
-                        {
-                            "destinationURI": f"{dest_user}@{dest_dom}",
-                            "destinationRoomName": dest_user,
-                            "destinationDomain": dest_dom,
-                        },
-                    )
-                    continue
-
-                ### QOS ###
-                stats_header_match = STAT_HEADER_REGEX.match(line.strip())
-                if stats_header_match:
-                    current_media = stats_header_match.group("media").strip().lower()
-                    if current_media == "video":
-                        stream_s = stats_header_match.group("stream")
-                        if stream_s is not None:
-                            current_stream = int(stream_s)
-                            video_auto_index = max(video_auto_index, current_stream)
-                        else:
-                            video_auto_index += 1
-                            current_stream = video_auto_index
-                    else:
-                        current_stream = None
-                    continue
-
-                ### QOS values ###
-                stats_value_match = STAT_VALUE_REGEX.match(line.strip())
-                if stats_value_match and current_media in ("audio", "video"):
-                    label = stats_value_match.group("label").strip()
-                    if label in FIELD_MAP:
-                        nums = NUM_REGEX.findall(stats_value_match.group("rest"))
-                        tx = to_number(nums[0]) if len(nums) >= 1 else None
-                        rx = to_number(nums[1]) if len(nums) >= 2 else None
-                        append_history(
-                            history_file,
-                            "stats_value",
+                        appendHistory(
+                            historyFile,
+                            "call_closed",
                             {
-                                "media": current_media,
-                                "streamIndex": current_stream,
-                                "field": FIELD_MAP[label],
-                                "tx": tx,
-                                "rx": rx,
+                                "callId": callId,
+                                "peerDisplayName": peerdisplay,
+                                "closeReason": closeReason,
+                                "lastEventType": lastType,
+                                "sourceURI": normalizeSipUri(peeruri),
+                                "destinationURI": normalizeSipUri(accountaor),
                             },
                         )
-                    continue
 
-                ### Baresip end ###
-                if (
-                    "ua: stop all" in line
-                    or "Files sent and removed" in line
-                    or "Files moved in log directory" in line
-                ):
-                    dt = utc_now()
-                    append_history(history_file, "call_end", {"raw": raw_timestamp(dt), "timestamp": iso_z(dt)})
-                    push_history(history_file)
-                    continue
+                        dt = utcNow()
+                        appendHistory(historyFile, "call_end", {"raw": rawTimestamp(dt), "timestamp": isoZ(dt)})
 
-        except Exception as exc:
-            print("Failed to parse log line:", exc, file=sys.stderr, flush=True)
+                        pushHistory(historyFile)
+                        continue
+
+                ### Baresip ###
+                if pref == "Baresip":
+                    callLineMatch = baresipRegex.match(line.strip())
+                    if callLineMatch:
+                        destUser = callLineMatch.group("dest_user")
+                        destDom = callLineMatch.group("dest_dom")
+                        appendHistory(
+                            historyFile,
+                            "destination",
+                            {
+                                "destinationURI": f"{destUser}@{destDom}",
+                                "destinationRoomName": destUser,
+                                "destinationDomain": destDom,
+                            },
+                        )
+                        continue
+
+                    ### QOS ###
+                    statsHeaderMatch = statHeaderRegex.match(line.strip())
+                    if statsHeaderMatch:
+                        currentMedia = statsHeaderMatch.group("media").strip().lower()
+                        if currentMedia == "video":
+                            streamS = statsHeaderMatch.group("stream")
+                            if streamS is not None:
+                                currentStream = int(streamS)
+                                videoAutoIndex = max(videoAutoIndex, currentStream)
+                            else:
+                                videoAutoIndex += 1
+                                currentStream = videoAutoIndex
+                        else:
+                            currentStream = None
+                        continue
+
+                    ### QOS values ###
+                    statsValueMatch = statValueRegex.match(line.strip())
+                    if statsValueMatch and currentMedia in ("audio", "video"):
+                        label = statsValueMatch.group("label").strip()
+                        if label in fieldMap:
+                            nums = numRegex.findall(statsValueMatch.group("rest"))
+                            tx = toNumber(nums[0]) if len(nums) >= 1 else None
+                            rx = toNumber(nums[1]) if len(nums) >= 2 else None
+                            appendHistory(
+                                historyFile,
+                                "stats_value",
+                                {
+                                    "media": currentMedia,
+                                    "streamIndex": currentStream,
+                                    "field": fieldMap[label],
+                                    "tx": tx,
+                                    "rx": rx,
+                                },
+                            )
+                        continue
+
+                    ### Baresip end ###
+                    if (
+                        "ua: stop all" in line
+                        or "Files sent and removed" in line
+                        or "Files moved in log directory" in line
+                    ):
+                        dt = utcNow()
+                        appendHistory(historyFile, "call_end", {"raw": rawTimestamp(dt), "timestamp": isoZ(dt)})
+                        pushHistory(historyFile)
+                        continue
+
+            except Exception as exc:
+                print("Failed to parse log line:", exc, file=sys.stderr, flush=True)
 
 
 if __name__ == "__main__":
