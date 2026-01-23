@@ -127,6 +127,7 @@ class Jitsi extends UIHelper{
             }
             if(passInput){
                 this.overlay.style.display = "flex";
+                this.wrapper.style.display = "none";
                 this.setPromptMessage(this.passwordPrompt);
                 this.passwordInput.value = "";
                 this.passwordInput.focus();
