@@ -150,6 +150,8 @@ class Bigbluebutton extends UIHelper {
             document.querySelector('[accesskey="R"]').click();
         if (key == "5")
             document.querySelector('[accesskey="U"]').click();
+        if (key == "6")
+            document.querySelector("[aria-label='Accept recording and continue']").click();
         if (key == "s")
             document.querySelector("[data-test='startScreenShare']").click();
     }
