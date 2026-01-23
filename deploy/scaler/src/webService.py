@@ -65,7 +65,7 @@ class Scaling:
     def GET(self, args=None):
         data = web.input()
         if 'auto' in data.keys():
-            initData = {}
+            initData = { 'callin' : {}}
             self.scaler.csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
             try:
                 self.scaler.cleanup()
