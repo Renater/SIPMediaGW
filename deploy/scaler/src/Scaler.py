@@ -37,7 +37,18 @@ class Scaler:
 
     # Cleanup stale instances
     def cleanup(self):
-     pass
+        instList = self.csp.enumerateInstances()
+        runningCpuCount = 0
+        for inst in instList:
+            if inst in self.config['cleaner_blacklist']:
+                continue
+            runningCpuCount+= inst['cpu_count']
+            if not inst['addr']['pub']:
+                now = dt.datetime.now(dt.timezone.utc)
+                start = du.parse(inst['start'])
+                if (now-start).total_seconds() > 600:
+                    self.csp.destroyInstances([inst['addr']['priv']])
+        print('Number of running CPUs: {} \n'.format(runningCpuCount), flush=True)
 
     # Get current available capacity
     def getCurrentCapacity(self):
