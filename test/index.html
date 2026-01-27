@@ -1,34 +1,161 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>ID de réunion pour connecteur SIP agnostique</title>
+<meta charset="UTF-8">
+<title>Connecteur SIP agnostique</title>
+
+<style>
+  body {
+    font-family: sans-serif;
+    max-width: 520px;
+    margin: auto;
+    padding: 2rem;
+    background: #fafafa;
+  }
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: bold;
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.3rem;
+    font-size: 1rem;
+  }
+
+  button {
+    margin-top: 1.5rem;
+    cursor: pointer;
+  }
+
+  .domain {
+    margin-top: 0.5rem;
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  .result {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #eee;
+    font-family: monospace;
+    word-break: break-all;
+  }
+
+  .hidden {
+    display: none;
+  }
+</style>
 </head>
+
 <body>
 
-  <h2>ID de réunion pour connecteur SIP agnostique</h2>
+<h2>Connecteur SIP agnostique</h2>
 
-  <label>Plateforme</label>
-  <select id="platform"></select>
+<label>Plateforme</label>
+<select id="platform"></select>
+<div class="domain" id="platform-domain"></div>
 
-  <div id="meeting-name">
-    <label>Nom de la réunion</label>
-    <input id="conf" placeholder="kj3-hdv-sgg-av">
-  </div>
+<div id="default-field">
+  <label>Nom de la réunion</label>
+  <input id="meeting" placeholder="kj3-hdv-sgg-av">
+</div>
 
-  <div id="teams-fields" style="display:none">
-    <label>ID de la réunion</label>
-    <input id="teamsId">
+<div id="teams-fields" class="hidden">
+  <label>ID de la réunion</label>
+  <input id="teams-id" placeholder="123456789">
 
-    <label>Code PIN</label>
-    <input id="teamsPin">
-  </div>
+  <label>PIN / mot de passe</label>
+  <input id="teams-pin" placeholder="1234">
+</div>
 
-  <button id="generate">Générer l’URI SIP</button>
+<button onclick="generate()">Générer l’URI SIP</button>
 
-  <div class="result" id="result"></div>
+<div class="result" id="result"></div>
 
-  <!-- JS externe -->
-  <script src="app.js"></script>
+<script>
+const platforms = {
+  jitsi: { prefix: "1.", name: "Jitsi Meet", domain: "rendez-vous.renater.fr" },
+  bbb:   { prefix: "2.", name: "BigBlueButton", domain: "webinaire.numerique.gouv.fr" },
+  visio: { prefix: "3.", name: "Visio", domain: "visio.numerique.gouv.fr" },
+  teams: { prefix: "4.", name: "Microsoft Teams", domain: "teams.live.com" }
+};
+
+const select = document.getElementById("platform");
+const domainDiv = document.getElementById("platform-domain");
+const result = document.getElementById("result");
+const defaultField = document.getElementById("default-field");
+const teamsFields = document.getElementById("teams-fields");
+
+// Remplir le select
+Object.entries(platforms).forEach(([key, p]) => {
+  const opt = document.createElement("option");
+  opt.value = key;
+  opt.textContent = p.name;
+  select.appendChild(opt);
+});
+
+// UI dynamique
+function updateUI() {
+  const p = platforms[select.value];
+  domainDiv.textContent = "Domaine : " + p.domain;
+
+  if (select.value === "teams") {
+    defaultField.classList.add("hidden");
+    teamsFields.classList.remove("hidden");
+  } else {
+    defaultField.classList.remove("hidden");
+    teamsFields.classList.add("hidden");
+  }
+}
+
+select.addEventListener("change", updateUI);
+updateUI();
+
+// Génération de l’URI SIP
+async function generate() {
+  try {
+    const p = platforms[select.value];
+    let room;
+
+    if (select.value === "teams") {
+      const id = document.getElementById("teams-id").value.trim();
+      const pin = document.getElementById("teams-pin").value.trim();
+      if (!id || !pin) throw "ID ou PIN manquant";
+      room = `${id}-${pin}`;
+    } else {
+      const meeting = document.getElementById("meeting").value.trim();
+      if (!meeting) throw "Nom de réunion manquant";
+
+      if (select.value === "visio") {
+        const sipUri = `${p.prefix}${meeting}@rdv.visio.renater.fr`;
+        result.textContent = sipUri;
+        return;
+      }
+
+      room = meeting;
+    }
+    const url =
+      `https://rendez-vous.renater.fr/conf-api/conferenceMapper?conference=${room}@rendez-vous.renater.fr`;
+    const data = await (await fetch(url)).json();
+
+    if (!data.id) throw "ID non retourné par l’API";
+
+    const sipUri = `${p.prefix}${data.id}@rdv.visio.renater.fr`;
+    result.textContent = sipUri;
+
+  } catch (e) {
+    result.textContent = "Erreur : " + e;
+  }
+}
+</script>
+
 </body>
 </html>
