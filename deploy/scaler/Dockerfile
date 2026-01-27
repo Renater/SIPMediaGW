@@ -7,7 +7,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade setuptools
 RUN pip3 install requests httplib2 web.py mysql-connector-python \
                  defusedxml fire xmltodict typing_extensions \
-                 python-dateutil
+                 python-dateutil redis
 
 COPY src/* /var
 WORKDIR /var

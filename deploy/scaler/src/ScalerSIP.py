@@ -5,7 +5,7 @@ import dateutil.parser as du
 import json
 from contextlib import closing
 import mysql.connector as mysqlcon
-from deploy.scaler.src.Scaler import Scaler
+from Scaler import Scaler
 
 
 class ScalerSIP(Scaler):

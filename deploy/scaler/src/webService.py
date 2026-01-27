@@ -7,8 +7,8 @@ import inspect
 import re
 import web
 import json
-from deploy.scaler.src.ScalerSIP  import ScalerSIP
-from deploy.scaler.src.ScalerMedia import ScalerMedia
+from ScalerSIP  import ScalerSIP
+from ScalerMedia import ScalerMedia
 
 scalerConfigFile = os.environ.get("SCALER_CONFIG_FILE", "scaler.json")
 cspName =  os.environ.get("CSP_NAME", "outscale")

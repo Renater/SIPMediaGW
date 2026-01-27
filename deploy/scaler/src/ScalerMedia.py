@@ -6,7 +6,7 @@ import json
 import redis
 
 from contextlib import closing
-from deploy.scaler.src.Scaler import Scaler
+from Scaler import Scaler
 
 def getSeconds(stringHMS):
    timedeltaObj = dt.datetime.strptime(stringHMS, "%H:%M:%S") - dt.datetime(1900,1,1)
