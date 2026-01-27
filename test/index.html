@@ -2,57 +2,33 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>RENATER – Récupération ID réunion</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      max-width: 500px;
-    }
-    input, button {
-      padding: 0.5rem;
-      font-size: 1rem;
-      width: 100%;
-      margin-top: 0.5rem;
-    }
-    .result {
-      margin-top: 1rem;
-      font-weight: bold;
-    }
-  </style>
+  <title>ID de réunion pour connecteur SIP agnostique</title>
 </head>
 <body>
 
   <h2>ID de réunion pour connecteur SIP agnostique</h2>
 
-  <label>Nom de la réunion (ex: kj3-hdv-sgg-av)</label>
-  <input id="conf" placeholder="kj3-hdv-sgg-av">
+  <label>Plateforme</label>
+  <select id="platform"></select>
 
-  <button onclick="getId()">Récupérer l’ID</button>
+  <div id="meeting-name">
+    <label>Nom de la réunion</label>
+    <input id="conf" placeholder="kj3-hdv-sgg-av">
+  </div>
+
+  <div id="teams-fields" style="display:none">
+    <label>ID de la réunion</label>
+    <input id="teamsId">
+
+    <label>Code PIN</label>
+    <input id="teamsPin">
+  </div>
+
+  <button id="generate">Générer l’URI SIP</button>
 
   <div class="result" id="result"></div>
 
-  <script>
-    async function getId() {
-      const conf = document.getElementById("conf").value.trim();
-      const result = document.getElementById("result");
-
-      if (!conf) {
-        result.textContent = "❌ Nom de réunion manquant";
-        return;
-      }
-
-      const url = `https://rendez-vous.renater.fr/conf-api/conferenceMapper?conference=${conf}0@rendez-vous.renater.fr`;
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        result.textContent = `✅ ID : ${data.id}`;
-      } catch (e) {
-        result.textContent = "❌ Erreur lors de la requête";
-      }
-    }
-  </script>
-
+  <!-- JS externe -->
+  <script src="app.js"></script>
 </body>
 </html>
