@@ -40,7 +40,7 @@ class Fakescale(ManageInstance):
                 sipDomain = instConfig['user_data']['sip_domain']['pub']
                 pubIp = instConfig['user_data']['sip_domain']['pub']
 
-    def createInstance(self, numCPU, name=None, ip=None):
+    def createInstance(self, numCPU, gigaRAM="4", name=None, ip=None):
         return self.freeIpAddr.get()
 
     def destroyInstances(self, ipList):

@@ -17,7 +17,7 @@ class ManageInstance:
     def enumerateInstances(self):
         pass
 
-    def createInstance(self, numCPU, name=None, ip=None):
+    def createInstance(self, numCPU, gigaRAM="4", name=None, ip=None):
         pass
 
     def destroyInstances(self, ipList):

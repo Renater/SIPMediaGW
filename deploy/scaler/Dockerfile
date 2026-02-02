@@ -9,5 +9,5 @@ RUN pip3 install requests httplib2 web.py mysql-connector-python \
                  defusedxml fire xmltodict typing_extensions \
                  python-dateutil redis
 
-COPY src/* /var
+COPY src/ /var
 WORKDIR /var

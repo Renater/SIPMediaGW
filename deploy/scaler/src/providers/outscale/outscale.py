@@ -4,7 +4,7 @@ import json
 import importlib
 import base64
 from ipaddress import ip_address
-from deploy.scaler.src.manageInstance import ManageInstance
+from manageInstance import ManageInstance
 
 class Outscale(ManageInstance):
 
@@ -96,8 +96,8 @@ class Outscale(ManageInstance):
                              'cpu_count':int(cpuCnt)})
         return instDict
 
-    def runInstance(self, numCPU):
-            bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 20, "VolumeType": "gp2"},
+    def runInstance(self, numCPU, gigaRAM):
+            bdm = [{ "Ebs": {"DeleteOnTemination": True, "VolumeSize": 10, "VolumeType": "standard"},
                     "DeviceName": "/dev/sda1" }]
             self.fcu.make_request("RunInstances", 
                             Profile=self.profile, Version=self.version,
@@ -107,14 +107,14 @@ class Outscale(ManageInstance):
                             ImageId=self.ami,
                             KeyName="Visio-DEV",
                             InstanceInitiatedShutdownBehavior="stop",
-                            InstanceType=self.instType[numCPU],
+                            InstanceType= self.instType[numCPU][gigaRAM],
                             SubnetId=self.subNet,
                             SecurityGroupId=[self.secuGrp['admin'],self.secuGrp['app']],
                             UserData=base64.b64encode(self.userData.encode('ascii')).decode("utf-8"))
             return self.fcu.response['RunInstancesResponse']['instancesSet']['item']
 
-    def createInstance(self, numCPU, name=None, ip=None):
-        res = self.runInstance(numCPU)
+    def createInstance(self, numCPU, gigaRAM, name=None, ip=None):
+        res = self.runInstance(numCPU, gigaRAM)
         if 'instanceId' in res:
             instanceId = res['instanceId']
             instName = res['privateDnsName']
@@ -131,7 +131,7 @@ class Outscale(ManageInstance):
         res = self.fcu.make_request("CreateTags", Profile=self.profile, Version=self.version,
                             ResourceId=instanceId,
                             Tag=[{"Key": "name", "Value":"{}".format(instName)}])
-        print('Created Instance: {}, {}, {}, {}VCPUs'.format(instanceId, privIp, pubIp, numCPU), flush=True)
+        print('Created Instance: {}, {}, {}, {}VCPUs, {}G'.format(instanceId, privIp, pubIp, numCPU, gigaRAM), flush=True)
 
         return { "id":instanceId, "ip":pubIp}
 

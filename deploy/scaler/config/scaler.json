@@ -1,16 +1,17 @@
 {
     "gw_name_prefix" : "mediagw",
     "auto_scale_threshold" : {
-        "00:00:00": {"unlockedMin":2, "loadMax":0.9},
-        "07:00:00": {"unlockedMin":4, "loadMax":0.75},
-        "09:00:00": {"unlockedMin":4, "loadMax":0.75},
-        "10:30:00": {"unlockedMin":4, "loadMax":0.75},
-        "12:30:00": {"unlockedMin":4, "loadMax":0.8},
-        "13:00:00": {"unlockedMin":4, "loadMax":0.75},
-        "14:30:00": {"unlockedMin":4, "loadMax":0.75},
-        "17:00:00": {"unlockedMin":2, "loadMax":0.8}
+        "00:00:00": {"unlockedMin":1, "loadMax":0.9},
+        "07:00:00": {"unlockedMin":2, "loadMax":0.75},
+        "09:00:00": {"unlockedMin":2, "loadMax":0.75},
+        "10:30:00": {"unlockedMin":2, "loadMax":0.75},
+        "12:30:00": {"unlockedMin":2, "loadMax":0.8},
+        "13:00:00": {"unlockedMin":2, "loadMax":0.75},
+        "14:30:00": {"unlockedMin":2, "loadMax":0.75},
+        "17:00:00": {"unlockedMin":1, "loadMax":0.8}
     },
     "cpu_per_gw": 4,
+    "ram_per_gw": 4,
     "sip_db": {
         "host": "127.0.0.1",
         "root_password": "dbrootpw"

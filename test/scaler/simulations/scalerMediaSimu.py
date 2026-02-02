@@ -95,7 +95,7 @@ class Simuscale(Fakescale):
         self.gwCnt = 0
         self.cpuCnt = 0
 
-    def createInstance(self, numCPU, name=None, ip=None):
+    def createInstance(self, numCPU, gigaRAM, name=None, ip=None):
         ippAddr = super().createInstance(numCPU)
         numGw = int(int(numCPU)/self.config['cpu_per_gw'])
         if self.simuTime:

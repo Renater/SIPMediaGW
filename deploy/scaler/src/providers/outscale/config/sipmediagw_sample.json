@@ -12,8 +12,10 @@
     },
     "instance_image" : null,
     "instance_type_by_cpu_num" : {
-        "4":"tinav6.c4r4p1",
-        "8":"tinav6.c8r8p1"
+        "4":{"4": "tinav6.c4r4p1",
+             "8": "tinav6.c8r8p1"},
+        "8":{"8": "tinav6.c8r8p1",
+             "16": "tinav6.c16r16p1"}
     },
     "name": null,
     "subnet": null,

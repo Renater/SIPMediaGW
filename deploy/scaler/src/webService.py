@@ -42,8 +42,7 @@ def authorize(func):
 class Scaling:
     def __init__(self) -> None:
         # Get a manageInstance object from CSP file name
-
-        sys.path.append(cspName)
+        sys.path.append("{}/providers/{}".format(os.path.dirname(os.path.abspath(__file__)), cspName))
         modName = cspName
         print("CSP mod name: "+modName, flush=True)
         mod = importlib.import_module(modName)
@@ -66,7 +65,8 @@ class Scaling:
         data = web.input()
         if 'auto' in data.keys():
             initData = { 'callin' : {}}
-            self.scaler.csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
+            self.scaler.csp.configureInstance("{}/providers/{}/config/{}".format(
+                os.path.dirname(os.path.abspath(__file__)), cspName, cspConfigFile), initData)
             try:
                 self.scaler.cleanup()
                 if self.scaler.scale() == 0:
@@ -91,7 +91,7 @@ class Scaling:
             initData ['callin'] = {}
             self.scaler.csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
             try:
-                instRes = self.scaler.csp.createInstance('4', name='mediagw')
+                instRes = self.scaler.csp.createInstance('4','4', name='mediagw')
                 web.ctx.status = '200 OK'
                 return json.dumps({"status": "success", "instance": instRes})
             except Exception as error:
