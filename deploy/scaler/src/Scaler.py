@@ -75,11 +75,16 @@ class Scaler:
         inCallNum = incallsNum if incallsNum else (currentCapacity - readyToRunNum )
         minCapacity = thresholdTimeLine[th]['unlockedMin'] + inCallNum
         if readyToRunNum < thresholdTimeLine[th]['unlockedMin']:
-            self.upScale(math.ceil(self.config['cpu_per_gw']*
-                                        (thresholdTimeLine[th]['unlockedMin'] - readyToRunNum)))
-            currentCapacity = thresholdTimeLine[th]['unlockedMin'] + inCallNum
+            targetCapacity = min((currentCapacity + thresholdTimeLine[th]['unlockedMin']
+                                  - readyToRunNum),
+                                  thresholdTimeLine[th]['maxGw'])
+            capacityIncrease = math.ceil(targetCapacity - currentCapacity)
+            if capacityIncrease > 0:
+                self.upScale(math.ceil(capacityIncrease*self.config['cpu_per_gw']))
+                currentCapacity = currentCapacity + capacityIncrease
 
-        targetCapacity = max(minCapacity, inCallNum/thresholdTimeLine[th]['loadMax'])
+        targetCapacity = min(thresholdTimeLine[th]['maxGw'],
+                             max(minCapacity, inCallNum/thresholdTimeLine[th]['loadMax']))
         capacityIncrease = math.ceil(targetCapacity - currentCapacity)
 
         if capacityIncrease > 0:
