@@ -64,7 +64,7 @@ class Scaling:
     def GET(self, args=None):
         data = web.input()
         if 'auto' in data.keys():
-            initData = { 'callin' : {}}
+            initData = { scalerType.lower() : {}}
             self.scaler.csp.configureInstance("{}/providers/{}/config/{}".format(
                 os.path.dirname(os.path.abspath(__file__)), cspName, cspConfigFile), initData)
             try:
@@ -75,20 +75,7 @@ class Scaling:
             except Exception as error:
                 return "The scaler iteration failed: {}".format(error)
         if 'up' in data.keys():
-            roomId = '0'
-            initData = {}
-            if 'roomId' in data.keys():
-                roomId = data['roomId']
-                if 'dialOut' in data.keys():
-                    initData['callout'] = {'dial' : data['dialOut'], 'room' : roomId}
-                if 'rtmpUri' in data.keys():
-                    initData['streaming'] = {'rtmp' : data['rtmpUri'], 'room' : roomId}
-                if 'apiKey' in data.keys() and 'userMail' in data.keys():
-                    initData['recording'] = {'key' : data['apiKey'],
-                                             'mail' : data['userMail'], 'room' : roomId}
-
-            # Ensure that the gateway will be in the "callin" pool (waiting an incoming  call) at the end...
-            initData ['callin'] = {}
+            initData [scalerType.lower()] = {}
             self.scaler.csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
             try:
                 instRes = self.scaler.csp.createInstance('4','4', name='mediagw')

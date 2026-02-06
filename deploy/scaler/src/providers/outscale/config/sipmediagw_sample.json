@@ -29,40 +29,27 @@
                        "sudo service cloud-init-hotplugd stop",
                        "sudo rm /usr/lib/systemd/system/cloud-init-hotplugd.socket",
                        "sudo rm /etc/udev/rules.d/10-cloud-init-hook-hotplug.rules",
-                       "sudo sed -i s%^DOCKER_IMAGE=.*%DOCKER_IMAGE={docker}% /usr/local/sipmediagw/.env",
-                       "sudo sed -i s/^SIP_REGISTRAR=.*/SIP_REGISTRAR={sip}/ /usr/local/sipmediagw/.env",
-                       "sudo sed -i 's/^SIP_PROXY=.*/SIP_PROXY={outbound}/' /usr/local/sipmediagw/.env",
-                       "sudo sed -i s/^TURN_SRV=.*/TURN_SRV={turn}/ /usr/local/sipmediagw/.env",
-                       "sudo sed -i s/^SDP_IN_IP4=.*/SDP_IN_IP4={pub}/ /usr/local/sipmediagw/.env"],
-            "callout": ["sudo modprobe -r v4l2loopback && sudo modprobe  v4l2loopback",
-                        "sudo sed -i s/^MAIN_APP=.*/MAIN_APP=baresip/ /usr/local/sipmediagw/.env",
-                        "pref=$(hostname --ip-address)",
-                        "cd /usr/local/sipmediagw",
-                        "sudo ./SIPMediaGW.sh -p $pref -r {room} -g callout -d {dial} -t 15",
-                        "sudo docker wait gw0",
-                        "sudo docker container prune -f"],
-            "callin": ["sudo sed -i s/^MAIN_APP=.*/MAIN_APP=baresip/ /usr/local/sipmediagw/.env",
-                       "sudo systemctl enable sipmediagw",
-                       "sudo service sipmediagw restart"],
-            "streaming": ["sudo modprobe -r v4l2loopback && sudo modprobe  v4l2loopback",
-                          "sudo sed -i s/^MAIN_APP=.*/MAIN_APP=streaming/ /usr/local/sipmediagw/.env",
-                          "sudo /usr/local/sipmediagw/SIPMediaGW.sh -r {room} -u {rtmp} -t 15",
-                          "sudo docker wait gw0",
-                          "sudo docker container prune -f"],
-            "recording": ["sudo modprobe -r v4l2loopback && sudo modprobe  v4l2loopback",
-                          "sudo sed -i s/^MAIN_APP=.*/MAIN_APP=recording/ /usr/local/sipmediagw/.env",
-                          "sudo /usr/local/sipmediagw/SIPMediaGW.sh -r {room} -m {mail} -a {key} -t 15",
-                          "sudo docker wait gw0",
-                          "sudo docker container prune -f"]
+                       "sudo sed -i s/^WITH_ALSA=.*/WITH_ALSA='true'/ /usr/local/sipmediagw/.env"],
+            "sip": ["sudo sed -i s/^SIP_REGISTRAR=.*/SIP_REGISTRAR={registrar}/ /usr/local/sipmediagw/.env",
+                    "sudo sed -i s/^SIP_PROXY=.*/SIP_PROXY=''/ /usr/local/sipmediagw/.env",
+                    "sudo sed -i s/^TURN_SRV=.*/TURN_SRV={turn}/ /usr/local/sipmediagw/.env",
+                    "sudo sed -i s/^SDP_IN_IP4=.*/SDP_IN_IP4=/ /usr/local/sipmediagw/.env",
+                    "sudo systemctl enable sipmediagw",
+                    "sudo service sipmediagw restart"],
+            "media": ["sudo systemctl enable sipmediagw",
+                      "sudo service sipmediagw restart"]
         },
-        "sip_domain": {
+        "sip_registrar": {
+            "priv": null,
+            "pub": null
+        },
+        "outbound_proxy": {
             "priv": null,
             "pub": null
         },
         "turn_server":{
             "priv":null,
             "pub": null
-        },
-        "docker_image" : "renater/sipmediagw:1.4.9"
+        }
     }
 }

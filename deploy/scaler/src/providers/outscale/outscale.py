@@ -35,34 +35,36 @@ class Outscale(ManageInstance):
         self.userData = ""
 
         # User Data
-        sipDomain = None
-        if 'sip_domain' in instConfig['user_data']:
-            if instConfig['user_data']['sip_domain']['priv']:
-                sipDomain = instConfig['user_data']['sip_domain']['priv']
-            else:
-                sipDomain = instConfig['user_data']['sip_domain']['pub']
-                pubIp = instConfig['user_data']['sip_domain']['pub']
+        self.userData += "\n".join(instConfig['user_data']['script']['common'])
 
-        outboundProxy = None
-        if 'outbound_proxy' in instConfig['user_data']:
-            if instConfig['user_data']['outbound_proxy']['priv']:
-                outboundProxy = instConfig['user_data']['outbound_proxy']['priv']
-            else:
-                outboundProxy = instConfig['user_data']['outbound_proxy']['pub']
+        if "sip" in initData:
+            sipRegistrar = None
+            if 'sip_registrar' in instConfig['user_data']:
+                if instConfig['user_data']['sip_registrar']['priv']:
+                    sipRegistrar = instConfig['user_data']['sip_registrar']['priv']
+                else:
+                    sipRegistrar = instConfig['user_data']['sip_registrar']['pub']
+            if not "registrar" in initData["sip"]:
+                initData["sip"]["registrar"] = sipRegistrar
 
-        turnSrv = None
-        if 'turn_server' in instConfig['user_data']:
-            pubIp = instConfig['user_data']['turn_server']['pub']
-            if instConfig['user_data']['turn_server']['priv']:
-                turnSrv = instConfig['user_data']['turn_server']['priv']
-            else:
-                turnSrv = instConfig['user_data']['turn_server']['pub']
-        dockerImg = instConfig['user_data']['docker_image']
-        self.userData = "\n".join(instConfig['user_data']['script']['common']).format(docker=dockerImg,
-                                                                                      sip=sipDomain,
-                                                                                      outbound=outboundProxy,
-                                                                                      turn=turnSrv,
-                                                                                      pub=pubIp)
+            outboundProxy = None
+            if 'outbound_proxy' in instConfig['user_data']:
+                if instConfig['user_data']['outbound_proxy']['priv']:
+                    outboundProxy = instConfig['user_data']['outbound_proxy']['priv']
+                else:
+                    outboundProxy = instConfig['user_data']['outbound_proxy']['pub']
+            if not "proxy" in initData["sip"]:
+                initData["sip"]["proxy"] = outboundProxy
+
+            turnSrv = None
+            if 'turn_server' in instConfig['user_data']:
+                if instConfig['user_data']['turn_server']['priv']:
+                    turnSrv = instConfig['user_data']['turn_server']['priv']
+                else:
+                    turnSrv = instConfig['user_data']['turn_server']['pub']
+            if not "turn" in initData["sip"]:
+                initData["sip"]["turn"] = turnSrv
+
         for act in initData:
             self.userData += "\n"
             self.userData += "\n".join(instConfig['user_data']['script'][act]).format(**initData[act])
