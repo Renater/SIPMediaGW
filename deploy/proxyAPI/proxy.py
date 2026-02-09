@@ -243,7 +243,11 @@ async def startGateway(request: Request):
     room = (await request.json()).get("room")
     if not room:
         raise HTTPException(status_code=400, detail="Missing 'room' parameter")
-    
+
+    main_app = (await request.json()).get("main_app")
+    if not main_app:
+        raise HTTPException(status_code=400, detail="Missing 'main_app' parameter")
+
     gateway = findAvailableGateway()
     if not gateway:
         raise HTTPException(status_code=503, detail="No available gateways")

@@ -45,9 +45,9 @@ class WebRTCDomain(RootModel[Dict[str, ProviderConfig]]):
         return value
 
 class StartRequest(BaseModel):
-    type: str               # Record / Streaming / SIP
     room: str
     gw_id: str
+    main_app: str
     webrtc_domain: Optional[WebRTCDomain] = None
     from_id: Optional[str] = None
     prefix: Optional[str] = None
@@ -58,7 +58,6 @@ class StartRequest(BaseModel):
     audio_only: Optional[str] = None
     api_key: Optional[str] = None
     recipient_mail: Optional[str] = None
-    main_app: Optional[str] = None
 
 class StartResponse(BaseResponse):
     data: Optional[Dict[str, str]] = None
