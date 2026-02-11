@@ -36,7 +36,8 @@
                     "sudo sed -i s/^SDP_IN_IP4=.*/SDP_IN_IP4=/ /usr/local/sipmediagw/.env",
                     "sudo systemctl enable sipmediagw",
                     "sudo service sipmediagw restart"],
-            "media": ["sudo systemctl enable sipmediagw",
+            "media": ["sudo sed -i s/^MAIN_APP=.*/MAIN_APP=${{MAIN_APP}}/ /usr/local/sipmediagw/.env",
+                      "sudo systemctl enable sipmediagw",
                       "sudo service sipmediagw restart"]
         },
         "sip_registrar": {
@@ -50,6 +51,7 @@
         "turn_server":{
             "priv":null,
             "pub": null
-        }
+        },
+        "docker_image" : null
     }
 }
