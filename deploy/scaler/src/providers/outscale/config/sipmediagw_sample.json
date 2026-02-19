@@ -36,7 +36,8 @@
                     "sudo sed -i s/^SDP_IN_IP4=.*/SDP_IN_IP4=/ /usr/local/sipmediagw/.env",
                     "sudo systemctl enable sipmediagw",
                     "sudo service sipmediagw restart"],
-            "media": ["sudo sed -i s/^MAIN_APP=.*/MAIN_APP=${{MAIN_APP}}/ /usr/local/sipmediagw/.env",
+            "media": ["sudo sed -i s/^MAIN_APP=.*/MAIN_APP={main_app}/ /usr/local/sipmediagw/.env",
+                      "sudo sed -i s%^ASSETS_URL=.*%ASSETS_URL={assets_url}% /usr/local/sipmediagw/.env",
                       "sudo systemctl enable sipmediagw",
                       "sudo service sipmediagw restart"]
         },

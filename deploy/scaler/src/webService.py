@@ -63,10 +63,11 @@ class Scaling:
     @authorize
     def GET(self, args=None):
         data = web.input()
+        initData = { scalerType.lower() : {'main_app' : self.scaler.config['main_app'],
+                                           'assets_url' : self.scaler.config['assets_url']}}
+        self.scaler.csp.configureInstance("{}/providers/{}/config/{}".format(
+            os.path.dirname(os.path.abspath(__file__)), cspName, cspConfigFile), initData)
         if 'auto' in data.keys():
-            initData = { scalerType.lower() : {}}
-            self.scaler.csp.configureInstance("{}/providers/{}/config/{}".format(
-                os.path.dirname(os.path.abspath(__file__)), cspName, cspConfigFile), initData)
             try:
                 self.scaler.cleanup()
                 if self.scaler.scale() == 0:
@@ -75,8 +76,6 @@ class Scaling:
             except Exception as error:
                 return "The scaler iteration failed: {}".format(error)
         if 'up' in data.keys():
-            initData [scalerType.lower()] = {}
-            self.scaler.csp.configureInstance("{}/config/{}".format(cspName, cspConfigFile), initData)
             try:
                 instRes = self.scaler.csp.createInstance('4','4', name='mediagw')
                 web.ctx.status = '200 OK'
