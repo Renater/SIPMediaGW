@@ -92,7 +92,7 @@ sed -i 's/.*video_size.*/video_size\t\t'$VID_SIZE_APP'/' .baresip/config
 sed -i 's/.*video_fps.*/video_fps\t\t'$VID_FPS'/' .baresip/config
 sed -i 's/.*video_source.*/video_source\t\tx11grab,'$DISPLAY_WEB'/' .baresip/config
 sed -i 's/.*x11_main.*/x11_main\t\t'$DISPLAY_APP','$VID_SIZE_WEBRTC'+0+0/' .baresip/config
-sed -i 's/.*x11_slides.*/x11_slides\t\t'$DISPLAY_APP','$VID_SIZE_APP'+'$VID_W_APP'+0/' .baresip/config
+sed -i 's/.*x11_slides.*/x11_slides\t\t'$DISPLAY_WEBRTC','$VID_SIZE_APP'+'$VID_W_APP'+0/' .baresip/config
 echo "DISPLAY=$DISPLAY_APP LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip" | logParse -p "SIP client"
 DISPLAY=$DISPLAY_APP LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESIP_ARGS \
                      1> >( logParse -p "Baresip" -i $HISTORY ) \
