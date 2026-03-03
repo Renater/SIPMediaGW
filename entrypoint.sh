@@ -5,7 +5,7 @@ if [[ -z "$GW_ID" ]]; then
     exit 1
 fi
 
-# If GW_PROXY is set Register the gateway in the Redis Proxy at init phase
+# If GW_PROXY is set => register the gateway in the Redis Proxy at init phase
 if [[ -n "$GW_PROXY" &&  -n "$INIT" ]]; then
     echo "Registering gateway $GW_NAME form $HOST_IP type $MAIN_APP at $GW_PROXY : $INIT" | logParse -p "RegisterGW"
     resp=$(curl -s -X POST "$GW_PROXY/register" \
@@ -15,9 +15,13 @@ if [[ -n "$GW_PROXY" &&  -n "$INIT" ]]; then
     echo "Registration response: $resp" | logParse -p "RegisterGW"
 fi
 
-if [[ -z "$ROOM_NAME" && ( "$MAIN_APP" == "recording" || "$MAIN_APP" == "streaming" ) ]]; then
+if [[ -z "$ROOM_NAME" && ( "$MAIN_APP" != "baresip" ) ]]; then
     echo "Must provide ROOM_NAME with $MAIN_APP"
     exit 1
+fi
+
+if [[ -z "$USER_NAME" && ( "$MAIN_APP" != "baresip" ) ]]; then
+    USER_NAME=$MAIN_APP
 fi
 
 ### Init logging ###
