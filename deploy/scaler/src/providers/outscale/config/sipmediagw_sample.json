@@ -33,7 +33,6 @@
             "sip": ["sudo sed -i s/^SIP_REGISTRAR=.*/SIP_REGISTRAR={registrar}/ /usr/local/sipmediagw/.env",
                     "sudo sed -i s/^SIP_PROXY=.*/SIP_PROXY=''/ /usr/local/sipmediagw/.env",
                     "sudo sed -i s/^TURN_SRV=.*/TURN_SRV={turn}/ /usr/local/sipmediagw/.env",
-                    "sudo sed -i s/^SDP_IN_IP4=.*/SDP_IN_IP4=/ /usr/local/sipmediagw/.env",
                     "sudo systemctl enable sipmediagw",
                     "sudo service sipmediagw restart"],
             "media": ["sudo sed -i s/^MAIN_APP=.*/MAIN_APP={main_app}/ /usr/local/sipmediagw/.env",

@@ -33,7 +33,7 @@ class ScalerMedia(Scaler):
               break
           value = self.redisClient.get(key)
           parts = value.split("|")
-          gwIp = parts[0]
+          gwIp = parts[0].split(':', 1)[0]
           state = parts[1] if len(parts) > 1 else None
           if state in ["started", "stopped"]:
                 # No rooms assigned, can downscale
