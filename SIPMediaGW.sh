@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
         -k|--api-key) api_key="$2"; shift 2;;
         -m|--recipient-mail) recipient_mail="$2"; shift 2;;
         -n|--user-name) user_name="$2"; shift 2;;
-        -o|--audio-only) audio_only="true"; shift 2;;
+        -o|--audio-only) audio_only="true"; shift;;
         -s|--with-transcript) with_transcript="true"; shift;;
         -l|--loop) loop=1; shift;;
         -i|--init) init=1; shift;;
@@ -81,7 +81,7 @@ checkGwStatus() {
 
 # If gw_name is provided use it to get the ID
 if [[ -n $gw_name ]]; then
-    id=$(docker compose -p $gw_name ps -a --format '{{json .Name}}'| tr -cd '0-9')
+    id=$(docker compose -p $gw_name ps -a --format '{{json .Name}}'| tr -cd '0-9'| head -c1)
 else
     lockGw
 fi
