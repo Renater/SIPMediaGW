@@ -41,7 +41,7 @@ fi
             1> >( logParse -p "Recording") \
             2> >( logParse -p "Recording") &
 
-for i in {1..5}; do
+for i in {1..30}; do
     if ls ./recording/*.mp4 &> /dev/null; then
         recording="on"
         break
