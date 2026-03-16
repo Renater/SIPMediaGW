@@ -26,7 +26,7 @@ if [ "$MAIN_APP" == "baresip" ]; then
     echo "Starting SIPMediaGW in a loop"
     until [ "$?" == 1 ]; do 
         cd $SIPMEDIAGW_DIR
-        /bin/bash ./SIPMediaGW.sh -p $pref -i -l
+        /bin/bash ./SIPMediaGW.sh -p $pref -l
     done
 else
     echo "MAIN_APP is not baresip so start them once as Media gateway"
@@ -35,7 +35,7 @@ else
     maxGwNum=$(echo "$(nproc)/$CPU_PER_GW" | bc )
     for i in $(seq 0 $((maxGwNum - 1))); do
         echo "Starting gateway number $i"
-        /bin/bash ./SIPMediaGW.sh -p $pref -i -l
+        /bin/bash ./SIPMediaGW.sh -p $pref -i
         sleep 1
         exec {lockFd}>"/tmp/"${lockFilePrefix}$i".lock"
         flock -x -n $lockFd
