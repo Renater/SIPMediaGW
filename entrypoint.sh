@@ -5,14 +5,24 @@ if [[ -z "$GW_ID" ]]; then
     exit 1
 fi
 
-# If GW_PROXY is set => register the gateway in the Redis Proxy at init phase
-if [[ -n "$GW_PROXY" &&  -n "$INIT" ]]; then
-    echo "Registering gateway $GW_NAME form $HOST_IP type $MAIN_APP at $GW_PROXY : $INIT" | logParse -p "RegisterGW"
+proxyRegister() {
     resp=$(curl -s -X POST "$GW_PROXY/register" \
-         -H "Authorization: Bearer $GW_TOKEN" \
-         -H "Content-Type: application/json" \
-         -d '{"gw_id": "'$GW_NAME'", "gw_ip": "'$HOST_IP:$GW_API_PORT'", "gw_type": "'$MAIN_APP'"}' | logParse -p "RegisterGW")
-    echo "Registration response: $resp" | logParse -p "RegisterGW"
+        -H "Authorization: Bearer $GW_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"gw_id": "'$GW_NAME'", "gw_ip": "'$HOST_IP:$GW_API_PORT'", "gw_type": "'$MAIN_APP'"}' | logParse -p "ProxyRegister")
+    echo "Registration response: $resp" | logParse -p "ProxyRegister"
+}
+
+# If GW_PROXY is set => register the gateway in the Redis Proxy
+if [[ -n "$GW_PROXY" &&  -n "$GW_NAME" ]]; then
+    echo "Registering gateway $GW_NAME form $HOST_IP type $MAIN_APP at $GW_PROXY" | logParse -p "ProxyRegister"
+    proxyRegister
+    (
+        while true; do
+            proxyRegister
+            sleep 60
+        done
+    ) &
 fi
 
 if [[ -z "$ROOM_NAME" && ( "$MAIN_APP" != "baresip" ) ]]; then
