@@ -154,7 +154,6 @@ ID=$id \
 INIT=$init \
 AUDIO_ONLY=$audio_only \
 VIDEO_DEV=$video_dev \
-DISPLAY=$DISPLAY \
 DISPLAY=${display:+:$display} \
 PULSE_SERVER=$pulse_server \
 WITH_ALSA=$with_alsa \
