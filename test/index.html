@@ -134,13 +134,6 @@ async function generate() {
     } else {
       const meeting = document.getElementById("meeting").value.trim();
       if (!meeting) throw "Nom de réunion manquant";
-
-      if (select.value === "visio") {
-        const sipUri = `${p.prefix}${meeting}@rdv.visio.renater.fr`;
-        result.textContent = sipUri;
-        return;
-      }
-
       room = meeting;
     }
     const url =
