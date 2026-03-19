@@ -31,8 +31,24 @@ This some screen shots of a working configuration (in french...) that you can us
 
  ### How to test SIPMediaGW with my own webconference service ?
 
-By defaut SIPMediaGW is configured to work with the public instance of Jitsi Meet (meet.jit.si).\
-Thanks to BROWSE_FILE and WEBRTC_DOMAIN variables, it is possible to make it work with others webconferencing services and instances.
+By default, SIPMediaGW is configured to work with several webconference platforms.
+When you make a call, the IVR will first prompt you to choose the webconference platform (for example: Jitsi Meet, BigBlueButton,Visio, or Livekit), and then ask for the meeting ID or name.
+
+This list of available platforms is defined by the `WEBRTC_DOMAINS` variable in your `.env` file.
+By default, the following platforms are configured:
+
+```json
+{
+    "jitsi": { "name": "Jitsi Meet (rendez-vous.renater.fr)", "domain": "rendez-vous.renater.fr" },
+    "bigbluebutton": { "name": "Big Blue Button (bigbluebutton.org)", "domain": "demo.bigbluebutton.org/rooms" },
+    "visio": {"name": "Visio (visio.numerique.gouv.fr)", "domain": "visio.numerique.gouv.fr"},
+    "livekit" : {"name": "Livekit (meet.livekit.io)", "domain": "meet.livekit.io/rooms"}
+}
+```
+
+You can add or modify entries in this JSON to match your own webconference service or instance.
+Simply update the `WEBRTC_DOMAINS` variable in your `.env` file with the appropriate service name and domain.
+SIPMediaGW will then present these choices in the IVR menu, allowing you to select your platform before entering the meeting ID.
 
 ### SIPMediaGW being provided thourgh a dockerized envrironment, is it possible to deploy it in a Kubernetes cluster ?
 
