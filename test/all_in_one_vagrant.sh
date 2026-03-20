@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ENV_FILE="../.env"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env"
 
 # Load WEBRTC_DOMAINS safely from .env (handles multiline JSON)
 if [ -f "$ENV_FILE" ]; then
@@ -36,48 +37,8 @@ function select_main_application() {
     esac
 }
 
-function select_conferencing_tool() {
-    echo "Do you want to pre-select a WebRTC conferencing tool?"
-    echo "0) No"
-
-    # Extract "key → name" pairs from JSON manually (Bash parsing)
-    mapfile -t entries < <(echo "$WEBRTC_DOMAINS" \
-        | grep '"name"' \
-        | sed -E 's/^[[:space:]]*"([^"]+)":.*"name":[[:space:]]*"([^"]+)".*/\1\t\2/')
-
-    i=1
-    declare -gA mapping
-    for entry in "${entries[@]}"; do
-        key=$(echo "$entry" | cut -f1)
-        name=$(echo "$entry" | cut -f2-)
-        echo "$i) $name"
-        mapping[$i]=$key
-        ((i++))
-    done
-
-    read -r choice
-
-    if [ "$choice" == "0" ] || [ -z "$choice" ]; then
-        browsing=""
-    elif [[ -n "${mapping[$choice]}" ]]; then
-        browsing="${mapping[$choice]}"
-    else
-        echo "Invalid choice. Please try again."
-        select_conferencing_tool
-    fi
-}
-
-# Step 1: main application role
 select_main_application
 echo "You selected MAIN_APP: $main_app"
-
-# Step 2: conferencing tool (optional)
-select_conferencing_tool
-if [ -n "$browsing" ]; then
-    echo "You selected BROWSING: $browsing"
-else
-    echo "No WebRTC tool selected"
-fi
 
 # Export variables
 export MAIN_APP=${main_app}
