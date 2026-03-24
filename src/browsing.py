@@ -87,11 +87,6 @@ class Browsing:
                                                     os.environ.get('AUDIO_ONLY'))
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.join();")
-        while True:
-            joined = self.driver.execute_script("return window.meeting.joined")
-            if joined:
-                break
-            self.interact()
 
     def monitorSingleParticipant(self, thresholdSeconds=300, checkInterval=60):
         singleStartTime = None
@@ -142,6 +137,11 @@ class Browsing:
                                            options=self.chromeOptions)
             self.loadPage()
             self.join()
+            while True:
+                joined = self.driver.execute_script("return window.meeting.joined")
+                if joined:
+                    break
+                self.interact()
             if os.getenv("ENDING_TIMEOUT"):
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
