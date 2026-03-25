@@ -54,7 +54,8 @@
     "auth_token": {
         "jwt": "${AUTH_TOKEN}",
         "url": "${TOKEN_API_URL}",
-        "secure_room_regexp": "${ROOM_REGEXP}"
+        "secure_room_regexp": "${ROOM_REGEXP}",
+        "webinaire_token": "${WEBINAIRE_TOKEN}"
     },
     "ivr_tts": "${IVR_TTS}",
     "lang": "${IVR_LANG}",
