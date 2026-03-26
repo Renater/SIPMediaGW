@@ -139,6 +139,28 @@ class DockerGateway(MediaBackend):
         status = DockerGateway.get_status_by_name(result, gw_id)
         return status
 
+    @staticmethod
+    def get_gw_info(gw_id: str):
+        """
+        Return the docker compose ps info (as JSON) for the given gateway/project name.
+        """
+        gwSubProc = ['docker', 'compose', '-p', gw_id, 'ps', '--format', 'json']
+        res = subprocess.Popen(gwSubProc, cwd='.', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = res.communicate()
+        decoded = out.decode('utf-8').strip()
+        try:
+            parsed = json.loads(decoded)
+            if isinstance(parsed, dict):
+                result = [parsed]
+            elif isinstance(parsed, list):
+                result = parsed
+            else:
+                raise ValueError("Unexpected format")
+        except json.JSONDecodeError:
+            result = [json.loads(line) for line in decoded.split('\n') if line.strip()]
+
+        return next((c for c in result if c.get("Name", "").startswith("gw")), None)
+
     def start_gateway(self, req: StartRequest) -> Dict[str, Any]:
         print(f"[START CONTAINER] for gateway room={req.room} main_app={req.main_app}")
         gwSubProc = ['./SIPMediaGW.sh']
@@ -227,25 +249,11 @@ class DockerGateway(MediaBackend):
             return {"gw_state": "down", "detail": "exited"}
         elif status is None:
             raise ValueError("Gateway not found")
-        
-        # Check docker compose ps for the gateway
-        gwSubProc = ['docker', 'compose', '-p', gw_id, 'ps', '--format', 'json']
-        res = subprocess.Popen(gwSubProc, cwd='.', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = res.communicate()
-        decoded = out.decode('utf-8').strip()
-        try:
-            parsed = json.loads(decoded)
-            if isinstance(parsed, dict):
-                result = [parsed]
-            elif isinstance(parsed, list):
-                result = parsed
-            else:
-                raise ValueError("Unexpected format")
-        except json.JSONDecodeError:
-            result = [json.loads(line) for line in decoded.split('\n') if line.strip()]
+
+        gwData = DockerGateway.get_gw_info(gw_id)
 
         resp = {}
-        if not result:
+        if not gwData:
             resp['gw_state'] = "down"
             return resp
         else:
@@ -253,7 +261,6 @@ class DockerGateway(MediaBackend):
         
         resp["gw_id"] = gw_id
 
-        gwData = next((c for c in result if c.get("Name", "").startswith("gw")), None)
         gwName = gwData['Name']
         # Recording progress
         gwSubProc = ['docker', 'exec', gwName,
@@ -287,6 +294,18 @@ class DockerGateway(MediaBackend):
         return resp
 
     def send_command(self, gw_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        gwData = DockerGateway.get_gw_info(gw_id)
+        if gwData is None:
+            raise ValueError("Gateway not found")
+        else:
+            gwName = gwData['Name']
+
+        gwSubProc = ['docker', 'exec', gwName,
+                        'sh', '-c',
+                        ('echo $DISPLAY_WEB')]
+        res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = res.communicate()
+        DISPLAY_WEB = out.decode().strip()
         print(f"[COMMAND] id={gw_id} payload={payload}")
         status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
