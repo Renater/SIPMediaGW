@@ -171,9 +171,6 @@ if [[ "$AUDIO_ONLY" != "true" ]]; then
     sudo chmod 1777 /tmp/.X11-unix
     sudo chown root /tmp/.X11-unix/
 
-    DISPLAY_WEB=${DISPLAY:-":99"}
-    DISPLAY_APP=:100
-
     if [[ -z "$DISPLAY" ]]; then
         echo "Display ID, web browser " $DISPLAY_WEB | logParse -p "Xvfb"
         Xvfb $DISPLAY_WEB -screen 0 \
