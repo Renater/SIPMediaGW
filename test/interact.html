@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Virtual Keyboard Gateway</title>
+<style>
+  body { font-family: monospace; padding: 2rem; background: #f9f9f9; }
+  .config { display: flex; gap: 12px; margin-bottom: 1rem; }
+  .config input { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+  #status { font-size: 12px; color: #888; margin-bottom: 1rem; height: 18px; }
+  .keyboard { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .key { min-width: 44px; height: 44px; padding: 0 12px; border: 1px solid #bbb;
+         border-radius: 6px; background: white; font-size: 14px; cursor: pointer; }
+  .key:active { background: #e0e0e0; transform: scale(0.94); }
+  .key.wide { min-width: 80px; }
+  .key.wider { min-width: 120px; }
+  #log { font-size: 11px; background: #eee; border-radius: 6px; padding: 10px;
+         max-height: 100px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<div class="kb-wrap">
+  <div class="config">
+    <input id="url" value="http://127.0.0.1:8100/gateway/command" placeholder="URL" />
+    <input id="gwid" value="el3wf0uk0253el600vr9v7kz" placeholder="gw_id" />
+  </div>
+  <div class="status" id="status">Prêt</div>
+  <div class="keyboard">
+    <div class="row">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key special" data-k="*">*</button>
+      <button class="key special" data-k="#">#</button>
+      <button class="key special" data-k="-">-</button>
+      <button class="key special" data-k="_">_</button>
+    </div>
+    <div class="row">
+      <button class="key letter" data-letter="q">q</button>
+      <button class="key letter" data-letter="w">w</button>
+      <button class="key letter" data-letter="e">e</button>
+      <button class="key letter" data-letter="r">r</button>
+      <button class="key letter" data-letter="t">t</button>
+      <button class="key letter" data-letter="y">y</button>
+      <button class="key letter" data-letter="u">u</button>
+      <button class="key letter" data-letter="i">i</button>
+      <button class="key letter" data-letter="o">o</button>
+      <button class="key letter" data-letter="p">p</button>
+    </div>
+    <div class="row">
+      <button class="key letter" data-letter="a">a</button>
+      <button class="key letter" data-letter="s">s</button>
+      <button class="key letter" data-letter="d">d</button>
+      <button class="key letter" data-letter="f">f</button>
+      <button class="key letter" data-letter="g">g</button>
+      <button class="key letter" data-letter="h">h</button>
+      <button class="key letter" data-letter="j">j</button>
+      <button class="key letter" data-letter="k">k</button>
+      <button class="key letter" data-letter="l">l</button>
+      <button class="key wide" data-k="Enter">↵ Enter</button>
+    </div>
+    <div class="row">
+      <button class="key shift-key" id="shift-btn">⇧ Maj</button>
+      <button class="key letter" data-letter="z">z</button>
+      <button class="key letter" data-letter="x">x</button>
+      <button class="key letter" data-letter="c">c</button>
+      <button class="key letter" data-letter="v">v</button>
+      <button class="key letter" data-letter="b">b</button>
+      <button class="key letter" data-letter="n">n</button>
+      <button class="key letter" data-letter="m">m</button>
+      <button class="key wide" data-k="Backspace">⌫</button>
+    </div>
+    <div class="row">
+      <button class="key" data-k="ArrowUp">▲</button>
+      <button class="key" data-k="ArrowDown">▼</button>
+      <button class="key" data-k="ArrowLeft">◀</button>
+      <button class="key" data-k="ArrowRight">▶</button>
+      <button class="key wider" data-k=" ">Espace</button>
+      <button class="key" data-k="Tab">Tab</button>
+      <button class="key" data-k="Escape">Esc</button>
+    </div>
+  </div>
+  <div class="log" id="log">En attente d'une touche...</div>
+</div>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const gwIdParam = urlParams.get('gwId');
+const gwProxyApi = urlParams.get('gwProxyApi');
+const gwApiPath = urlParams.get('gwApiPath');
+if (gwIdParam) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('gwid').value = gwIdParam;
+  });
+}
+
+if (gwProxyApi && gwApiPath) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('url').value = gwProxyApi + gwApiPath;
+  });
+}
+
+let uppercase = false;
+
+function updateCase() {
+  document.querySelectorAll('.key.letter').forEach(btn => {
+    const l = btn.dataset.letter;
+    btn.textContent = uppercase ? l.toUpperCase() : l.toLowerCase();
+  });
+  const shiftBtn = document.getElementById('shift-btn');
+  shiftBtn.classList.toggle('active', uppercase);
+  shiftBtn.textContent = uppercase ? '⇧ MAJ' : '⇧ Maj';
+}
+
+document.getElementById('shift-btn').addEventListener('click', () => {
+  uppercase = !uppercase;
+  updateCase();
+});
+async function sendKey(param1) {
+  const url = document.getElementById('url').value.trim();
+  const gw_id = document.getElementById('gwid').value.trim();
+  const status = document.getElementById('status');
+  const log = document.getElementById('log');
+  const payload = { gw_id, payload: { command: "sendKey", param1 } };
+  status.textContent = `Envoi: ${param1}`;
+  status.className = 'status';
+  log.textContent = `→ POST ${url}\n   ${JSON.stringify(payload)}`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    status.textContent = `✓ ${res.status} — touche: ${param1}`;
+    status.className = 'status ok';
+    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
+  } catch(e) {
+    status.textContent = `✗ Erreur: ${e.message}`;
+    status.className = 'status err';
+    log.textContent += `\n← ${e.message}`;
+  }
+}
+
+document.querySelectorAll('.key.letter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 150);
+    sendKey(uppercase ? btn.dataset.letter.toUpperCase() : btn.dataset.letter.toLowerCase());
+  });
+});
+
+document.querySelectorAll('.key[data-k]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 150);
+    sendKey(btn.dataset.k);
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Shift') return;
+  const letter = document.querySelector(`.key.letter[data-letter="${e.key.toLowerCase()}"]`);
+  if (letter) {
+    letter.classList.add('pressed');
+    setTimeout(() => letter.classList.remove('pressed'), 150);
+    sendKey(e.key);
+    return;
+  }
+  const btn = document.querySelector(`.key[data-k="${e.key}"]`);
+  if (btn) {
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 150);
+    sendKey(e.key);
+  }
+});
+
+updateCase();
+</script>
+</body>
+</html>
