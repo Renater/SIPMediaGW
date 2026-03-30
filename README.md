@@ -1,5 +1,5 @@
 # SIPMediaGW
-SIPMediaGW is an open-source set of components that allows traditional meeting rooms with conferencing systems to join any modern platform (like Jitsi, BigBlueButton, LiveKit — and even Teams).
+SIPMediaGW is an open-source set of components that allows traditional meeting rooms with conferencing systems to join any modern platform (like Jitsi, BigBlueButton, LiveKit — and even Google Meet & Microsoft Teams).
 <br><br><br>
 ![sipmediagw_demo](https://github.com/user-attachments/assets/4da15b2f-026e-4a5f-acae-7b5c9085714d)
 <br><br><br>
