@@ -7,6 +7,9 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import pathlib
 from pydantic import BaseModel, RootModel, field_validator
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
@@ -19,7 +22,16 @@ import uvicorn
 from functools import lru_cache
 
 app = FastAPI(title="SIP Media Gateway API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Mount the 'test' directory at /test
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+app.mount("/test", StaticFiles(directory=str(BASE_DIR / "test")), name="test")
 
 # -----------------------
 # Models
@@ -307,7 +319,18 @@ class DockerGateway(MediaBackend):
         out, err = res.communicate()
         DISPLAY_WEB = out.decode().strip()
         print(f"[COMMAND] id={gw_id} payload={payload}")
-        status = DockerGateway.get_gateway_docker_status(gw_id)
+        if payload['command'] == 'sendKey':
+            k = payload['param1']
+            if k == '#'or k == 'Backspace':
+                k = 'numbersign'
+            if k == '*':
+                k = 'numbersign'
+            gwSubProc = ['docker', 'exec', gwName,
+                            'sh', '-c',
+                            ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]
+            res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = res.communicate()
+        #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
             raise ValueError("Gateway not found")
         return {"ack": True, "received": payload}
