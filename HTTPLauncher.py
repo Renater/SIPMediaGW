@@ -321,10 +321,10 @@ class DockerGateway(MediaBackend):
         print(f"[COMMAND] id={gw_id} payload={payload}")
         if payload['command'] == 'sendKey':
             k = payload['param1']
-            if k == '#'or k == 'Backspace':
+            if k == '#' or k == 'Enter':
                 k = 'numbersign'
-            if k == '*':
-                k = 'numbersign'
+            if k == '*' or k == 'Backspace':
+                k = 'asterisk'
             gwSubProc = ['docker', 'exec', gwName,
                             'sh', '-c',
                             ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]

@@ -7,7 +7,7 @@ fi
 
 proxyRegister() {
     resp=$(curl -s -X POST "$GW_PROXY/register" \
-        -H "Authorization: Bearer $GW_TOKEN" \
+        -H "Authorization: Bearer $PROXY_TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"gw_id": "'$GW_NAME'", "gw_ip": "'$HOST_IP:$GW_API_PORT'", "gw_type": "'$MAIN_APP'"}' | logParse -p "ProxyRegister")
     echo "Registration response: $resp" | logParse -p "ProxyRegister"

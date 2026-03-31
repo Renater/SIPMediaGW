@@ -7,6 +7,9 @@ import time
 import queue
 import traceback
 import urllib.parse
+import qrcode
+import base64
+from io import BytesIO
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 
@@ -99,6 +102,34 @@ class IVR:
     def prompt(self):
         startTime = time.time()
         browsingName = ''
+        if os.getenv('QR_CODE_URL') and os.getenv('GW_NAME'):
+            qrCodeUrl = os.getenv('QR_CODE_URL')
+            apiProxy = os.getenv('GW_PROXY', '{}:{}'.format(os.getenv('HOST_IP'),os.getenv('GW_API_PORT')))
+            qrCodeUrl = qrCodeUrl.format(proxy=apiProxy, uid=os.getenv('GW_NAME'))
+
+            # Générer le QR code en base64
+            qr = qrcode.QRCode(box_size=4, border=2)
+            qr.add_data(qrCodeUrl)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            qr_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+            # Inject QR code
+            js = f"""
+            (function() {{
+                let old = document.getElementById('qr-overlay');
+                if (old) old.remove();
+                let div = document.createElement('div');
+                div.id = 'qr-overlay';
+                let img = document.createElement('img');
+                img.src = 'data:image/png;base64,{qr_b64}';
+                div.appendChild(img);
+                document.body.appendChild(div);
+            }})();
+            """
+            self.driver.execute_script(js)
         while True:
             if self.IVRTimeout and time.time() > ( startTime + self.IVRTimeout ):
                 print("IVR Timeout", flush=True)
