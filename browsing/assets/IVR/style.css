@@ -243,6 +243,25 @@ body {
 }
 
 /* ============================
+   QR Code
+   ============================ */
+#qr-overlay {
+  position: fixed;
+  right: 50px;
+  bottom: 100px;
+  z-index: 9999;
+  background: rgba(255,255,255,0.92);
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#qr-overlay img {
+  width: 100px;
+  height: 100px;
+  display: block;
+}
+
+/* ============================
     UI Helper
    ============================ */
 #blocker {

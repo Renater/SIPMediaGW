@@ -47,7 +47,7 @@ RUN v='146.0.7680.80-1~deb12u1' \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip3 install --no-cache-dir --upgrade pip
-RUN pip3 install --no-cache-dir selenium requests pynetstring psutil
+RUN pip3 install --no-cache-dir selenium requests pynetstring psutil qrcode pillow
 
 COPY entrypoint.sh /var/
 COPY pulseaudio/init.sh /var/pulseaudio_init.sh
