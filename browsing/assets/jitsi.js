@@ -211,7 +211,7 @@ class Jitsi extends UIHelper{
             this.jitsiApiClient.executeCommand('toggleLobby', this.toggleLobby);
         if (key == "8")
             this.jitsiApiClient.executeCommand('muteEveryone');
-        if (key == "s")
+        if (key == "s" || key == "q")
             this.jitsiApiClient.executeCommand('toggleShareScreen');
     }
     leave() {

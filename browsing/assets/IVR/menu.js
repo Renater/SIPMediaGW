@@ -236,7 +236,7 @@ class Menu {
                 (e) => {
                     const key = e.key;
                 if ((key >= '0' && key <= '9') ||
-                     key === '#' || key === 's' || key === '*') {
+                     key === '#' || key === 's' || key === 'q' || key === '*') {
                     e.preventDefault();
                     this.interact(key);
                     }

@@ -53,7 +53,7 @@ class Visio extends UIHelper{
             document.querySelector('button[data-attr*="controls-hand-raise"], button[data-attr*="controls-hand-lower"]').click();
         if (key == "5")
             document.querySelector('button[data-attr*="controls-participants-closed"], button[data-attr*="controls-participants-open"]').click();
-        if (key == "s")
+        if (key == "s" || key == "q")
             document.querySelector('[data-attr*="controls-screenshare"]').click();
     }
 

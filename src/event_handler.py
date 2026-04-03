@@ -125,7 +125,7 @@ def event_handler(data, args):
             args['ivr'].screenShared = True
         if (data['param'] == 'VIDEO_SLIDES_STOP' and
             args['ivr'].screenShared == True):
-            args['ivr'].userInputs.put('s')
+            args['ivr'].userInputs.put('q')
             args['ivr'].screenShared = False
 
     if data['type'] == 'CHAT_INPUT':

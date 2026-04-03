@@ -178,7 +178,7 @@ class Webinaire extends UIHelper {
             if (document.querySelector("[data-test='joinAudio']")) {
                 this.startAudio();
             }
-        if (key == "s")
+        if (key == "s" || key == "q")
             document.querySelector("[data-test='startScreenShare']").click();
     }
 
