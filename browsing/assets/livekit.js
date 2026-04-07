@@ -49,6 +49,8 @@ class Livekit extends UIHelper{
             document.querySelector('button[data-lk-source*="camera"]').click();
         if (key == "3" || key == "c")
             document.querySelector('button[class*="chat-toggle"]').click();
+        if (key == "s" || key == "q")
+            document.querySelector('button[data-lk-source*="screen_share"]').click();
     }
 
     async leave() {
