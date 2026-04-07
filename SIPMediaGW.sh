@@ -23,6 +23,7 @@ while [[ $# -gt 0 ]]; do
         -l|--loop) loop=1; shift;;
         -i|--init) init=1; shift;;
         -x|--display) display="$2"; shift 2;;
+        -y|--gw-proxy) gw_proxy="$2"; shift 2;;
         *)
             echo 'Error in command line parsing' >&2
             exit 1
@@ -144,6 +145,7 @@ HOST_TZ=$(cat /etc/timezone) \
 HOST_IP=${HOST_IP:-$(hostname -I | awk '{print $1}')} \
 ROOM=$room \
 GW_NAME=$GW_NAME \
+GW_PROXY=$gw_proxy \
 BROWSING=$browsing_name \
 RTMP_DST=$rtmp_dst \
 FS_API_KEY=$FS_API_KEY \

@@ -102,9 +102,9 @@ class IVR:
     def prompt(self):
         startTime = time.time()
         browsingName = ''
-        if os.getenv('QR_CODE_URL') and os.getenv('GW_NAME'):
+        if os.getenv('QR_CODE_URL') and os.getenv('GW_NAME') and os.getenv('GW_PROXY'):
             qrCodeUrl = os.getenv('QR_CODE_URL')
-            apiProxy = os.getenv('GW_PROXY', '{}:{}'.format(os.getenv('HOST_IP'),os.getenv('GW_API_PORT')))
+            apiProxy = os.getenv('GW_PROXY')
             qrCodeUrl = qrCodeUrl.format(proxy=apiProxy, uid=os.getenv('GW_NAME'))
 
             # Générer le QR code en base64
@@ -130,6 +130,7 @@ class IVR:
             }})();
             """
             self.driver.execute_script(js)
+            print("IVR: QR Code URL: {}".format(qrCodeUrl), flush=True)
         while True:
             if self.IVRTimeout and time.time() > ( startTime + self.IVRTimeout ):
                 print("IVR Timeout", flush=True)
