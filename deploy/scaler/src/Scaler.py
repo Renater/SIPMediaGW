@@ -61,7 +61,13 @@ class Scaler:
 
     # Scaling logic based on current load and time of the day
     def scale(self, scaleTime=None, incallsNum=None):
-        thresholdTimeLine = self.config['auto_scale_threshold']
+        weekday = dt.datetime.now().strftime('%A').lower()  # e.g. 'monday', 'saturday'
+        thresholdConfig = self.config['auto_scale_threshold']
+        if weekday in thresholdConfig:
+            thresholdTimeLine = thresholdConfig[weekday]
+        else:
+            thresholdTimeLine = thresholdConfig['default']
+
         if not scaleTime:
             scaleTime = dt.datetime.now().strftime("%H:%M:%S")
         th = min([ i for i in list(thresholdTimeLine.keys()) if i <= scaleTime],
