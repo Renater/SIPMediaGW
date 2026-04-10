@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Virtual Keyboard Gateway</title>
@@ -8,87 +8,82 @@
   .config { display: flex; gap: 12px; margin-bottom: 1rem; }
   .config input { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
   #status { font-size: 12px; color: #888; margin-bottom: 1rem; height: 18px; }
-  .keyboard { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
-  .row { display: flex; gap: 6px; flex-wrap: wrap; }
   .key { min-width: 44px; height: 44px; padding: 0 12px; border: 1px solid #bbb;
          border-radius: 6px; background: white; font-size: 14px; cursor: pointer; }
   .key:active { background: #e0e0e0; transform: scale(0.94); }
-  .key.wide { min-width: 80px; }
-  .key.wider { min-width: 120px; }
-  #log { font-size: 11px; background: #eee; border-radius: 6px; padding: 10px;
-         max-height: 100px; overflow-y: auto; }
+  .menu-key {
+    background: #f0f8ff;
+    border: 1px solid #aee;
+    color: #222;
+    margin: 4px 6px 4px 0;
+    font-size: 15px;
+    min-width: 120px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #lang-switch {
+    margin-bottom: 1em;
+  }
+  #lang-switch button {
+    margin-right: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #bbb;
+    background: #fff;
+    cursor: pointer;
+  }
+  #lang-switch button[disabled] {
+    background: #e0e0e0;
+    color: #888;
+    cursor: default;
+  }
+  #input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1em;
+  }
+  #key-capture {
+    width: 180px;
+    font-size: 1.5em;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #bbb;
+    background: #fff;
+    letter-spacing: 0.2em;
+  }
+  #menu-options {
+    margin-bottom: 1em;
+  }
+  #log {
+    font-size: 11px; background: #eee; border-radius: 6px; padding: 10px;
+    max-height: 100px; overflow-y: auto;
+  }
+  #input-help {
+    font-size: 0.95em;
+    color: #666;
+    margin-bottom: 1em;
+  }
 </style>
 </head>
 <body>
 <div class="kb-wrap">
   <div class="config">
     <input id="url" value="http://127.0.0.1:8100/gateway/command" placeholder="URL" />
-    <input id="gwid" value="el3wf0uk0253el600vr9v7kz" placeholder="gw_id" />
+    <input id="gwid" placeholder="gw_id" />
   </div>
-  <div class="status" id="status">Prêt</div>
-  <div class="keyboard">
-    <div class="row">
-      <button class="key" data-k="1">1</button>
-      <button class="key" data-k="2">2</button>
-      <button class="key" data-k="3">3</button>
-      <button class="key" data-k="4">4</button>
-      <button class="key" data-k="5">5</button>
-      <button class="key" data-k="6">6</button>
-      <button class="key" data-k="7">7</button>
-      <button class="key" data-k="8">8</button>
-      <button class="key" data-k="9">9</button>
-      <button class="key" data-k="0">0</button>
-      <button class="key special" data-k="*">*</button>
-      <button class="key special" data-k="#">#</button>
-      <button class="key special" data-k="-">-</button>
-      <button class="key special" data-k="_">_</button>
-    </div>
-    <div class="row">
-      <button class="key letter" data-letter="q">q</button>
-      <button class="key letter" data-letter="w">w</button>
-      <button class="key letter" data-letter="e">e</button>
-      <button class="key letter" data-letter="r">r</button>
-      <button class="key letter" data-letter="t">t</button>
-      <button class="key letter" data-letter="y">y</button>
-      <button class="key letter" data-letter="u">u</button>
-      <button class="key letter" data-letter="i">i</button>
-      <button class="key letter" data-letter="o">o</button>
-      <button class="key letter" data-letter="p">p</button>
-    </div>
-    <div class="row">
-      <button class="key letter" data-letter="a">a</button>
-      <button class="key letter" data-letter="s">s</button>
-      <button class="key letter" data-letter="d">d</button>
-      <button class="key letter" data-letter="f">f</button>
-      <button class="key letter" data-letter="g">g</button>
-      <button class="key letter" data-letter="h">h</button>
-      <button class="key letter" data-letter="j">j</button>
-      <button class="key letter" data-letter="k">k</button>
-      <button class="key letter" data-letter="l">l</button>
-      <button class="key wide" data-k="Enter">↵ Enter</button>
-    </div>
-    <div class="row">
-      <button class="key shift-key" id="shift-btn">⇧ Maj</button>
-      <button class="key letter" data-letter="z">z</button>
-      <button class="key letter" data-letter="x">x</button>
-      <button class="key letter" data-letter="c">c</button>
-      <button class="key letter" data-letter="v">v</button>
-      <button class="key letter" data-letter="b">b</button>
-      <button class="key letter" data-letter="n">n</button>
-      <button class="key letter" data-letter="m">m</button>
-      <button class="key wide" data-k="Backspace">⌫</button>
-    </div>
-    <div class="row">
-      <button class="key" data-k="ArrowUp">▲</button>
-      <button class="key" data-k="ArrowDown">▼</button>
-      <button class="key" data-k="ArrowLeft">◀</button>
-      <button class="key" data-k="ArrowRight">▶</button>
-      <button class="key wider" data-k=" ">Espace</button>
-      <button class="key" data-k="Tab">Tab</button>
-      <button class="key" data-k="Escape">Esc</button>
-    </div>
+  <div id="lang-switch"></div>
+  <div id="input-row">
+    <label for="key-capture" id="input-label" style="font-size:1.1em;">Type here:</label>
+    <input id="key-capture" autocomplete="off" />
+    <button id="btn-enter" type="button" class="key" tabindex="-1">Enter</button>
+    <button id="btn-del" type="button" class="key" tabindex="-1">←</button>
   </div>
-  <div class="log" id="log">En attente d'une touche...</div>
+  <div class="status" id="status">Ready</div>
+  <div id="menu-options"></div>
+  <div id="log">Waiting for input...</div>
+  <div id="input-help"></div>
 </div>
 <script>
 const urlParams = new URLSearchParams(window.location.search);
@@ -100,36 +95,84 @@ if (gwIdParam) {
     document.getElementById('gwid').value = gwIdParam;
   });
 }
-
 if (gwProxyApi && gwApiPath) {
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('url').value = gwProxyApi + gwApiPath;
   });
 }
 
-let uppercase = false;
+let pollingStarted = false;
+let ivrMenus = {};
+let webrtcDomains = {};
+let browsingName = '';
+let menuOptions = [];
+let menuDisplayed = false;
+let currentLang = 'en';
 
-function updateCase() {
-  document.querySelectorAll('.key.letter').forEach(btn => {
-    const l = btn.dataset.letter;
-    btn.textContent = uppercase ? l.toUpperCase() : l.toLowerCase();
-  });
-  const shiftBtn = document.getElementById('shift-btn');
-  shiftBtn.classList.toggle('active', uppercase);
-  shiftBtn.textContent = uppercase ? '⇧ MAJ' : '⇧ Maj';
+// Always show language switch
+function renderLangSwitch() {
+  const langDiv = document.getElementById('lang-switch');
+  langDiv.innerHTML = `
+    <button onclick="setMenuLang('fr')" ${currentLang === 'fr' ? 'disabled' : ''}>🇫🇷 Français</button>
+    <button onclick="setMenuLang('en')" ${currentLang === 'en' ? 'disabled' : ''}>🇬🇧 English</button>
+  `;
+  // Update input label and help according to language
+  document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Tapez ici :' : 'Type here:';
+  document.getElementById('btn-enter').textContent = currentLang === 'fr' ? 'Entrée' : 'Enter';
+  document.getElementById('input-help').textContent =
+    currentLang === 'fr'
+      ? "# ou Entrée pour valider — * ou ← pour corriger"
+      : "# or Enter to validate — * or Backspace to erase";
+}
+function setMenuLang(lang) {
+  currentLang = lang;
+  renderLangSwitch();
+  renderMenuOptions();
+  renderDomainButtons();
 }
 
-document.getElementById('shift-btn').addEventListener('click', () => {
-  uppercase = !uppercase;
-  updateCase();
+// Show dots as placeholder, clear on first input
+document.getElementById('key-capture').placeholder = '••••';
+document.getElementById('key-capture').addEventListener('input', function() {
+  if (this.value) this.placeholder = '';
+  else this.placeholder = '••••';
 });
+
+// Keyboard input handler: handles validation and correction
+document.getElementById('key-capture').addEventListener('keydown', function(e) {
+  // Validate on # or Enter
+  if (e.key === '#' || e.key === 'Enter') {
+    e.preventDefault();
+    if (this.value.length > 0) {
+      sendString(this.value + '#');
+      this.value = '';
+    }
+    return;
+  }
+  // Correction with * or Backspace
+  if (e.key === '*' || e.key === 'Backspace') {
+    // Let native behavior handle erase
+    return;
+  }
+  // Allow digits and letters
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+    return;
+  }
+  // Block all other keys
+  e.preventDefault();
+});
+document.getElementById('key-capture').addEventListener('blur', function() {
+  setTimeout(() => this.focus(), 100);
+});
+
+// Send a single key to the backend
 async function sendKey(param1) {
   const url = document.getElementById('url').value.trim();
   const gw_id = document.getElementById('gwid').value.trim();
   const status = document.getElementById('status');
   const log = document.getElementById('log');
   const payload = { gw_id, payload: { command: "sendKey", param1 } };
-  status.textContent = `Envoi: ${param1}`;
+  status.textContent = `Sending: ${param1}`;
   status.className = 'status';
   log.textContent = `→ POST ${url}\n   ${JSON.stringify(payload)}`;
   try {
@@ -139,50 +182,206 @@ async function sendKey(param1) {
       body: JSON.stringify(payload)
     });
     const text = await res.text();
-    status.textContent = `✓ ${res.status} — touche: ${param1}`;
+    status.textContent = `✓ ${res.status} — key: ${param1}`;
     status.className = 'status ok';
     log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
+    // Start polling only after '#' is sent
+    if ((param1 === '#' || param1 === 'Enter') && !pollingStarted) {
+      pollingStarted = true;
+      setTimeout(checkGwStatus, 1000);
+    }
   } catch(e) {
-    status.textContent = `✗ Erreur: ${e.message}`;
+    status.textContent = `✗ Error: ${e.message}`;
     status.className = 'status err';
     log.textContent += `\n← ${e.message}`;
   }
 }
 
-document.querySelectorAll('.key.letter').forEach(btn => {
-  btn.addEventListener('click', () => {
-    btn.classList.add('pressed');
-    setTimeout(() => btn.classList.remove('pressed'), 150);
-    sendKey(uppercase ? btn.dataset.letter.toUpperCase() : btn.dataset.letter.toLowerCase());
-  });
-});
+// Send a string (sequence) to the backend
+async function sendString(str) {
+  const url = document.getElementById('url').value.trim();
+  const gw_id = document.getElementById('gwid').value.trim();
+  const status = document.getElementById('status');
+  const log = document.getElementById('log');
+  const payload = { gw_id, payload: { command: "sendString", param1: str } };
+  status.textContent = `Sending: ${str}`;
+  status.className = 'status';
+  log.textContent = `→ POST ${url}\n   ${JSON.stringify(payload)}`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    status.textContent = `✓ ${res.status} — string: ${str}`;
+    status.className = 'status ok';
+    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
+    // Start polling if needed
+    if (!pollingStarted) {
+      pollingStarted = true;
+      setTimeout(checkGwStatus, 1000);
+    }
+  } catch(e) {
+    status.textContent = `✗ Error: ${e.message}`;
+    status.className = 'status err';
+    log.textContent += `\n← ${e.message}`;
+  }
+}
 
-document.querySelectorAll('.key[data-k]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    btn.classList.add('pressed');
-    setTimeout(() => btn.classList.remove('pressed'), 150);
-    sendKey(btn.dataset.k);
-  });
-});
+// Fetch IVR config and restore state if already in ROOM
+async function fetchIvrConfigAndRestoreState() {
+  const gwId = document.getElementById('gwid').value.trim();
+  if (!gwId) return;
+  try {
+    const res = await fetch(`/gateway/ivrConfig?gw_id=${encodeURIComponent(gwId)}`);
+    const data = await res.json();
+    ivrMenus = data.menus || {};
+    webrtcDomains = data.webrtc_domains || {};
+    renderLangSwitch();
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Shift') return;
-  const letter = document.querySelector(`.key.letter[data-letter="${e.key.toLowerCase()}"]`);
-  if (letter) {
-    letter.classList.add('pressed');
-    setTimeout(() => letter.classList.remove('pressed'), 150);
-    sendKey(e.key);
+    // Check current status
+    const statusRes = await fetch(`/gateway/status?gw_id=${encodeURIComponent(gwId)}`);
+    if (!statusRes.ok) {
+      renderDomainButtons();
+      return;
+    }
+    const statusData = await statusRes.json();
+    let callStatus = statusData.data?.call_status || statusData.call_status;
+    if (callStatus === 'ROOM') {
+      // Already in ROOM, show menu directly
+      const browsingRes = await fetch(`/gateway/browsing?gw_id=${encodeURIComponent(gwId)}`);
+      const browsingData = await browsingRes.json();
+      browsingName = browsingData.browsingName;
+      menuOptions = (ivrMenus[browsingName] && ivrMenus[browsingName].options) ? ivrMenus[browsingName].options : [];
+      menuDisplayed = true;
+      renderMenuOptions();
+    } else {
+      renderDomainButtons();
+    }
+  } catch (e) {
+    document.getElementById('status').textContent = "Error loading IVR config.";
+  }
+}
+
+// Render domain selection buttons
+function renderDomainButtons() {
+  const menuDiv = document.getElementById('menu-options');
+  menuDiv.innerHTML = '';
+  const domains = Object.entries(webrtcDomains);
+  if (!domains.length) return;
+  menuDiv.innerHTML = '<div style="margin-bottom:0.5em;">Choose a service:</div>';
+  domains.forEach(([key, val], idx) => {
+    const digit = (idx + 1).toString();
+    const btn = document.createElement('button');
+    btn.className = 'key menu-key';
+    btn.textContent = `${digit}. ${val.name || key}`;
+    btn.onclick = async () => {
+      await sendKey(digit);
+      await sendKey('#');
+      showInputAndPrepareMenu(key);
+    };
+    menuDiv.appendChild(btn);
+  });
+  // Input always visible, but disabled until a domain is chosen
+  document.getElementById('key-capture').disabled = !browsingName;
+}
+
+// After domain selection, enable input and clear menu until ROOM
+function showInputAndPrepareMenu(selectedDomainKey) {
+  browsingName = selectedDomainKey;
+  menuOptions = [];
+  menuDisplayed = false;
+  renderMenuOptions(); // Clear menu
+  document.getElementById('key-capture').disabled = false;
+  document.getElementById('key-capture').focus();
+}
+
+// Poll for ROOM state and display menu when ready
+async function checkGwStatus() {
+  const gwId = document.getElementById('gwid').value.trim();
+  if (!gwId) return setTimeout(checkGwStatus, 2000);
+
+  try {
+    const statusRes = await fetch(`/gateway/status?gw_id=${encodeURIComponent(gwId)}`);
+    if (!statusRes.ok) {
+      document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — Stopping polling.`;
+      return;
+    }
+    const statusData = await statusRes.json();
+
+    if (statusData.data?.gw_state === "down") {
+      document.getElementById('status').textContent = `Gateway down ("exited") — Stopping polling.`;
+      return;
+    }
+
+    let callStatus = statusData.data?.call_status || statusData.call_status;
+    if (callStatus === 'ROOM' && !menuDisplayed) {
+      const browsingRes = await fetch(`/gateway/browsing?gw_id=${encodeURIComponent(gwId)}`);
+      const browsingData = await browsingRes.json();
+      browsingName = browsingData.browsingName;
+      menuOptions = (ivrMenus[browsingName] && ivrMenus[browsingName].options) ? ivrMenus[browsingName].options : [];
+      renderMenuOptions();
+      menuDisplayed = true;
+      return;
+    } else if (callStatus !== 'ROOM') {
+      menuOptions = [];
+      menuDisplayed = false;
+      renderMenuOptions();
+      setTimeout(checkGwStatus, 2000);
+    }
+  } catch (e) {
+    document.getElementById('status').textContent = `Status error — Stopping polling.`;
     return;
   }
-  const btn = document.querySelector(`.key[data-k="${e.key}"]`);
-  if (btn) {
-    btn.classList.add('pressed');
-    setTimeout(() => btn.classList.remove('pressed'), 150);
-    sendKey(e.key);
-  }
-});
+}
 
-updateCase();
+// Render menu options with icons and language
+function renderMenuOptions() {
+  const menuDiv = document.getElementById('menu-options');
+  menuDiv.innerHTML = '';
+  if (!menuOptions.length) return;
+  menuOptions.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'key menu-key';
+    btn.innerHTML = `${getIcon(opt.icon)} ${opt[currentLang] || opt['en'] || ''}`;
+    btn.onclick = () => sendKey(opt.dtmf);
+    menuDiv.appendChild(btn);
+  });
+}
+
+// Get icon HTML for a menu option
+function getIcon(icon) {
+  if (!icon) return '';
+  const gwId = document.getElementById('gwid').value.trim();
+  return `<img src="/gateway/icon/${icon}?gw_id=${encodeURIComponent(gwId)}" alt="" style="width:1.5em;height:1.5em;vertical-align:middle;">`;
+}
+
+// Initialize everything on page load
+document.addEventListener('DOMContentLoaded', fetchIvrConfigAndRestoreState);
+
+// Button handlers for Enter and Delete
+document.getElementById('btn-enter').onclick = () => {
+  const input = document.getElementById('key-capture');
+  if (input.value.length > 0) {
+    sendString(input.value + '#');
+    input.value = '';
+  }
+};
+document.getElementById('btn-del').onclick = () => {
+  const input = document.getElementById('key-capture');
+  input.value = input.value.slice(0, -1);
+  input.focus();
+};
+
+// Input help text on focus/blur
+const inputHelp = document.getElementById('input-help');
+document.getElementById('key-capture').addEventListener('focus', () => {
+  inputHelp.textContent = 'Use the virtual keyboard or type directly.';
+});
+document.getElementById('key-capture').addEventListener('blur', () => {
+  inputHelp.textContent = '';
+});
 </script>
 </body>
 </html>

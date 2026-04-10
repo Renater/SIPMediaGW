@@ -5,7 +5,7 @@
 # - keeps endpoints and response models compatible with previous behavior
 
 from fastapi import FastAPI, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -173,6 +173,25 @@ class DockerGateway(MediaBackend):
 
         return next((c for c in result if c.get("Name", "").startswith("gw")), None)
 
+    @staticmethod
+    def parseHistoryFile(filepath):
+        result = {}
+        with open(filepath, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or ':' not in line:
+                    continue
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip()
+                # Try to parse value as JSON, fallback to string
+                try:
+                    parsed = json.loads(value)
+                except Exception:
+                    parsed = value
+                result.setdefault(key, []).append(parsed)
+        return result
+
     def start_gateway(self, req: StartRequest) -> Dict[str, Any]:
         print(f"[START CONTAINER] for gateway room={req.room} main_app={req.main_app}")
         gwSubProc = ['./SIPMediaGW.sh']
@@ -303,22 +322,82 @@ class DockerGateway(MediaBackend):
                 if mp4List else "0%"
             )
             resp["transcript_progress"] = processedPercent
+
+        historyFile = './logs/{}_history'.format(gwData['Name'])
+        history = self.parseHistoryFile(historyFile)
+        resp["call_status"] = "OFF"
+        if 'call_start' in history:
+            if 'room' in history:
+                resp["call_status"] = 'ROOM'
+            else:
+                resp["call_status"] = 'IVR'
+
         return resp
+
+    def getGatewayBrowsing(self, gwId: str) -> Dict[str, Any]:
+        gwData = DockerGateway.get_gw_info(gwId)
+        if not gwData:
+            raise ValueError("Gateway not found")
+        historyFile = f'./logs/{gwData["Name"]}_history'
+        if not os.path.exists(historyFile):
+            raise ValueError("History file not found")
+        history = DockerGateway.parseHistoryFile(historyFile)
+        try:
+            roomEntry = history['room'][-1]
+            browsingName = roomEntry['value'].split(',')[0].strip()
+        except Exception:
+            raise ValueError("No room info found in history")
+        return {
+            "status": "success",
+            "browsingName": browsingName
+        }
+
+    def getIvrConfig(self, gwId: str) -> Dict[str, Any]:
+        """
+        Return IVR config for the given gateway: menu and webrtc_domains.
+        """
+        # 1. Get gateway info
+        gwData = DockerGateway.get_gw_info(gwId)
+        if not gwData:
+            raise ValueError("Gateway not found")
+
+        # 2. Read config.json from container
+        gwName = gwData['Name']
+        gwSubProc = [
+            'docker', 'exec', gwName,
+            'cat', '/var/browsing/assets/config.json'
+        ]
+        res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = res.communicate()
+        if res.returncode != 0:
+            raise ValueError(f"Failed to read config.json: {err.decode()}")
+        try:
+            browsingConfig = json.loads(out.decode())
+        except Exception as e:
+            raise ValueError(f"Invalid config.json: {e}")
+
+        # 3. Return menu and webrtc_domains
+        menus = browsingConfig.get('menus', {})
+        webrtcDomains = browsingConfig.get('webrtc_domains', {})
+
+        return {
+            "status": "success",
+            "menus": menus,
+            "webrtc_domains": webrtcDomains
+        }
 
     def send_command(self, gw_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         gwData = DockerGateway.get_gw_info(gw_id)
         if gwData is None:
             raise ValueError("Gateway not found")
-        else:
-            gwName = gwData['Name']
+        gwName = gwData['Name']
 
-        gwSubProc = ['docker', 'exec', gwName,
-                        'sh', '-c',
-                        ('echo $DISPLAY_WEB')]
+        gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'echo $DISPLAY_WEB']
         res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = res.communicate()
         DISPLAY_WEB = out.decode().strip()
         print(f"[COMMAND] id={gw_id} payload={payload}")
+
         if payload['command'] == 'sendKey':
             k = payload['param1']
             if k == '#' or k == 'Enter':
@@ -330,6 +409,21 @@ class DockerGateway(MediaBackend):
                             ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]
             res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = res.communicate()
+        elif payload['command'] == 'sendString':
+            s = payload['param1']
+            # Envoie chaque caractère avec xdotool
+            for c in s:
+                if c == '#':
+                    k = 'numbersign'
+                elif c == '*':
+                    k = 'asterisk'
+                else:
+                    k = c
+                gwSubProc = ['docker', 'exec', gwName,
+                                'sh', '-c',
+                                ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]
+                res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = res.communicate()
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
             raise ValueError("Gateway not found")
@@ -465,6 +559,29 @@ def status(gw_id: str, backend: MediaBackend = Depends(get_backend)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/gateway/browsing")
+def gateway_browsing(gw_id: str, backend: MediaBackend = Depends(get_backend)):
+    try:
+        result = backend.getGatewayBrowsing(gw_id)
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/gateway/ivrConfig")
+def gateway_ivr_config(gw_id: str, backend: MediaBackend = Depends(get_backend)):
+    """
+    HTTP GET endpoint to return IVR config (menu + webrtc_domains) for the given gateway.
+    """
+    try:
+        result = backend.getIvrConfig(gw_id)
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/gateway/command", response_model=CommandResponse)
 def command(req: CommandRequest, backend: MediaBackend = Depends(get_backend)):
     try:
@@ -478,6 +595,23 @@ def command(req: CommandRequest, backend: MediaBackend = Depends(get_backend)):
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/gateway/icon/{icon_name}")
+def get_icon(icon_name: str, gw_id: str):
+    gwData = DockerGateway.get_gw_info(gw_id)
+    if not gwData:
+        raise HTTPException(status_code=404, detail="Gateway not found")
+    gwName = gwData['Name']
+    for ext in ['svg', 'png']:
+        gwSubProc = [
+            'docker', 'exec', gwName,
+            'cat', f'/var/browsing/assets/IVR/images/menu-icons/{icon_name}.{ext}'
+        ]
+        res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = res.communicate()
+        if res.returncode == 0:
+            return Response(content=out, media_type=f"image/{ext if ext != 'svg' else 'svg+xml'}")
+    raise HTTPException(status_code=404, detail="Icon not found")
 
 # -----------------------
 # Entrypoint
