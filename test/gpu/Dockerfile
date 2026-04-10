@@ -17,7 +17,7 @@ RUN sed -i 's/^Components: main$/& contrib non-free non-free-firmware/' /etc/apt
     build-essential cmake git \
     && git clone --branch v3.15.0_patch https://github.com/Renater/re.git \
     && cd re && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
-    && git clone --branch v3.15.0_patch https://github.com/Renater/baresip.git \
+    && git clone --branch v3.15.0_patchv2 https://github.com/Renater/baresip.git \
     && cd baresip && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && rm -r baresip re \
     && git clone https://github.com/Renater/JitsiMeetUIHelper.git /var/UIHelper \
