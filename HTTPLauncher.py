@@ -5,7 +5,7 @@
 # - keeps endpoints and response models compatible with previous behavior
 
 from fastapi import FastAPI, Depends, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -28,10 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Mount the 'test' directory at /test
-BASE_DIR = pathlib.Path(__file__).parent.resolve()
-app.mount("/test", StaticFiles(directory=str(BASE_DIR / "test")), name="test")
 
 # -----------------------
 # Models
@@ -612,6 +608,13 @@ def get_icon(icon_name: str, gw_id: str):
         if res.returncode == 0:
             return Response(content=out, media_type=f"image/{ext if ext != 'svg' else 'svg+xml'}")
     raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/gateway/interact")
+def serve_interact_html():
+    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "./test/interact.html"))
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found.")
+    return FileResponse(file_path, media_type="text/html")
 
 # -----------------------
 # Entrypoint

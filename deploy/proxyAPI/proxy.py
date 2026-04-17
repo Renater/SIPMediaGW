@@ -14,7 +14,7 @@ app = FastAPI()
 
 
 
-redisClient = redis.Redis(host="127.0.0.1", port=6379, decode_responses=True)
+redisClient = redis.Redis(host='redis', port=6379, decode_responses=True)
 allowedToken = "1234"
 adminToken = "admin-secret-key"  # Change this to a secure admin key
 
@@ -22,7 +22,7 @@ adminToken = "admin-secret-key"  # Change this to a secure admin key
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>"
 # state: started | working | stopped
 
-redis_gw_field_count = 7
+redis_gw_field_count = 8
 
 redis_gw_ip_index = 0
 redis_gw_state_index = 1
@@ -31,6 +31,7 @@ redis_gw_room_index = 3
 redis_gw_start_time_index = 4
 redis_gw_media_duration_index = 5
 redis_gw_transcript_progress_index = 6
+redis_gw_call_status = 7
 
 
 @app.exception_handler(RequestValidationError)
@@ -43,7 +44,6 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
             "message": exc.errors(),
         },
     )
-
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -89,6 +89,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     streaming = data.get("streaming_duration")
     transcript = data.get("transcript_progress")
     state  = data.get("gw_state")
+    callStatus = data.get("call_status")
     parts += [""] * (redis_gw_field_count - len(parts))
     if recording:
         parts[redis_gw_media_duration_index] = f"{recording}"
@@ -101,6 +102,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
         parts[redis_gw_state_index] = "working"
     elif (state == "down"):
         parts[redis_gw_state_index] = "started"
+    parts[redis_gw_call_status] = f"{callStatus}"
 
     mapping = "|".join(parts)
     redisClient.set(f"gateway:{gw_id}", mapping)
@@ -114,14 +116,15 @@ def getGatewayStatusFromRedis(gw_id: str):
     room = parts[redis_gw_room_index] if len(parts) > redis_gw_room_index else None
     state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
     media_duration = parts[redis_gw_media_duration_index] if len(parts) > redis_gw_media_duration_index else None
-    redis_gw_transcript_progress_index = 6
     transcript = parts[redis_gw_transcript_progress_index] if len(parts) > redis_gw_transcript_progress_index else None
+    callStatus = parts[redis_gw_call_status]
     return {
         "status": "success",
         "data": {
             "gw_id": gw_id,
             "gw_state": state,
             "room": room,
+            "call_status": callStatus,
             "media_duration": media_duration,
             "transcript_progress": transcript
         }
@@ -137,7 +140,7 @@ async def adminStatus(request: Request):
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             media_type="application/json"
         )
-    
+
     result = {}
     for key in redisClient.scan_iter(match="gateway:*"):
         gw_id = key.split(":")[-1]
@@ -160,9 +163,36 @@ async def adminStatus(request: Request):
         }
     return result
 
+async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, parts: list):
+    """
+    Fetch /gateway/status from a single gateway and update its Redis entry.
+    Used by the periodic monitor and the on‑demand monitor.
+    """
+    url = f"http://{gw_ip}/gateway/status"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            headers = {"Authorization": f"Bearer {allowedToken}"}
+            response = await client.get(url, params={"gw_id": gw_id}, headers=headers)
+
+        data = response.json()
+        if data.get("status") == "success" and data['data']['gw_state'] != "down":
+            updateProgressInfo(gw_id, parts, data.get("data"))
+        else:
+            print(f"Gateway {gw_id} returned error → delete mapping")
+            redisClient.delete(f"gateway:{gw_id}")
+    except Exception as exc:
+        print(f"[fetchAndStoreGatewayStatus] error contacting {gw_ip}: {exc}")
+        redisClient.delete(f"gateway:{gw_id}")
+
+async def monitorOneGateway(gw_id: str, gw_ip: str):
+    """Check a single gateway (baresip case) and refresh its Redis entry."""
+    raw = redisClient.get(f"gateway:{gw_id}")
+    parts = raw.split("|") if raw else []
+    await _fetchAndStoreGatewayStatus(gw_id, gw_ip, parts)
+
 # Background task to monitor gateways
 async def monitorGateways(intervalSeconds: int = 30):
-    """Periodically check gateway states and update Redis mappings"""
+
     while True:
         print("Checking gateway states...")
         for key in redisClient.scan_iter(match="gateway:*"):
@@ -172,25 +202,9 @@ async def monitorGateways(intervalSeconds: int = 30):
                 continue
 
             parts = value.split("|")
-            gwIp = parts[redis_gw_ip_index]
+            gw_ip = parts[redis_gw_ip_index]
 
-            url = f"http://{gwIp}/gateway/status"
-            try:
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    headers = {"Authorization": f"Bearer {allowedToken}"}
-                    response = await client.get(url, params={"gw_id": gw_id}, headers=headers)
-
-                    data = response.json()
-                    if data.get("status") == "success":
-                        updateProgressInfo(gw_id, parts, data.get("data"))
-                    elif data.get("status") == "error":
-                        print(f"Gateway {gw_id} doesn't exist, removing mapping")
-                        redisClient.delete(key)
-                    
-            except Exception as e:
-                print(f"Error checking {gwIp}: {e}")                
-                print(f"Removing mapping for Gateway {gw_id} (Http GW API is down)")
-                redisClient.delete(key)
+            await _fetchAndStoreGatewayStatus(gw_id, gw_ip, parts)
 
         await asyncio.sleep(intervalSeconds)
 
@@ -210,6 +224,30 @@ def get_asset(file_name: str):
         media_type="application/x-xz",
         filename=file_name,
     )
+
+@app.get("/interact")
+async def interact(request: Request):
+
+    gwId = request.query_params.get("gwId") or request.query_params.get("gw_id")
+    if not gwId:
+        raise HTTPException(status_code=400, detail="Missing 'gw_id' parameter")
+
+    rawData = redisClient.get(f"gateway:{gwId}")
+    if not rawData:
+        raise HTTPException(status_code=404, detail=f"Gateway '{gwId}' not found")
+
+    parts = rawData.split("|")
+    gwIp = parts[redis_gw_ip_index]
+
+    gwUrl = f"http://{gwIp}/gateway/interact"
+    headers = {"Authorization": request.headers.get("Authorization", "")}
+    params = dict(request.query_params)
+
+    gwResponse = await proxyToGateway(gwUrl, request, params, None, headers)
+
+    content = gwResponse.content
+    mediaType = gwResponse.headers.get("content-type", "text/html")
+    return Response(content=content, status_code=gwResponse.status_code, media_type=mediaType)
 
 async def proxyToGateway(gwUrl: str, request: Request, params: dict, body: dict,headers: dict):
     """Forward request to gateway and return response"""
@@ -239,7 +277,7 @@ async def startGateway(request: Request):
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             media_type="application/json"
         )
-    
+
     room = (await request.json()).get("room")
     if not room:
         raise HTTPException(status_code=400, detail="Missing 'room' parameter")
@@ -251,14 +289,14 @@ async def startGateway(request: Request):
     gateway = findAvailableGateway()
     if not gateway:
         raise HTTPException(status_code=503, detail="No available gateways")
-    
+
     gw_id = gateway[0].split(":")[-1]
     gwIp = gateway[1]
-    
+
     print(f"Allocating gateway {gw_id} ({gwIp}) for room {room}")
-    
+
     params = dict(request.query_params)
-    
+
     gwUrl = f"http://{gwIp}/gateway/start"
     headers = {"Authorization": request.headers.get("Authorization", "")}
     body = await request.json()
@@ -266,7 +304,7 @@ async def startGateway(request: Request):
 
     gwResponse = await proxyToGateway(gwUrl, request, params, body, headers)
     responseJson = gwResponse.json()
-    
+
     try:
         status = responseJson.get("status")
         if status == "success":
@@ -282,7 +320,7 @@ async def startGateway(request: Request):
             raise HTTPException(status_code=503, detail=responseJson.get("error").get("detail"))
     except Exception as e:
         raise HTTPException(status_code=503, detail="Faild to parse Gateway Json response")
-    
+
     return Response(
         content=json.dumps(responseJson),
         status_code=gwResponse.status_code,
@@ -307,7 +345,7 @@ async def stopGateway(request: Request):
     rawValue = redisClient.get(f"gateway:{gw_id}")
     if not rawValue:
         raise HTTPException(status_code=404, detail=f"No mapping found for gateway '{gw_id}'")
-    
+
     parts = rawValue.split("|")
     gwIp = parts[redis_gw_ip_index]
     body = await request.json()
@@ -315,11 +353,11 @@ async def stopGateway(request: Request):
     params = dict(request.query_params)
     gwUrl = f"http://{gwIp}/gateway/stop"
     headers = {"Authorization": request.headers.get("Authorization", "")}
-    
+
     gwResponse = await proxyToGateway(gwUrl, request, params, body, headers)
     responseJson = gwResponse.json()
     print("Gateway Stop Response:", responseJson)
-    
+
     try:
         detailsRes = responseJson.get("data", {}).get("processing_state", "")
         if "stopping" in detailsRes or "stopped" in detailsRes:
@@ -334,7 +372,7 @@ async def stopGateway(request: Request):
     except Exception as e:
         print("Failed to parse JSON response:", e)
         responseJson["status"] = "error"
-    
+
     return Response(
         content=json.dumps(responseJson),
         status_code=gwResponse.status_code,
@@ -345,15 +383,13 @@ async def stopGateway(request: Request):
 @app.get("/progress")
 async def statusGateway(request: Request, gw_id: str = None, room: str = None):
     """GET /status?gw_id=gatewayName - Get gateway status"""
-    if not authorize(request):
-        return Response(
-            json.dumps({"error": "authorization error"}),
-            status_code=401,
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
-            media_type="application/json"
-        )
-
-
+    # if not authorize(request):
+    #     return Response(
+    #         json.dumps({"error": "authorization error"}),
+    #         status_code=401,
+    #         headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+    #         media_type="application/json"
+    #     )
 
     if not gw_id and not room:
         raise HTTPException(status_code=400, detail="Missing 'gw_id' or 'room' parameter")
@@ -376,11 +412,26 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
     rawValue = redisClient.get(f"gateway:{gw_id}")
     if not rawValue:
         raise HTTPException(status_code=404, detail=f"Gateway '{gw_id}' not found")
-    
+
     parts = rawValue.split("|")
     gwIp = parts[redis_gw_ip_index]
 
-    
+    # ----- Refresh baresip gateways on demand --------------------
+    gw_type = parts[redis_gw_type_index] if len(parts) > redis_gw_type_index else None
+    if gw_type == "baresip":
+        # call the on‑demand monitor to get a fresh status
+        await monitorOneGateway(gw_id, gwIp)
+
+        # reload the (possibly updated) mapping
+        rawValue = redisClient.get(f"gateway:{gw_id}")
+        if not rawValue:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Gateway '{gw_id}' unreachable after on‑the‑fly check"
+            )
+        parts = rawValue.split("|")
+    # ------------------------------------------------------------------
+
     # Get Status from Redis
     responseJson = getGatewayStatusFromRedis(gw_id)
     if responseJson:
@@ -396,82 +447,124 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
             media_type="application/json"
         )
 
-@app.api_route("/command", methods=["GET", "POST"])
-async def commandGateway(request: Request):
-    """GET/POST /command - Send command to gateway"""
-    if not authorize(request):
-        return Response(
-            json.dumps({"error": "authorization error"}),
-            status_code=401,
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
-            media_type="application/json"
-        )
-
-    body = await request.json()
-    gw_id = body.get("gw_id")
+async def genericGatewayProxy(request: Request, endpoint: str):
+    """Generic proxy for gateway endpoints like /command, /ivrConfig, /status, /icon/*"""
+    # Retrieve gw_id from query params (GET) or JSON body (POST)
+    gw_id = request.query_params.get("gw_id")
+    if request.method != "GET":
+        try:
+            body = await request.json()
+            gw_id = body.get("gw_id") or gw_id
+        except Exception:
+            pass
 
     if not gw_id:
         raise HTTPException(status_code=400, detail="Missing 'gw_id' parameter")
-    
-    rawValue = redisClient.get(f"gateway:{gw_id}")
-    if not rawValue:
-        raise HTTPException(status_code=404, detail=f"Gateway '{gw_id}' not found")
-    
-    parts = rawValue.split("|")
-    gwIp = parts[redis_gw_ip_index]
-    isStopped = len(parts) > redis_gw_state_index and parts[redis_gw_state_index] != "working"
 
-    if isStopped:
+    raw_value = redisClient.get(f"gateway:{gw_id}")
+    if not raw_value:
+        raise HTTPException(status_code=404, detail=f"Gateway '{gw_id}' not found")
+
+    parts = raw_value.split("|")
+    gw_ip = parts[redis_gw_ip_index]
+
+    is_stopped = (
+        len(parts) > redis_gw_state_index
+        and parts[redis_gw_state_index] != "working"
+    )
+    if is_stopped:
         raise HTTPException(status_code=403, detail=f"Gateway '{gw_id}' is stopped, cannot send commands")
-    body = await request.json()
 
     params = dict(request.query_params)
-    gwUrl = f"http://{gwIp}/command"
     headers = {"Authorization": request.headers.get("Authorization", "")}
-    
-    gwResponse = await proxyToGateway(gwUrl, request, params, body, headers)
-    responseJson = gwResponse.json()
-    
-    return Response(
-        content=json.dumps(responseJson),
-        status_code=gwResponse.status_code,
-        media_type="application/json"
-    )
+    body = await request.json() if request.method != "GET" else None
+    gw_url = f"http://{gw_ip}/gateway/{endpoint}"
+
+    gw_response = await proxyToGateway(gw_url, request, params, body, headers)
+
+    # Try to decode JSON; if it fails, return raw content (useful for binary icons)
+    try:
+        response_json = gw_response.json()
+        content = json.dumps(response_json)
+        media_type = "application/json"
+    except Exception:
+        content = gw_response.content
+        media_type = gw_response.headers.get("content-type", "application/octet-stream")
+
+    return Response(content=content, status_code=gw_response.status_code, media_type=media_type)
+
+@app.api_route("/command", methods=["POST"])
+async def commandGateway(request: Request):
+    return await genericGatewayProxy(request, "command")
+
+@app.api_route("/ivrConfig", methods=["GET"])
+async def ivrConfigGateway(request: Request):
+    return await genericGatewayProxy(request, "ivrConfig")
+
+@app.api_route("/browsing", methods=["GET"])
+async def ivrConfigGateway(request: Request):
+    return await genericGatewayProxy(request, "browsing")
+
+@app.api_route("/status", methods=["GET"])
+async def statusGatewayProxy(request: Request):
+    return await genericGatewayProxy(request, "status")
+
+@app.api_route("/icon/{icon_name}", methods=["GET"])
+async def iconGateway(request: Request, icon_name: str):
+    return await genericGatewayProxy(request, f"icon/{icon_name}")
 
 @app.post("/register")
 async def registerGateway(request: Request):
-    """POST /register - Register a new gateway"""
     if not authorize(request):
         return Response(
             json.dumps({"error": "authorization error"}),
             status_code=401,
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
-            media_type="application/json"
+            media_type="application/json",
         )
-    
+
     try:
-        body = await request.json()
-        gwIp = body.get("gw_ip")
-        gw_id = body.get("gw_id")
+        body   = await request.json()
+        gwIp   = body.get("gw_ip")
+        gw_id  = body.get("gw_id")
         gwType = body.get("gw_type", "media")
-        
+
         if not gwIp or not gw_id:
             raise HTTPException(status_code=400, detail="Missing 'gwIp' or 'gw_id'")
-        
-        # Register gateway in Redis
-        startTime = dt.datetime.now().isoformat()
-        gwValue = f"{gwIp}|started|{gwType}|None|{startTime}|0|0"
+
+        # Look for existing mapping
+        existing_raw = redisClient.get(f"gateway:{gw_id}")
+        if existing_raw:
+            # Keep status based metrics
+            parts = existing_raw.split("|")
+            parts += [""] * (redis_gw_field_count - len(parts))
+            startTime = parts[redis_gw_start_time_index]
+            media_duration   = parts[redis_gw_media_duration_index]
+            transcript_prog  = parts[redis_gw_transcript_progress_index]
+            call_status      = parts[redis_gw_call_status]
+        else:
+            # No mapping found => reset
+            startTime = dt.datetime.now().isoformat()
+            media_duration   = "0"
+            transcript_prog  = "0"
+            call_status      = "None"
+
+        # Build new mapping
+        # format : gwIp|state|type|room|startTime|media|transcript|callStatus
+        gwValue = (
+            f"{gwIp}|started|{gwType}|None|{startTime}|"
+            f"{media_duration}|{transcript_prog}|{call_status}"
+        )
         redisClient.set(f"gateway:{gw_id}", gwValue)
-        
-        print(f"Gateway registered: {gw_id} ({gwIp})")
-        
+
+        print(f"Gateway registered / updated: {gw_id} ({gwIp})")
         return Response(
             content=json.dumps({"status": "success", "gw_id": gw_id, "gw_ip": gwIp}),
             status_code=200,
-            media_type="application/json"
+            media_type="application/json",
         )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 @app.post("/unregister")
 async def unregisterGateway(request: Request):
@@ -483,23 +576,23 @@ async def unregisterGateway(request: Request):
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             media_type="application/json"
         )
-    
+
     try:
         body = await request.json()
         gw_id = body.get("gw_id")
         
         if not gw_id:
             raise HTTPException(status_code=400, detail="Missing 'gw_id'")
-        
+
         # Check if gateway exists
         if not redisClient.exists(f"gateway:{gw_id}"):
             raise HTTPException(status_code=404, detail=f"Gateway '{gw_id}' not found")
-        
+
         # Remove gateway from Redis
         redisClient.delete(f"gateway:{gw_id}")
         
         print(f"Gateway unregistered: {gw_id}")
-        
+
         return Response(
             content=json.dumps({"status": "success", "gw_id": gw_id, "removed": True}),
             status_code=200,

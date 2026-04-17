@@ -71,7 +71,7 @@
 <div class="kb-wrap">
   <div class="config">
     <input id="url" value="http://127.0.0.1:8100/gateway/command" placeholder="URL" />
-    <input id="gwid" placeholder="gw_id" />
+    <input id="gwId" placeholder="gwId" />
   </div>
   <div id="lang-switch"></div>
   <div id="input-row">
@@ -89,15 +89,14 @@
 const urlParams = new URLSearchParams(window.location.search);
 const gwIdParam = urlParams.get('gwId');
 const gwProxyApi = urlParams.get('gwProxyApi');
-const gwApiPath = urlParams.get('gwApiPath');
 if (gwIdParam) {
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('gwid').value = gwIdParam;
+    document.getElementById('gwId').value = gwIdParam;
   });
 }
-if (gwProxyApi && gwApiPath) {
+if (gwProxyApi) {
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('url').value = gwProxyApi + gwApiPath;
+    document.getElementById('url').value = gwProxyApi;
   });
 }
 
@@ -127,8 +126,11 @@ function renderLangSwitch() {
 function setMenuLang(lang) {
   currentLang = lang;
   renderLangSwitch();
-  renderMenuOptions();
-  renderDomainButtons();
+  if (menuDisplayed) {
+    renderMenuOptions();
+  } else {
+    renderDomainButtons();
+  }
 }
 
 // Show dots as placeholder, clear on first input
@@ -165,18 +167,21 @@ document.getElementById('key-capture').addEventListener('blur', function() {
   setTimeout(() => this.focus(), 100);
 });
 
+function apiUrl(path) {
+  const url = document.getElementById('url').value.trim();
+  return `${url.replace(/\/$/, '')}${path}`;
+}
 // Send a single key to the backend
 async function sendKey(param1) {
-  const url = document.getElementById('url').value.trim();
-  const gw_id = document.getElementById('gwid').value.trim();
+  const gwId = document.getElementById('gwId').value.trim();
   const status = document.getElementById('status');
   const log = document.getElementById('log');
-  const payload = { gw_id, payload: { command: "sendKey", param1 } };
+  const payload = { gw_id: gwId, payload: { command: "sendKey", param1 } };
   status.textContent = `Sending: ${param1}`;
   status.className = 'status';
-  log.textContent = `→ POST ${url}\n   ${JSON.stringify(payload)}`;
+  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
   try {
-    const res = await fetch(url, {
+    const res = await fetch(apiUrl('/command'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -199,16 +204,15 @@ async function sendKey(param1) {
 
 // Send a string (sequence) to the backend
 async function sendString(str) {
-  const url = document.getElementById('url').value.trim();
-  const gw_id = document.getElementById('gwid').value.trim();
+  const gwId = document.getElementById('gwId').value.trim();
   const status = document.getElementById('status');
   const log = document.getElementById('log');
-  const payload = { gw_id, payload: { command: "sendString", param1: str } };
+  const payload = { gw_id: gwId, payload: { command: "sendString", param1: str } };
   status.textContent = `Sending: ${str}`;
   status.className = 'status';
-  log.textContent = `→ POST ${url}\n   ${JSON.stringify(payload)}`;
+  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
   try {
-    const res = await fetch(url, {
+    const res = await fetch(apiUrl('/command'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -231,17 +235,17 @@ async function sendString(str) {
 
 // Fetch IVR config and restore state if already in ROOM
 async function fetchIvrConfigAndRestoreState() {
-  const gwId = document.getElementById('gwid').value.trim();
+  const gwId = document.getElementById('gwId').value.trim();
   if (!gwId) return;
   try {
-    const res = await fetch(`/gateway/ivrConfig?gw_id=${encodeURIComponent(gwId)}`);
+    const res = await fetch(apiUrl('/ivrConfig') + `?gw_id=${encodeURIComponent(gwId)}`);
     const data = await res.json();
     ivrMenus = data.menus || {};
     webrtcDomains = data.webrtc_domains || {};
     renderLangSwitch();
 
     // Check current status
-    const statusRes = await fetch(`/gateway/status?gw_id=${encodeURIComponent(gwId)}`);
+    const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
     if (!statusRes.ok) {
       renderDomainButtons();
       return;
@@ -250,7 +254,7 @@ async function fetchIvrConfigAndRestoreState() {
     let callStatus = statusData.data?.call_status || statusData.call_status;
     if (callStatus === 'ROOM') {
       // Already in ROOM, show menu directly
-      const browsingRes = await fetch(`/gateway/browsing?gw_id=${encodeURIComponent(gwId)}`);
+      const browsingRes = await fetch(apiUrl('/browsing') + `?gw_id=${encodeURIComponent(gwId)}`);
       const browsingData = await browsingRes.json();
       browsingName = browsingData.browsingName;
       menuOptions = (ivrMenus[browsingName] && ivrMenus[browsingName].options) ? ivrMenus[browsingName].options : [];
@@ -299,11 +303,11 @@ function showInputAndPrepareMenu(selectedDomainKey) {
 
 // Poll for ROOM state and display menu when ready
 async function checkGwStatus() {
-  const gwId = document.getElementById('gwid').value.trim();
+  const gwId = document.getElementById('gwId').value.trim();
   if (!gwId) return setTimeout(checkGwStatus, 2000);
 
   try {
-    const statusRes = await fetch(`/gateway/status?gw_id=${encodeURIComponent(gwId)}`);
+    const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
     if (!statusRes.ok) {
       document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — Stopping polling.`;
       return;
@@ -317,7 +321,7 @@ async function checkGwStatus() {
 
     let callStatus = statusData.data?.call_status || statusData.call_status;
     if (callStatus === 'ROOM' && !menuDisplayed) {
-      const browsingRes = await fetch(`/gateway/browsing?gw_id=${encodeURIComponent(gwId)}`);
+      const browsingRes = await fetch(apiUrl('/browsing') + `?gw_id=${encodeURIComponent(gwId)}`);
       const browsingData = await browsingRes.json();
       browsingName = browsingData.browsingName;
       menuOptions = (ivrMenus[browsingName] && ivrMenus[browsingName].options) ? ivrMenus[browsingName].options : [];
@@ -353,8 +357,8 @@ function renderMenuOptions() {
 // Get icon HTML for a menu option
 function getIcon(icon) {
   if (!icon) return '';
-  const gwId = document.getElementById('gwid').value.trim();
-  return `<img src="/gateway/icon/${icon}?gw_id=${encodeURIComponent(gwId)}" alt="" style="width:1.5em;height:1.5em;vertical-align:middle;">`;
+  const gwId = document.getElementById('gwId').value.trim();
+  return `<img src="`+apiUrl('/icon')+`/${icon}?gw_id=${encodeURIComponent(gwId)}" alt="" style="width:1.5em;height:1.5em;vertical-align:middle;">`;
 }
 
 // Initialize everything on page load
