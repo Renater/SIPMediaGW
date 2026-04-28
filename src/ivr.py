@@ -65,6 +65,7 @@ class IVR:
         configFile = os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/config.json')
         with open(configFile) as f:
             self.config = json.load(f)
+        self.applyBrowserLanguage(self.config.get("lang", "en"))
         IVRPath = "file://"
         IVRPath += os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/index.html')
         self.url = '{}?displayName={}'.format(IVRPath, self.name)
@@ -77,6 +78,25 @@ class IVR:
         if self.mixedId:
             self.url = '{}&mixedId={}'.format(self.url, urllib.parse.quote(self.mixedId))
         print("Web browsing URL: "+self.url, flush=True)
+
+    def applyBrowserLanguage(self, lang):
+        normalized = (lang or "en").strip().lower()
+        locale_map = {
+            "fr": "fr-FR",
+            "en": "en-US",
+            "es": "es-ES",
+            "de": "de-DE",
+            "it": "it-IT",
+        }
+        locale = locale_map.get(
+            normalized,
+            normalized if "-" in normalized else f"{normalized}-{normalized.upper()}",
+        )
+
+        self.chromeOptions.add_argument(f'--lang={locale}')
+        prefs = self.chromeOptions.experimental_options.get('prefs', {})
+        prefs['intl.accept_languages'] = f'{locale},{normalized}'
+        self.chromeOptions.add_experimental_option('prefs', prefs)
 
     def launchBrowser(self):
         try:
