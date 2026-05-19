@@ -5,6 +5,7 @@ import redis
 import os
 import httpx
 import datetime as dt
+import random, string
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.exceptions import RequestValidationError
@@ -12,17 +13,15 @@ from fastapi.responses import FileResponse, JSONResponse
 
 app = FastAPI()
 
-
-
 redisClient = redis.Redis(host='redis', port=6379, decode_responses=True)
 allowedToken = "1234"
 adminToken = "admin-secret-key"  # Change this to a secure admin key
 
 # Redis Mapping:
-# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>"
+# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<call_status>"
 # state: started | working | stopped
 
-redis_gw_field_count = 8
+redis_gw_field_count = 9
 
 redis_gw_ip_index = 0
 redis_gw_state_index = 1
@@ -31,8 +30,7 @@ redis_gw_room_index = 3
 redis_gw_start_time_index = 4
 redis_gw_media_duration_index = 5
 redis_gw_transcript_progress_index = 6
-redis_gw_call_status = 7
-
+redis_gw_call_status_index = 7
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -102,7 +100,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
         parts[redis_gw_state_index] = "working"
     elif (state == "down"):
         parts[redis_gw_state_index] = "started"
-    parts[redis_gw_call_status] = f"{callStatus}"
+    parts[redis_gw_call_status_index] = f"{callStatus}"
 
     mapping = "|".join(parts)
     redisClient.set(f"gateway:{gw_id}", mapping)
@@ -117,7 +115,7 @@ def getGatewayStatusFromRedis(gw_id: str):
     state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
     media_duration = parts[redis_gw_media_duration_index] if len(parts) > redis_gw_media_duration_index else None
     transcript = parts[redis_gw_transcript_progress_index] if len(parts) > redis_gw_transcript_progress_index else None
-    callStatus = parts[redis_gw_call_status]
+    callStatus = parts[redis_gw_call_status_index]
     return {
         "status": "success",
         "data": {
@@ -230,7 +228,31 @@ async def interact(request: Request):
 
     gwId = request.query_params.get("gwId") or request.query_params.get("gw_id")
     if not gwId:
-        raise HTTPException(status_code=400, detail="Missing 'gw_id' parameter")
+        pairingCode = request.query_params.get("pairingCode")
+        if pairingCode:
+            # Look‑up the gw_id stored under the pairing code
+            resolvedGwId = redisClient.get(f"pairing:{pairingCode}")
+            if resolvedGwId:
+                # Redirect to the same endpoint with the resolved gw_id
+                redirectUrl = "{}?gwId={}".format(str(request.url).split('?')[0],resolvedGwId)
+                from fastapi.responses import RedirectResponse
+
+                return RedirectResponse(url=redirectUrl, status_code=302)
+            else:
+                raise HTTPException(
+                    status_code=400, detail="Invalid pairing code"
+                )
+        else:
+            html_form = """
+            <html><body>
+                <h3>Enter Pairing Code</h3>
+                <form method='get' action='/interact'>
+                    <input type='text' name='pairingCode' placeholder='Pairing Code' required/>
+                    <button type='submit'>Submit</button>
+                </form>
+            </body></html>
+            """
+            return Response(content=html_form, media_type="text/html")
 
     rawData = redisClient.get(f"gateway:{gwId}")
     if not rawData:
@@ -468,11 +490,12 @@ async def genericGatewayProxy(request: Request, endpoint: str):
     parts = raw_value.split("|")
     gw_ip = parts[redis_gw_ip_index]
 
-    is_stopped = (
+    isWorking = (
         len(parts) > redis_gw_state_index
-        and parts[redis_gw_state_index] != "working"
+        and parts[redis_gw_state_index] == "working"
     )
-    if is_stopped:
+    if not isWorking:
+        print(f"Gateway '{gw_id}' is stopped, cannot send commands")
         raise HTTPException(status_code=403, detail=f"Gateway '{gw_id}' is stopped, cannot send commands")
 
     params = dict(request.query_params)
@@ -515,6 +538,9 @@ async def iconGateway(request: Request, icon_name: str):
 
 @app.post("/register")
 async def registerGateway(request: Request):
+    def generatePairingCode(length: int = 5) -> str:
+        return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
     if not authorize(request):
         return Response(
             json.dumps({"error": "authorization error"}),
@@ -526,40 +552,60 @@ async def registerGateway(request: Request):
     try:
         body   = await request.json()
         gwIp   = body.get("gw_ip")
-        gw_id  = body.get("gw_id")
+        gwId  = body.get("gw_id")
         gwType = body.get("gw_type", "media")
+        pairingCode = body.get("pairing_code")
+        pairingTimeOut = body.get("pairing_timeout")
+        # If a pairing_code was provided, ensure we don't overwrite an existing mapping
+        if pairingCode:
+            if redisClient.exists(f"pairing:{pairingCode}"):
+                # pairing code already mapped, keep existing mapping and do not overwrite
+                existingGwId = redisClient.get(f"pairing:{pairingCode}")
+                # Use existing gwId for consistency (ignore the gw_id supplied if different)
+                gwId = existingGwId
+            else:
+                pairingCode = generatePairingCode()
+                redisClient.setex(f"pairing:{pairingCode}", pairingTimeOut, gwId)
+        else:
+            pairingCode = generatePairingCode()
+            redisClient.setex(f"pairing:{pairingCode}", pairingTimeOut, gwId)
 
-        if not gwIp or not gw_id:
+        if not gwIp or not gwId:
             raise HTTPException(status_code=400, detail="Missing 'gwIp' or 'gw_id'")
 
         # Look for existing mapping
-        existing_raw = redisClient.get(f"gateway:{gw_id}")
+        existing_raw = redisClient.get(f"gateway:{gwId}")
         if existing_raw:
             # Keep status based metrics
             parts = existing_raw.split("|")
             parts += [""] * (redis_gw_field_count - len(parts))
+            gwState = parts[redis_gw_state_index]
             startTime = parts[redis_gw_start_time_index]
-            media_duration   = parts[redis_gw_media_duration_index]
-            transcript_prog  = parts[redis_gw_transcript_progress_index]
-            call_status      = parts[redis_gw_call_status]
+            roomName        = parts[redis_gw_room_index]
+            mediaduration   = parts[redis_gw_media_duration_index]
+            transcriptprog  = parts[redis_gw_transcript_progress_index]
+            callStatus      = parts[redis_gw_call_status_index]
         else:
             # No mapping found => reset
+            gwState = "started"
             startTime = dt.datetime.now().isoformat()
-            media_duration   = "0"
-            transcript_prog  = "0"
-            call_status      = "None"
+            roomName = "None"
+            mediaduration   = "0"
+            transcriptprog  = "0"
+            callStatus      = "None"
 
         # Build new mapping
         # format : gwIp|state|type|room|startTime|media|transcript|callStatus
         gwValue = (
-            f"{gwIp}|started|{gwType}|None|{startTime}|"
-            f"{media_duration}|{transcript_prog}|{call_status}"
+            f"{gwIp}|{gwState}|{gwType}|{roomName}|{startTime}|"
+            f"{mediaduration}|{transcriptprog}|{callStatus}"
         )
-        redisClient.set(f"gateway:{gw_id}", gwValue)
-
-        print(f"Gateway registered / updated: {gw_id} ({gwIp})")
+        redisClient.set(f"gateway:{gwId}", gwValue)
+        print(f"Gateway registered / updated: {gwId} ({gwIp})")
         return Response(
-            content=json.dumps({"status": "success", "gw_id": gw_id, "gw_ip": gwIp}),
+            content=json.dumps({"status": "success",
+                                "gw_id": gwId, "gw_ip": gwIp,
+                                "pairing_code": pairingCode}),
             status_code=200,
             media_type="application/json",
         )

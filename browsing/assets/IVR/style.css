@@ -243,22 +243,42 @@ body {
 }
 
 /* ============================
-   QR Code
+   QR / Pairing Code
    ============================ */
-#qr-overlay {
+#qr-container {
   position: fixed;
   right: 50px;
-  bottom: 100px;
+  bottom: 70px;
   z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#qr-overlay {
   background: rgba(255,255,255,0.92);
   padding: 8px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  margin-bottom: 10px;
 }
+
 #qr-overlay img {
   width: 100px;
   height: 100px;
   display: block;
+}
+
+#pairing-info {
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  color: #2a3550;
+  font-size: 1.125rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 /* ============================

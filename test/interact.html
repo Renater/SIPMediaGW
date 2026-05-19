@@ -60,19 +60,10 @@
     font-size: 11px; background: #eee; border-radius: 6px; padding: 10px;
     max-height: 100px; overflow-y: auto;
   }
-  #input-help {
-    font-size: 0.95em;
-    color: #666;
-    margin-bottom: 1em;
-  }
 </style>
 </head>
 <body>
 <div class="kb-wrap">
-  <div class="config">
-    <input id="url" value="http://127.0.0.1:8100/gateway/command" placeholder="URL" />
-    <input id="gwId" placeholder="gwId" />
-  </div>
   <div id="lang-switch"></div>
   <div id="input-row">
     <label for="key-capture" id="input-label" style="font-size:1.1em;">Type here:</label>
@@ -83,22 +74,10 @@
   <div class="status" id="status">Ready</div>
   <div id="menu-options"></div>
   <div id="log">Waiting for input...</div>
-  <div id="input-help"></div>
 </div>
 <script>
 const urlParams = new URLSearchParams(window.location.search);
-const gwIdParam = urlParams.get('gwId');
-const gwProxyApi = urlParams.get('gwProxyApi');
-if (gwIdParam) {
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('gwId').value = gwIdParam;
-  });
-}
-if (gwProxyApi) {
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('url').value = gwProxyApi;
-  });
-}
+const gwId = urlParams.get('gwId');
 
 let pollingStarted = false;
 let ivrMenus = {};
@@ -118,10 +97,6 @@ function renderLangSwitch() {
   // Update input label and help according to language
   document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Tapez ici :' : 'Type here:';
   document.getElementById('btn-enter').textContent = currentLang === 'fr' ? 'Entrée' : 'Enter';
-  document.getElementById('input-help').textContent =
-    currentLang === 'fr'
-      ? "# ou Entrée pour valider — * ou ← pour corriger"
-      : "# or Enter to validate — * or Backspace to erase";
 }
 function setMenuLang(lang) {
   currentLang = lang;
@@ -168,12 +143,11 @@ document.getElementById('key-capture').addEventListener('blur', function() {
 });
 
 function apiUrl(path) {
-  const url = document.getElementById('url').value.trim();
+  const url = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
   return `${url.replace(/\/$/, '')}${path}`;
 }
 // Send a single key to the backend
 async function sendKey(param1) {
-  const gwId = document.getElementById('gwId').value.trim();
   const status = document.getElementById('status');
   const log = document.getElementById('log');
   const payload = { gw_id: gwId, payload: { command: "sendKey", param1 } };
@@ -204,7 +178,6 @@ async function sendKey(param1) {
 
 // Send a string (sequence) to the backend
 async function sendString(str) {
-  const gwId = document.getElementById('gwId').value.trim();
   const status = document.getElementById('status');
   const log = document.getElementById('log');
   const payload = { gw_id: gwId, payload: { command: "sendString", param1: str } };
@@ -235,7 +208,6 @@ async function sendString(str) {
 
 // Fetch IVR config and restore state if already in ROOM
 async function fetchIvrConfigAndRestoreState() {
-  const gwId = document.getElementById('gwId').value.trim();
   if (!gwId) return;
   try {
     const res = await fetch(apiUrl('/ivrConfig') + `?gw_id=${encodeURIComponent(gwId)}`);
@@ -303,7 +275,6 @@ function showInputAndPrepareMenu(selectedDomainKey) {
 
 // Poll for ROOM state and display menu when ready
 async function checkGwStatus() {
-  const gwId = document.getElementById('gwId').value.trim();
   if (!gwId) return setTimeout(checkGwStatus, 2000);
 
   try {
@@ -357,7 +328,6 @@ function renderMenuOptions() {
 // Get icon HTML for a menu option
 function getIcon(icon) {
   if (!icon) return '';
-  const gwId = document.getElementById('gwId').value.trim();
   return `<img src="`+apiUrl('/icon')+`/${icon}?gw_id=${encodeURIComponent(gwId)}" alt="" style="width:1.5em;height:1.5em;vertical-align:middle;">`;
 }
 
@@ -378,14 +348,6 @@ document.getElementById('btn-del').onclick = () => {
   input.focus();
 };
 
-// Input help text on focus/blur
-const inputHelp = document.getElementById('input-help');
-document.getElementById('key-capture').addEventListener('focus', () => {
-  inputHelp.textContent = 'Use the virtual keyboard or type directly.';
-});
-document.getElementById('key-capture').addEventListener('blur', () => {
-  inputHelp.textContent = '';
-});
 </script>
 </body>
 </html>

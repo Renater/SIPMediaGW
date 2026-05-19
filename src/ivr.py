@@ -61,6 +61,19 @@ class IVR:
         except:
             pass
 
+    def _readPairingCode(self):
+        """Read PAIRING_CODE from /etc/environment (returns '' if not set)."""
+        try:
+            with open('/etc/environment') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('PAIRING_CODE='):
+                        # Strip possible surrounding quotes
+                        return line.split('=', 1)[1].strip().strip('"\'')
+        except Exception:
+            pass
+        return ''
+
     def setUrl(self):
         configFile = os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/config.json')
         with open(configFile) as f:
@@ -122,39 +135,119 @@ class IVR:
     def prompt(self):
         startTime = time.time()
         browsingName = ''
-        if os.getenv('QR_CODE_URL') and os.getenv('GW_NAME') and os.getenv('GW_PROXY'):
+        pairingCode = self._readPairingCode()
+        if os.getenv('GW_PROXY') and os.getenv('QR_CODE_URL') and pairingCode:
             qrCodeUrl = os.getenv('QR_CODE_URL')
-            apiProxy = os.getenv('GW_PROXY')
-            qrCodeUrl = qrCodeUrl.format(proxy=apiProxy, uid=os.getenv('GW_NAME'))
+            reverseProxy = os.getenv('GW_REVERSE_PROXY') or os.getenv('GW_PROXY')
+            qrCodeUrl = qrCodeUrl.format(reverse_proxy=reverseProxy, code=pairingCode)
+            pairingUrl = qrCodeUrl.split('?')[0]
 
-            # Générer le QR code en base64
+            # Generate QR code in base64
             qr = qrcode.QRCode(box_size=4, border=2)
             qr.add_data(qrCodeUrl)
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             buffered = BytesIO()
             img.save(buffered, format="PNG")
-            qr_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            qrB64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
             # Inject QR code
-            js = f"""
+            jsQr = f"""
             (function() {{
-                let old = document.getElementById('qr-overlay');
+                let old = document.getElementById('qr-container');
                 if (old) old.remove();
-                let div = document.createElement('div');
-                div.id = 'qr-overlay';
+
+                let container = document.createElement('div');
+                container.id = 'qr-container';
+
+                // QR
+                let qrDiv = document.createElement('div');
+                qrDiv.id = 'qr-overlay';
+
                 let img = document.createElement('img');
-                img.src = 'data:image/png;base64,{qr_b64}';
-                div.appendChild(img);
-                document.body.appendChild(div);
+                img.src = 'data:image/png;base64,{qrB64}';
+                qrDiv.appendChild(img);
+                container.appendChild(qrDiv);
+
+                if ("{pairingCode}" && "{pairingUrl}") {{
+                    // Pairing
+                    let info = document.createElement('div');
+                    info.id = 'pairing-info';
+                    info.innerHTML = `Code: {pairingCode} <br/> (<a href="{pairingUrl}" target="_blank">{pairingUrl}</a>)`;
+                    container.appendChild(info);
+                }}
+                document.body.appendChild(container);
             }})();
             """
-            self.driver.execute_script(js)
+            self.driver.execute_script(jsQr)
             print("IVR: QR Code URL: {}".format(qrCodeUrl), flush=True)
+            print("IVR: Pairing Code: {}, Pairing URL: {}".format(pairingCode, pairingUrl), flush=True)
+
+        lastPairingCode = pairingCode
+
         while True:
             if self.IVRTimeout and time.time() > ( startTime + self.IVRTimeout ):
                 print("IVR Timeout", flush=True)
                 return {}
+            # Detect a changed PAIRING_CODE in /etc/environment and update UI
+            currentPairingCode = self._readPairingCode()
+            if (os.getenv('GW_PROXY') and os.getenv('QR_CODE_URL') and
+                currentPairingCode != lastPairingCode):
+                # Regenerate QR code in base64
+                qrCodeUrl = os.getenv('QR_CODE_URL').format(
+                    reverse_proxy=os.getenv('GW_REVERSE_PROXY') or os.getenv('GW_PROXY'),
+                    code=currentPairingCode
+                )
+                pairingUrl = qrCodeUrl.split('?')[0]
+                qr = qrcode.QRCode(box_size=4, border=2)
+                qr.add_data(qrCodeUrl)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                qrB64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+                updateJs = f"""
+                (function() {{
+                    // Ensure qr-container exists
+                    let container = document.getElementById('qr-container');
+                    if (!container) {{
+                        container = document.createElement('div');
+                        container.id = 'qr-container';
+                        document.body.appendChild(container);
+                    }}
+
+                    // Ensure qr-overlay exists
+                    let qrDiv = document.getElementById('qr-overlay');
+                    if (!qrDiv) {{
+                        qrDiv = document.createElement('div');
+                        qrDiv.id = 'qr-overlay';
+                        container.appendChild(qrDiv);
+                    }}
+
+                    // Ensure img exists
+                    let img = qrDiv.querySelector('img');
+                    if (!img) {{
+                        img = document.createElement('img');
+                        qrDiv.appendChild(img);
+                    }}
+                    img.src = 'data:image/png;base64,{qrB64}';
+
+                    // Update or create pairing-info
+                    let info = document.getElementById('pairing-info');
+                    if (!info && "{currentPairingCode}" && "{pairingUrl}") {{
+                        info = document.createElement('div');
+                        info.id = 'pairing-info';
+                        container.appendChild(info);
+                    }}
+                    if (info) {{
+                        info.innerHTML = `Code: {currentPairingCode} <br/> (<a href="{pairingUrl}" target="_blank">{pairingUrl}</a>)`;
+                    }}
+                }})();"""
+                self.driver.execute_script(updateJs)
+                lastPairingCode = currentPairingCode
+                print("IVR: QR Code URL: {}".format(qrCodeUrl), flush=True)
+                print("IVR: Pairing Code: {}, Pairing URL: {}".format(currentPairingCode, pairingUrl), flush=True)
             try:
                 if not browsingName:
                     browsingName = self.driver.execute_script("return window.browsing")
