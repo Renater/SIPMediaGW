@@ -1,20 +1,12 @@
-# Single-file FastAPI app with pluggable backend (DockerGateway / FakeGateway)
-# - introduces MediaBackend ABC
-# - selects backend via MODE env var (MODE=fake -> FakeGateway)
-# - uses FastAPI Depends for injection
-# - keeps endpoints and response models compatible with previous behavior
+# Single-file FastAPI app with DockerGateway backend
 
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-import pathlib
-from pydantic import BaseModel, RootModel, field_validator
+from pydantic import BaseModel
 from typing import Optional, Dict, Any
-from abc import ABC, abstractmethod
 import os
-import datetime as dt
 import subprocess
 import json
 import argparse
@@ -80,40 +72,10 @@ class CommandResponse(BaseResponse):
     data: Optional[Dict[str, Any]] = None
 
 # -----------------------
-# Backend abstraction
+# DockerGateway
 # -----------------------
-class MediaBackend(ABC):
-    """Abstract gateway backend interface used by the API routes."""
-
-    @abstractmethod
-    def start_gateway(self, req: StartRequest) -> Dict[str, Any]:
-        """Start a gateway instance. Returns a dict with processing_state and optional data."""
-        pass
-
-    @abstractmethod
-    def stop_gateway(self, req: StopRequest) -> Dict[str, Any]:
-        """Stop a gateway instance. Returns a dict with processing_state and optional data."""
-        pass
-
-    @abstractmethod
-    def get_status(self, gw_id: str) -> Dict[str, Any]:
-        """Return gateway status or raise ValueError if not found."""
-        pass
-
-    @abstractmethod
-    def send_command(self, gw_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Send an arbitrary command to the gateway; return result or raise ValueError."""
-        pass
-
-# -----------------------
-# DockerGateway (placeholder)
-# -----------------------
-class DockerGateway(MediaBackend):
-    """
-    Real implementation placeholder.
-    NOTE: This class should contain the real docker/docker-compose logic in production.
-    Here it returns deterministic placeholder responses so API routes stay decoupled.
-    """
+class DockerGateway:
+    """Docker gateway implementation for managing SIP Media Gateway containers."""
 
     def __init__(self):
         # In real impl: initialize docker client or CLI helpers
@@ -272,11 +234,13 @@ class DockerGateway(MediaBackend):
 
         status = DockerGateway.get_gateway_docker_status(gw_id)
 
+        
+        if status is None:
+            raise ValueError("Gateway not found")
+        
         if 'exited' in status:
             return {"gw_state": "down", "detail": "exited"}
-        elif status is None:
-            raise ValueError("Gateway not found")
-
+    
         gwData = DockerGateway.get_gw_info(gw_id)
 
         resp = {}
@@ -408,72 +372,11 @@ class DockerGateway(MediaBackend):
         return {"ack": True, "received": payload}
 
 # -----------------------
-# FakeGateway (in-memory deterministic, for tests)
-# -----------------------
-class FakeGateway(MediaBackend):
-    """In-memory fake backend suitable for unit/integration tests. Deterministic behaviour."""
-
-    def __init__(self):
-        # Simple in-memory map: gw_id -> metadata
-        self._store: Dict[str, Dict[str, Any]] = {}
-
-    def start_gateway(self, req: StartRequest) -> Dict[str, Any]:
-        now = dt.datetime.utcnow().isoformat()
-        self._store[req.gw_id] = {
-            "gw_state": "up",
-            "processing_state": "working",
-            "gw_id": req.gw_id,
-            "room": req.room,
-            "start_time": now,
-            "recording_duration": "00:00:00",
-            "transcript_progress": "0%",
-        }
-        return {"processing_state": "working", "gw_id": req.gw_id}
-
-    def stop_gateway(self, req: StopRequest) -> Dict[str, Any]:
-        if req.gw_id not in self._store:
-            raise ValueError("Gateway not found")
-        entry = self._store[req.gw_id]
-        entry["gw_state"] = "down"
-        entry["processing_state"] = "stopped"
-        # deterministic final durations
-        entry["recording_duration"] = entry.get("recording_duration", "00:00:00")
-        entry["transcript_progress"] = entry.get("transcript_progress", "0%")
-        return {"processing_state": "stopped"}
-
-    def get_status(self, gw_id: str) -> Dict[str, Any]:
-        if gw_id not in self._store:
-            raise ValueError("Gateway not found")
-        entry = self._store[gw_id].copy()
-        # update deterministic recording duration based on start_time
-        if entry.get("start_time") and entry.get("processing_state") == "working":
-            start = dt.datetime.fromisoformat(entry["start_time"])
-            elapsed = dt.datetime.utcnow() - start
-            entry["recording_duration"] = str(elapsed).split(".")[0]
-        return entry
-
-    def send_command(self, gw_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        if gw_id not in self._store:
-            raise ValueError("Gateway not found")
-        if self._store[gw_id].get("processing_state") == "stopped":
-            raise ValueError("Gateway is stopped")
-        # For tests, echo back command with deterministic ack
-        return {"ack": True, "received": payload}
-
-# -----------------------
-# Backend selector (single place)
+# Backend selector
 # -----------------------
 @lru_cache()
-def get_backend() -> MediaBackend:
-    """
-    Decide which backend to use based on environment variable MODE.
-    - MODE=fake => FakeGateway
-    - otherwise => DockerGateway
-    Cached so DI returns the same instance.
-    """
-    mode = os.getenv("MODE", "").lower()
-    if mode == "fake":
-        return FakeGateway()
+def get_backend() -> DockerGateway:
+    """Get or create the DockerGateway instance."""
     return DockerGateway()
 
 # -----------------------
@@ -508,7 +411,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 # HTTP Routes (no direct docker calls; backend injected)
 # -----------------------
 @app.post("/gateway/start", response_model=StartResponse)
-def start_gateway(req: StartRequest, backend: MediaBackend = Depends(get_backend)):
+def start_gateway(req: StartRequest, backend: DockerGateway = Depends(get_backend)):
     try:
         res = backend.start_gateway(req)
         return StartResponse(status="success", data={"processing_state": res.get("processing_state"), "gw_id": res.get("gw_id")})
@@ -518,7 +421,7 @@ def start_gateway(req: StartRequest, backend: MediaBackend = Depends(get_backend
         raise HTTPException(status_code=500, detail=f"Failed to start gateway: {e}")
 
 @app.post("/gateway/stop", response_model=StopResponse)
-def stop(req: StopRequest, backend: MediaBackend = Depends(get_backend)):
+def stop(req: StopRequest, backend: DockerGateway = Depends(get_backend)):
     try:
         res = backend.stop_gateway(req)
         return StopResponse(status="success", data={"processing_state": res.get("processing_state")})
@@ -528,7 +431,7 @@ def stop(req: StopRequest, backend: MediaBackend = Depends(get_backend)):
         raise HTTPException(status_code=500, detail=f"Failed to stop gateway: {e}")
 
 @app.get("/gateway/status", response_model=StatusResponse)
-def status(gw_id: str, backend: MediaBackend = Depends(get_backend)):
+def status(gw_id: str, backend: DockerGateway = Depends(get_backend)):
     try:
         data = backend.get_status(gw_id)
         return StatusResponse(status="success", data=data)
@@ -537,8 +440,18 @@ def status(gw_id: str, backend: MediaBackend = Depends(get_backend)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/gateway/browsing")
+def gateway_browsing(gw_id: str, backend: DockerGateway = Depends(get_backend)):
+    try:
+        result = backend.getGatewayBrowsing(gw_id)
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/gateway/ivrConfig")
-def gateway_ivr_config(gw_id: str, backend: MediaBackend = Depends(get_backend)):
+def gateway_ivr_config(gw_id: str, backend: DockerGateway = Depends(get_backend)):
     """
     HTTP GET endpoint to return IVR config (menu + webrtc_domains) for the given gateway.
     """
@@ -551,7 +464,7 @@ def gateway_ivr_config(gw_id: str, backend: MediaBackend = Depends(get_backend))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/gateway/command", response_model=CommandResponse)
-def command(req: CommandRequest, backend: MediaBackend = Depends(get_backend)):
+def command(req: CommandRequest, backend: DockerGateway = Depends(get_backend)):
     try:
         result = backend.send_command(req.gw_id, req.payload)
         return CommandResponse(status="success", data=result)

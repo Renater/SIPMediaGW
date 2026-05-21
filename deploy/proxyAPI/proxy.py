@@ -177,7 +177,7 @@ async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, parts: list):
             response = await client.get(url, params={"gw_id": gw_id}, headers=headers)
 
         data = response.json()
-        if data.get("status") == "success" and data['data']['gw_state'] != "down":
+        if data.get("status") == "success":
             updateProgressInfo(gw_id, parts, data.get("data"))
         else:
             print(f"Gateway {gw_id} returned error → delete mapping")
@@ -298,7 +298,7 @@ async def startGateway(request: Request):
     """POST /start - Start gateway for a room"""
     if not authorize(request):
         return Response(
-            json.dumps({"error": "authorization error"}),
+            json.dumps({"error": "authorization error invalid_token "}),
             status_code=401,
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             media_type="application/json"
@@ -349,7 +349,7 @@ async def startGateway(request: Request):
             redisClient.set(f"gateway:{gw_id}", mapping)
         else:
             raise HTTPException(status_code=503, detail=responseJson.get("error").get("detail"))
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=503, detail="Faild to parse Gateway Json response")
 
     return Response(
@@ -403,7 +403,11 @@ async def stopGateway(request: Request):
             responseJson["status"] = "error"
     except Exception as e:
         print("Failed to parse JSON response:", e)
-        responseJson["status"] = "error"
+        responseJson = {
+            "status": "error",
+            "error": "Failed to parse gateway response",
+            "data": gwResponse.json() if gwResponse.content else None
+        }
 
     return Response(
         content=json.dumps(responseJson),
