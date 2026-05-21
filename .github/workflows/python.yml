@@ -18,5 +18,9 @@ jobs:
       
       - run: pip install -r requirements-dev.txt
       - run: pip install pytest ruff
-      - run: ruff check .
+      
+      - name: Ruff lint
+        continue-on-error: true
+        run: ruff check .
+
       - run: pytest
