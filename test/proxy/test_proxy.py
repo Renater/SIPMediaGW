@@ -622,7 +622,7 @@ def test_status_gateway_baresip_unreachable_after_monitor(client, redis_mock):
     ]
 
     with patch.object(proxy, 'redisClient', redis_mock), \
-        patch('deploy.proxyAPI.proxy.monitorOneGateway', return_value=asyncio.coroutine(lambda: None)()), \
+        patch('deploy.proxyAPI.proxy.monitorOneGateway',  new=AsyncMock(return_value=None) ), \
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.get("/status?gw_id=gw1")
 
