@@ -223,17 +223,20 @@ async function fetchIvrConfigAndRestoreState() {
       return;
     }
     const statusData = await statusRes.json();
-    let callStatus = statusData.data?.call_status || statusData.call_status;
-    if (callStatus === 'ROOM') {
+    let browsingName = statusData.data.browsing;
+    let roomName = statusData.data.room;
+    if (roomName && browsingName) {
       // Already in ROOM, show menu directly
-      const browsingRes = await fetch(apiUrl('/browsing') + `?gw_id=${encodeURIComponent(gwId)}`);
-      const browsingData = await browsingRes.json();
-      browsingName = browsingData.browsingName;
       menuOptions = (ivrMenus[browsingName] && ivrMenus[browsingName].options) ? ivrMenus[browsingName].options : [];
       menuDisplayed = true;
       renderMenuOptions();
     } else {
-      renderDomainButtons();
+      if (browsingName){
+        showInputAndPrepareMenu(browsingName)
+      }
+      else{
+        renderDomainButtons();
+      }
     }
   } catch (e) {
     document.getElementById('status').textContent = "Error loading IVR config.";
@@ -290,19 +293,22 @@ async function checkGwStatus() {
       return;
     }
 
-    let callStatus = statusData.data?.call_status || statusData.call_status;
-    if (callStatus === 'ROOM' && !menuDisplayed) {
-      const browsingRes = await fetch(apiUrl('/browsing') + `?gw_id=${encodeURIComponent(gwId)}`);
-      const browsingData = await browsingRes.json();
-      browsingName = browsingData.browsingName;
+    let browsingName = statusData.data.browsing;
+    let roomName = statusData.data.room;
+    if (roomName  && browsingName && !menuDisplayed) {
       menuOptions = (ivrMenus[browsingName] && ivrMenus[browsingName].options) ? ivrMenus[browsingName].options : [];
       renderMenuOptions();
       menuDisplayed = true;
       return;
-    } else if (callStatus !== 'ROOM') {
-      menuOptions = [];
-      menuDisplayed = false;
-      renderMenuOptions();
+    } else {
+      if (browsingName){
+        showInputAndPrepareMenu(browsingName)
+      }
+      else{
+        menuOptions = [];
+        menuDisplayed = false;
+        renderDomainButtons();
+      }
       setTimeout(checkGwStatus, 2000);
     }
   } catch (e) {

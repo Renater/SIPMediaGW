@@ -255,6 +255,7 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
     destinationRoomName = ""
 
     roomLineValue = ""
+    browsingLineValue = ""
     sourceName = ""
     dtmfEvents: List[Dict[str, str]] = []
     media = MediaStats()
@@ -292,6 +293,8 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
 
         elif recordType == "room":
             roomLineValue = (recordData.get("value") or "").strip()
+        elif recordType == "browsing":
+            browsingLineValue = (recordData.get("value") or "").strip()
 
         elif recordType == "destination":
             if recordData.get("destinationURI"):
@@ -394,7 +397,8 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
     callObj = {
         "mainApp": mainApp,
         "callUrl": callUrl,
-        "room":roomLineValue,
+        "browsing": browsingLineValue,
+        "room": roomLineValue,
         "roomType": roomType,
         "callSession": {
             "callStart": {"raw": callStartRaw, "timestamp": callStartTimestamp},
@@ -509,8 +513,12 @@ def main() -> None:
 
                 ### Room ###
                 if "room:" in line:
-                    room = ""
                     appendHistory(historyFile, "room", {"value": line.split("room:", 1)[1].strip()})
+                    continue
+
+                ### Browsing ###
+                if "browsing:" in line:
+                    appendHistory(historyFile, "browsing", {"value": line.split("browsing:", 1)[1].strip()})
                     continue
 
                 ### Event ###

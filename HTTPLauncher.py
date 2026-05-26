@@ -321,32 +321,14 @@ class DockerGateway(MediaBackend):
 
         historyFile = './logs/{}_history'.format(gwData['Name'])
         history = self.parseHistoryFile(historyFile)
-        resp["call_status"] = "OFF"
+        resp["browsing"] = ""
+        resp["room"] = ""
         if 'call_start' in history:
             if 'room' in history:
-                resp["call_status"] = 'ROOM'
-            else:
-                resp["call_status"] = 'IVR'
-
+                resp["room"] = history['room'][-1]['value']
+            if 'browsing' in history:
+                    resp["browsing"] = history['browsing'][-1]['value']
         return resp
-
-    def getGatewayBrowsing(self, gwId: str) -> Dict[str, Any]:
-        gwData = DockerGateway.get_gw_info(gwId)
-        if not gwData:
-            raise ValueError("Gateway not found")
-        historyFile = f'./logs/{gwData["Name"]}_history'
-        if not os.path.exists(historyFile):
-            raise ValueError("History file not found")
-        history = DockerGateway.parseHistoryFile(historyFile)
-        try:
-            roomEntry = history['room'][-1]
-            browsingName = roomEntry['value'].split(',')[0].strip()
-        except Exception:
-            raise ValueError("No room info found in history")
-        return {
-            "status": "success",
-            "browsingName": browsingName
-        }
 
     def getIvrConfig(self, gwId: str) -> Dict[str, Any]:
         """
@@ -550,16 +532,6 @@ def status(gw_id: str, backend: MediaBackend = Depends(get_backend)):
     try:
         data = backend.get_status(gw_id)
         return StatusResponse(status="success", data=data)
-    except ValueError as ve:
-        raise HTTPException(status_code=404, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/gateway/browsing")
-def gateway_browsing(gw_id: str, backend: MediaBackend = Depends(get_backend)):
-    try:
-        result = backend.getGatewayBrowsing(gw_id)
-        return result
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:

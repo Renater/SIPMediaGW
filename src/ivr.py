@@ -202,10 +202,12 @@ class IVR:
             try:
                 if not browsingName:
                     browsingName = self.driver.execute_script("return window.browsing")
+                    if browsingName:
+                        print("IVR: browsing: {}".format(browsingName), flush=True)
                 else:
                     room = self.driver.execute_script("return window.room")
                     if room:
-                        print("IVR: browsing, room: {}, {}".format(browsingName, room['roomName']), flush=True)
+                        print("IVR: room: {}".format(room['roomName']), flush=True)
                         return browsingName, room
                 self.interact()
             except Exception as e:

@@ -13,12 +13,12 @@ from fastapi.responses import FileResponse, JSONResponse
 
 app = FastAPI()
 
-redisClient = redis.Redis(host='redis', port=6379, decode_responses=True)
+redisClient = redis.Redis(host='127.0.0.1', port=6379, decode_responses=True)
 allowedToken = "1234"
 adminToken = "admin-secret-key"  # Change this to a secure admin key
 
 # Redis Mapping:
-# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<call_status>"
+# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>"
 # state: started | working | stopped
 
 redis_gw_field_count = 9
@@ -30,7 +30,7 @@ redis_gw_room_index = 3
 redis_gw_start_time_index = 4
 redis_gw_media_duration_index = 5
 redis_gw_transcript_progress_index = 6
-redis_gw_call_status_index = 7
+redis_gw_browsing_index = 7
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -87,7 +87,8 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     streaming = data.get("streaming_duration")
     transcript = data.get("transcript_progress")
     state  = data.get("gw_state")
-    callStatus = data.get("call_status")
+    room = data.get("room")
+    browsing = data.get("browsing")
     parts += [""] * (redis_gw_field_count - len(parts))
     if recording:
         parts[redis_gw_media_duration_index] = f"{recording}"
@@ -100,7 +101,8 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
         parts[redis_gw_state_index] = "working"
     elif (state == "down"):
         parts[redis_gw_state_index] = "started"
-    parts[redis_gw_call_status_index] = f"{callStatus}"
+    parts[redis_gw_room_index] = f"{room}" if room else "None"
+    parts[redis_gw_browsing_index] = f"{browsing}" if browsing else "None"
 
     mapping = "|".join(parts)
     redisClient.set(f"gateway:{gw_id}", mapping)
@@ -115,14 +117,14 @@ def getGatewayStatusFromRedis(gw_id: str):
     state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
     media_duration = parts[redis_gw_media_duration_index] if len(parts) > redis_gw_media_duration_index else None
     transcript = parts[redis_gw_transcript_progress_index] if len(parts) > redis_gw_transcript_progress_index else None
-    callStatus = parts[redis_gw_call_status_index]
+    browsing = parts[redis_gw_browsing_index] if len(parts) > redis_gw_transcript_progress_index else None
     return {
         "status": "success",
         "data": {
             "gw_id": gw_id,
             "gw_state": state,
-            "room": room,
-            "call_status": callStatus,
+            "room": room if room and room != "" and room != "None" else None,
+            "browsing": browsing if browsing and browsing != "" and browsing != "None" else None,
             "media_duration": media_duration,
             "transcript_progress": transcript
         }
@@ -151,13 +153,15 @@ async def adminStatus(request: Request):
         state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
         media_duration = parts[redis_gw_media_duration_index] if len(parts) > redis_gw_media_duration_index else None
         transcript = parts[redis_gw_transcript_progress_index] if len(parts) > redis_gw_transcript_progress_index else None
+        browsing = parts[redis_gw_browsing_index] if len(parts) > redis_gw_browsing_index else None
 
         result[gw_id] = {
             "gateway": gwIp,
             "status": state,
-            "room": room,
+            "room": room if room else None,
             "media_duration": media_duration,
-            "transcript_progress": transcript
+            "transcript_progress": transcript,
+            "browsing": browsing if browsing else None
         }
     return result
 
@@ -300,6 +304,10 @@ async def startGateway(request: Request):
             media_type="application/json"
         )
 
+    browsing = (await request.json()).get("browsing")
+    if not browsing:
+        raise HTTPException(status_code=400, detail="Missing 'rbrowsing' parameter")
+
     room = (await request.json()).get("room")
     if not room:
         raise HTTPException(status_code=400, detail="Missing 'room' parameter")
@@ -335,7 +343,8 @@ async def startGateway(request: Request):
             parts = rawValue.split("|") if rawValue else [gwIp]
             parts += [""] * (redis_gw_field_count - len(parts))
             parts[redis_gw_state_index] = "working"
-            parts[redis_gw_room_index] = room
+            parts[redis_gw_room_index] = room if room else None
+            parts[redis_gw_browsing_index] = browsing if browsing else None
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)
         else:
@@ -384,7 +393,8 @@ async def stopGateway(request: Request):
         detailsRes = responseJson.get("data", {}).get("processing_state", "")
         if "stopping" in detailsRes or "stopped" in detailsRes:
             # Mark as stopped
-            parts[redis_gw_room_index] = "None"
+            parts[redis_gw_room_index] = None
+            parts[redis_gw_browsing_index] = None
             parts[redis_gw_state_index] = "stopped"
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)
@@ -584,21 +594,21 @@ async def registerGateway(request: Request):
             roomName        = parts[redis_gw_room_index]
             mediaduration   = parts[redis_gw_media_duration_index]
             transcriptprog  = parts[redis_gw_transcript_progress_index]
-            callStatus      = parts[redis_gw_call_status_index]
+            browsing      = parts[redis_gw_browsing_index]
         else:
             # No mapping found => reset
             gwState = "started"
             startTime = dt.datetime.now().isoformat()
-            roomName = "None"
+            roomName = None
             mediaduration   = "0"
             transcriptprog  = "0"
-            callStatus      = "None"
+            browsing      = None
 
         # Build new mapping
-        # format : gwIp|state|type|room|startTime|media|transcript|callStatus
+        # format : gwIp|state|type|room|startTime|media|transcript|browsing
         gwValue = (
             f"{gwIp}|{gwState}|{gwType}|{roomName}|{startTime}|"
-            f"{mediaduration}|{transcriptprog}|{callStatus}"
+            f"{mediaduration}|{transcriptprog}|{browsing}"
         )
         redisClient.set(f"gateway:{gwId}", gwValue)
         print(f"Gateway registered / updated: {gwId} ({gwIp})")
