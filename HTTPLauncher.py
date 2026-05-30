@@ -583,7 +583,7 @@ def get_icon(icon_name: str, gw_id: str):
 
 @app.get("/gateway/interact")
 def serve_interact_html():
-    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "./test/interact.html"))
+    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "./browsing/assets/interact.html"))
     if not os.path.isfile(file_path):
         raise HTTPException(status_code=404, detail="File not found.")
     return FileResponse(file_path, media_type="text/html")

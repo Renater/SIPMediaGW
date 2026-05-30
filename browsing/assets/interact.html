@@ -115,29 +115,16 @@ document.getElementById('key-capture').addEventListener('input', function() {
   else this.placeholder = '••••';
 });
 
-// Keyboard input handler: handles validation and correction
 document.getElementById('key-capture').addEventListener('keydown', function(e) {
-  // Validate on # or Enter
-  if (e.key === '#' || e.key === 'Enter') {
+  if (e.key === 'Enter') {
     e.preventDefault();
     if (this.value.length > 0) {
       sendString(this.value + '#');
       this.value = '';
     }
-    return;
   }
-  // Correction with * or Backspace
-  if (e.key === '*' || e.key === 'Backspace') {
-    // Let native behavior handle erase
-    return;
-  }
-  // Allow digits and letters
-  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-    return;
-  }
-  // Block all other keys
-  e.preventDefault();
 });
+
 document.getElementById('key-capture').addEventListener('blur', function() {
   setTimeout(() => this.focus(), 100);
 });
@@ -348,10 +335,10 @@ document.getElementById('btn-enter').onclick = () => {
     input.value = '';
   }
 };
+
 document.getElementById('btn-del').onclick = () => {
-  const input = document.getElementById('key-capture');
-  input.value = input.value.slice(0, -1);
-  input.focus();
+  sendKey('*');
+  document.getElementById('key-capture').focus();
 };
 
 </script>
