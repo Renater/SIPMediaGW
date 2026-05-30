@@ -138,28 +138,35 @@ fi
 
 ### launch the gateway ###
 
-MAIN_APP=$MAIN_APP \
-RESTART=$restart \
-CHECK_REG=$check_reg \
-HOST_TZ=$(cat /etc/timezone) \
-HOST_IP=${HOST_IP:-$(hostname -I | awk '{print $1}')} \
-ROOM=$room \
-GW_NAME=$GW_NAME \
-GW_PROXY=$gw_proxy \
-BROWSING=$browsing_name \
-RTMP_DST=$rtmp_dst \
-FS_API_KEY=$FS_API_KEY \
-FS_RECIPIENT_MAIL=$recipient_mail \
-WITH_TRANSCRIPT=$with_transcript \
-PREFIX=$prefix \
-ID=$id \
-INIT=$init \
-AUDIO_ONLY=$audio_only \
-VIDEO_DEV=$video_dev \
-DISPLAY=${display:+:$display} \
-PULSE_SERVER=$pulse_server \
-WITH_ALSA=$with_alsa \
-USER=$user_name \
+MAIN_APP=$MAIN_APP
+RESTART="no" #$restart
+LOOP=$loop
+CHECK_REG=$check_reg
+HOST_TZ=$(cat /etc/timezone)
+HOST_IP=${HOST_IP:-$(hostname -I | awk '{print $1}')}
+ROOM=$room
+GW_NAME=$GW_NAME
+GW_PROXY=$gw_proxy
+BROWSING=$browsing_name
+RTMP_DST=$rtmp_dst
+FS_API_KEY=$FS_API_KEY
+FS_RECIPIENT_MAIL=$recipient_mail
+WITH_TRANSCRIPT=$with_transcript
+PREFIX=$prefix
+ID=$id
+INIT=$init
+AUDIO_ONLY=$audio_only
+VIDEO_DEV=$video_dev
+DISPLAY=${display:+:$display}
+PULSE_SERVER=$pulse_server
+WITH_ALSA=$with_alsa
+USER=$user_name
+export COMPOSE_FILE SERVICES \
+       MAIN_APP RESTART LOOP CHECK_REG HOST_TZ \
+       HOST_IP ROOM GW_NAME GW_PROXY BROWSING \
+       RTMP_DST FS_API_KEY FS_RECIPIENT_MAIL WITH_TRANSCRIPT PREFIX ID INIT \
+       AUDIO_ONLY VIDEO_DEV DISPLAY PULSE_SERVER WITH_ALSA USER
+
 docker compose -p ${GW_NAME:-"gw"$id} $COMPOSE_FILE up \
                -d --force-recreate  \
                $SERVICES
@@ -188,22 +195,36 @@ if [ "$MAIN_APP" == "recording" ]; then
     echo "{'res':'ok', 'app': '$MAIN_APP', 'recipient mail': '$recipient_mail'}"
 fi
 
+export MAIN_APP
 
 # Wait for init mode
 if [[  "$init"  &&  "$MAIN_APP" != "baresip" ]]; then
     nohup bash -c "docker wait gw$id" &> /dev/null &
 else 
-    # child process => lockFile locked until the container exits + recording post processing
-    ID=$id \
-    LOOP=$loop \
-    MAIN_APP=$MAIN_APP \
-    WITH_TRANSCRIPT=$with_transcript \
-    COMPOSE_FILE=$COMPOSE_FILE \
-    room=$room \
-    nohup bash -c 'state="$(docker wait gw$ID)"
-                while [[ "$state" == "0" && $LOOP && "$MAIN_APP" == "baresip" ]] ; do
-                    state="$(docker wait gw$ID)"
-                done
+    nohup bash -c 'if [[ $LOOP && "$MAIN_APP" == "baresip" ]] ; then
+                    docker events \
+                        --filter "container=gw$ID" \
+                        --filter "event=stop" \
+                        --filter "event=die" |
+                    while read -r line; do
+                        case "$line" in
+                            *" stop "*)
+                                echo "Container manually stopped"
+                                break
+                                ;;
+                            *" die "*)
+                                echo "Container self stopped (end of the call)"
+                                docker container prune --force
+                                GW_NAME=$(tr -dc 'a-z0-9' </dev/urandom | head -c 24)
+                                docker compose \
+                                    -p "${GW_NAME:-gw$id}" \
+                                    $COMPOSE_FILE \
+                                    up -d --force-recreate \
+                                    $SERVICES
+                                ;;
+                        esac
+                    done
+                fi
                 if [[ "$MAIN_APP" == "recording" ]]; then
                     if [[ "$WITH_TRANSCRIPT" ]]; then
                         ID=$ID \
