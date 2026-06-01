@@ -9,7 +9,7 @@ curl -s -H "Authorization: Bearer 1234" -H "Content-Type: application/json" \
 "browsing_name": "jitsi",
 "transcript": "false",
 "audio_only": "false",
-"recipient_mail": "dfetis@gmail.com"}' | jq
+"recipient_mail": "toto@bob.com"}' | jq
 
 
 

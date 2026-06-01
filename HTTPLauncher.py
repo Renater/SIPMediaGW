@@ -440,16 +440,6 @@ def status(gw_id: str, backend: DockerGateway = Depends(get_backend)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/gateway/browsing")
-def gateway_browsing(gw_id: str, backend: DockerGateway = Depends(get_backend)):
-    try:
-        result = backend.getGatewayBrowsing(gw_id)
-        return result
-    except ValueError as ve:
-        raise HTTPException(status_code=404, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/gateway/ivrConfig")
 def gateway_ivr_config(gw_id: str, backend: DockerGateway = Depends(get_backend)):
     """
