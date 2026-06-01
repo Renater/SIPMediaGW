@@ -21,7 +21,7 @@ adminToken = "admin-secret-key"  # Change this to a secure admin key
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>"
 # state: started | working | stopped
 
-redis_gw_field_count = 9
+redis_gw_field_count = 8
 
 redis_gw_ip_index = 0
 redis_gw_state_index = 1
@@ -89,7 +89,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     state  = data.get("gw_state")
     room = data.get("room")
     browsing = data.get("browsing")
-    parts += [""] * (redis_gw_field_count - len(parts))
+    parts += [""] * (redis_gw_field_count - len(parts) )
     if recording:
         parts[redis_gw_media_duration_index] = f"{recording}"
     if streaming:
@@ -306,7 +306,7 @@ async def startGateway(request: Request):
 
     browsing = (await request.json()).get("browsing")
     if not browsing:
-        raise HTTPException(status_code=400, detail="Missing 'rbrowsing' parameter")
+        raise HTTPException(status_code=400, detail="Missing 'browsing' parameter")
 
     room = (await request.json()).get("room")
     if not room:
@@ -393,8 +393,8 @@ async def stopGateway(request: Request):
         detailsRes = responseJson.get("data", {}).get("processing_state", "")
         if "stopping" in detailsRes or "stopped" in detailsRes:
             # Mark as stopped
-            parts[redis_gw_room_index] = None
-            parts[redis_gw_browsing_index] = None
+            parts[redis_gw_room_index] = ''
+            parts[redis_gw_browsing_index] = ''
             parts[redis_gw_state_index] = "stopped"
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)

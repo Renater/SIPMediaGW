@@ -6,7 +6,6 @@ networks:
 services:
   gw:
     image: "${DOCKER_IMAGE}"
-    restart: ${RESTART}
     container_name: gw${ID}
     networks:
       default:

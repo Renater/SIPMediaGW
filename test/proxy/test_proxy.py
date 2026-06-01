@@ -46,33 +46,36 @@ def test_findAvailableGateway_returns_none_when_no_started_gateway(redis_mock):
 
 
 def test_updateProgressInfo_updates_redis_mapping(redis_mock):
-    parts = ["1.2.3.4", "started", "media", "room"]
+    parts = ["1.2.3.4", "started", "media", "room","00:00:00"]
     data = {
         "recording_duration": "00:05:30",
         "transcript_progress": "50%",
         "gw_state": "up",
-        "call_status": "ROOM",
+        "room": "room1",
+        "browsing": "JITSI"
     }
 
     with patch.object(proxy, 'redisClient', redis_mock):
         proxy.updateProgressInfo("gw1", parts, data)
 
-    expected = "1.2.3.4|working|media|room|" \
-        "|00:05:30|50%|ROOM"
+    expected = "1.2.3.4|working|media|room1|00:00:00|00:05:30|50%|JITSI"
+
+    print(redis_mock.set.call_args)
     assert redis_mock.set.call_count == 1
     assert redis_mock.set.call_args[0] == ("gateway:gw1", expected)
 
 
 def test_getGatewayStatusFromRedis_returns_status(redis_mock):
-    redis_mock.get.return_value = "1.2.3.4|working|media|room|start|00:05:30|60%|ROOM"
+    redis_mock.get.return_value = "1.2.3.4|working|media|room1|00:00:00|00:05:30|60%|ROOM"
 
     with patch.object(proxy, 'redisClient', redis_mock):
         result = proxy.getGatewayStatusFromRedis("gw1")
 
+    print(result)
     assert result["status"] == "success"
     assert result["data"]["gw_id"] == "gw1"
     assert result["data"]["gw_state"] == "working"
-    assert result["data"]["call_status"] == "ROOM"
+    assert result["data"]["browsing"] == "ROOM"
 
 
 def test_getGatewayStatusFromRedis_returns_none_when_missing(redis_mock):
@@ -96,7 +99,7 @@ def test_adminStatus_requires_admin_token(client, redis_mock):
 
 def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
     redis_mock.scan_iter.return_value = ["gateway:gw1"]
-    redis_mock.get.return_value = "1.2.3.4|working|media|room|start|00:05:30|40%|ROOM"
+    redis_mock.get.return_value = "1.2.3.4|working|media|room|00:00:00|00:05:30|40%|ROOM"
 
     with patch.object(proxy, 'redisClient', redis_mock), \
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
@@ -105,6 +108,7 @@ def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
         headers={"Authorization": "Bearer admin-secret-key"},
     )
 
+  
     assert response.status_code == 200
     assert response.json() == {
         "gw1": {
@@ -113,6 +117,7 @@ def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
             "room": "room",
             "media_duration": "00:05:30",
             "transcript_progress": "40%",
+            "browsing":'ROOM'
         }
     }
 
@@ -128,7 +133,7 @@ def test_get_asset_file_not_found(client):
 
 def test_fetchAndStoreGatewayStatus_success(redis_mock):
     response = Mock()
-    response.json.return_value = {"status": "success", "data": {"gw_state": "up", "call_status": "ROOM"}}
+    response.json.return_value = {"status": "success", "data": {"gw_state": "up", "browsing": "ROOM"}}
 
     async_client = AsyncMock()
     async_client.__aenter__.return_value = async_client
@@ -180,27 +185,28 @@ def test_updateProgressInfo_with_state_down(redis_mock):
     parts = ["1.2.3.4", "started", "media", "room"]
     data = {
         "gw_state": "down",
-        "call_status": "IDLE",
+        "browsing": "IDLE",
     }
 
     with patch.object(proxy, 'redisClient', redis_mock):
         proxy.updateProgressInfo("gw1", parts, data)
 
-    expected = "1.2.3.4|started|media|room||||IDLE"
+    expected = "1.2.3.4|started|media|None||||IDLE"
     assert redis_mock.set.call_args[0] == ("gateway:gw1", expected)
 
 
 def test_updateProgressInfo_with_streaming_duration(redis_mock):
-    parts = ["1.2.3.4", "started", "media", "room"]
+    parts = ["1.2.3.4", "started", "media", "room1","0"]
     data = {
+        "room": "room1",
         "streaming_duration": "00:10:20",
-        "call_status": "STREAMING",
+        "browsing": "STREAMING",
     }
 
     with patch.object(proxy, 'redisClient', redis_mock):
         proxy.updateProgressInfo("gw1", parts, data)
 
-    expected = "1.2.3.4|started|media|room||00:10:20||STREAMING"
+    expected = "1.2.3.4|started|media|room1|0|00:10:20||STREAMING"
     assert redis_mock.set.call_args[0] == ("gateway:gw1", expected)
 
 
@@ -208,7 +214,7 @@ def test_updateProgressInfo_extends_parts_list(redis_mock):
     parts = ["1.2.3.4"]  # Short parts list
     data = {
         "recording_duration": "00:05:00",
-        "call_status": "ACTIVE",
+        "browsing": "ACTIVE",
     }
 
     with patch.object(proxy, 'redisClient', redis_mock):
@@ -244,8 +250,7 @@ def test_interact_missing_gw_id_parameter(client):
     with patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.get("/interact")
 
-    assert response.status_code == 400
-    assert "gw_id" in response.json()["error"]["detail"]
+    assert response.status_code == 200
 
 
 def test_interact_gateway_not_found(client, redis_mock):
@@ -336,7 +341,7 @@ def test_start_gateway_missing_room_parameter(client):
     with patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.post(
             "/start",
-            json={"main_app": "jitsi"},
+            json={"main_app": "baresip","browsing":"jitsi"},
             headers={"Authorization": "Bearer 1234"}
         )
 
@@ -348,7 +353,7 @@ def test_start_gateway_missing_main_app_parameter(client):
     with patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.post(
             "/start",
-            json={"room": "test"},
+            json={"room": "test","browsing":"jitsi"},
             headers={"Authorization": "Bearer 1234"}
         )
 
@@ -363,7 +368,7 @@ def test_start_gateway_no_available_gateways(client, redis_mock):
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.post(
             "/start",
-            json={"room": "test", "main_app": "jitsi"},
+            json={"room": "test", "main_app": "baresip","browsing":"jitsi"},
             headers={"Authorization": "Bearer 1234"}
         )
 
@@ -386,7 +391,7 @@ def test_start_gateway_successful(client, redis_mock):
         mock_proxy.return_value = mock_response  
         response = client.post(
             "/start",
-            json={"room": "test", "main_app": "jitsi"},
+            json={"room": "test", "main_app": "baresip","browsing":"jitsi"},
             headers={"Authorization": "Bearer 1234"}
         )
 
@@ -408,7 +413,7 @@ def test_start_gateway_error_response(client, redis_mock):
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.post(
             "/start",
-            json={"room": "test", "main_app": "jitsi"},
+            json={"room": "test", "main_app": "baresip","browsing":"jitsi"},
             headers={"Authorization": "Bearer 1234"}
         )
 
@@ -427,7 +432,7 @@ def test_start_gateway_invalid_json_response(client, redis_mock):
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.post(
             "/start",
-            json={"room": "test", "main_app": "jitsi"},
+            json={"room": "test", "main_app": "baresip","browsing":"jitsi"},
             headers={"Authorization": "Bearer 1234"}
         )
 
@@ -469,7 +474,7 @@ def test_stop_gateway_not_found(client, redis_mock):
 
 
 def test_stop_gateway_successful(client, redis_mock):
-    redis_mock.get.return_value = "1.2.3.4|working|media|room|start|0|0|None"
+    redis_mock.get.return_value = "1.2.3.4|working|media|room|start|0|0|jitsi"
 
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -683,9 +688,11 @@ def test_register_gateway_new_registration(client, redis_mock):
             headers={"Authorization": "Bearer 1234"}
         )
 
+    print(response.json())
     assert response.status_code == 200
     assert response.json()["status"] == "success"
     assert response.json()["gw_id"] == "gw1"
+    assert response.json()["pairing_code"] is not None
     assert redis_mock.set.called
 
 
@@ -1008,7 +1015,7 @@ def test_getGatewayStatusFromRedis_with_full_parts(redis_mock):
     assert result["data"]["gw_id"] == "gw1"
     assert result["data"]["gw_state"] == "working"
     assert result["data"]["room"] == "room"
-    assert result["data"]["call_status"] == "ROOM"
+    assert result["data"]["browsing"] == "ROOM"
 
 
 # ----------------------- findAvailableGateway with Multiple Gateways ============

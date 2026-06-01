@@ -16,7 +16,7 @@ def client():
 @pytest.fixture
 def redis_mock():
     """Mock Redis interface shared by proxy tests."""
-    return Mock(spec=["scan_iter", "get", "set", "delete", "exists"])
+    return Mock(spec=["scan_iter", "get", "set", "delete", "exists","setex"])
 
 
 @pytest.fixture

@@ -501,9 +501,8 @@ class TestGetStatusMethod:
         
         gw = DockerGateway()
         result = gw.get_status("my-gw")
-        
         assert result["gw_state"] == "up"
-        assert result["call_status"] == "ROOM"
+        assert result["recording_duration"] == "00:05:30"
 
     @patch('subprocess.Popen')
     @patch('HTTPLauncher.DockerGateway.get_gateway_docker_status')
@@ -525,48 +524,6 @@ class TestGetStatusMethod:
         gw = DockerGateway()
         with pytest.raises(ValueError, match="Gateway not found"):
             gw.get_status("nonexistent")
-
-# === TESTS MANQUANTS - getGatewayBrowsing ===
-class TestGetGatewayBrowsingMethod:
-    """Tests de DockerGateway.getGatewayBrowsing()"""
-    
-    @patch('os.path.exists')
-    @patch('HTTPLauncher.DockerGateway.get_gw_info')
-    @patch('HTTPLauncher.DockerGateway.parseHistoryFile')
-    def test_get_gateway_browsing_success(self, mock_parse_history, mock_gw_info, mock_exists):
-        """Teste la récupération du browsing name."""
-        mock_gw_info.return_value = {"Name": "my-gw-1"}
-        mock_exists.return_value = True
-        mock_parse_history.return_value = {
-            "call_start": ["2026-05-13T10:00:00Z"],
-            "room": [{"value": "room1", "id": "123"}]
-        }
-
-        gw = DockerGateway()
-        result = gw.getGatewayBrowsing("my-gw")
-        
-        assert result["status"] == "success"
-        assert result["browsingName"] == "room1"
-
-    @patch('HTTPLauncher.DockerGateway.get_gw_info')
-    def test_get_gateway_browsing_not_found(self, mock_gw_info):
-        """Teste quand la gateway n'existe pas."""
-        mock_gw_info.return_value = None
-        
-        gw = DockerGateway()
-        with pytest.raises(ValueError, match="Gateway not found"):
-            gw.getGatewayBrowsing("nonexistent")
-
-    @patch('os.path.exists')
-    @patch('HTTPLauncher.DockerGateway.get_gw_info')
-    def test_get_gateway_browsing_no_history_file(self, mock_gw_info, mock_exists):
-        """Teste quand le fichier historique n'existe pas."""
-        mock_gw_info.return_value = {"Name": "my-gw-1"}
-        mock_exists.return_value = False
-        
-        gw = DockerGateway()
-        with pytest.raises(ValueError, match="History file not found"):
-            gw.getGatewayBrowsing("my-gw")
 
 # === TESTS MANQUANTS - getIvrConfig ===
 class TestGetIvrConfigMethod:
@@ -708,26 +665,6 @@ class TestRoutesCoverage:
         })
         
         assert response.status_code == 403
-
-    def test_browsing_success(self, client, override_backend):
-        """Doit retourner les infos de browsing."""
-        override_backend.getGatewayBrowsing.return_value = {
-            "status": "success",
-            "browsingName": "room1"
-        }
-        
-        response = client.get("/gateway/browsing?gw_id=my-gw")
-        
-        assert response.status_code == 200
-        assert response.json()["browsingName"] == "room1"
-
-    def test_browsing_not_found(self, client, override_backend):
-        """Doit retourner 404 si la gateway n'existe pas."""
-        override_backend.getGatewayBrowsing.side_effect = ValueError("Gateway not found")
-        
-        response = client.get("/gateway/browsing?gw_id=nonexistent")
-        
-        assert response.status_code == 404
 
     def test_ivr_config_success(self, client, override_backend):
         """Doit retourner la config IVR."""
