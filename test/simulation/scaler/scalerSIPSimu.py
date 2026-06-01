@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-import importlib
 import sys
-import time
 from random import randint
 import datetime as dt
 import pandas as pd
@@ -14,8 +12,8 @@ import mysql.connector as mysqlcon
 
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')));
-print(sys.path);
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+print(sys.path)
 
 from deploy.scaler.src.ScalerSIP import ScalerSIP
 from deploy.scaler.src.providers.fakescale.fakescale import Fakescale
@@ -268,23 +266,23 @@ step = math.ceil(len(x)/1000)
 
 yCalls=np.array(callsCount)
 ax[0].plot(x[::step], yCalls[::step], linewidth=2.0,
-        label = f'Incalls number')
+        label = 'Incalls number')
 
 yGws=np.array(gwsCount)
 ax[0].plot(x[::step], yGws[::step], linewidth=2.0,
-        label = f'GWs number')
+        label = 'GWs number')
 
 yReject=np.array(rejectedCount)
 ax[0].plot(x[::step], yReject[::step], linewidth=2.0,
-        label = f'Rejected calls count')
+        label = 'Rejected calls count')
 
 yMissed=np.array(missedCount)
 ax[0].plot(x[::step], yMissed[::step], linewidth=2.0,
-        label = f'Missed calls count')
+        label = 'Missed calls count')
 
 yCost=np.array(vcpuCostCumul)
 ax[1].plot(x[::step], yCost[::step], linewidth=2.0,
-        label = f'VCPU cumulated cost')
+        label = 'VCPU cumulated cost')
 
 for a in ax:
     a.legend(loc='upper left')

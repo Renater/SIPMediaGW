@@ -7,16 +7,6 @@ services:
     ports:
       - "6379:6379"
 
-  fakegateway:
-    image: fakegateway
-    container_name: fakegateway1
-    environment:
-        CONTAINER_NAME: "fakegateway1"
-    depends_on:
-      - redis
-    ports:
-      - "8080:80"
-
   proxy:
     image: python:3.12-slim
     container_name: proxy
@@ -30,5 +20,5 @@ services:
     depends_on:
       - redis
     ports:
-      - "80:80"
+      - "9010:80"
 

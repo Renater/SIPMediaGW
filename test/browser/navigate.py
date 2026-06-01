@@ -8,17 +8,9 @@ import json
 import subprocess
 import signal
 import threading
-import urllib.parse
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../src")
 from ivr import IVR
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 def parseEnvFile(envPath):
     envVars = {}

@@ -21,7 +21,7 @@ adminToken = "admin-secret-key"  # Change this to a secure admin key
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>"
 # state: started | working | stopped
 
-redis_gw_field_count = 9
+redis_gw_field_count = 8
 
 redis_gw_ip_index = 0
 redis_gw_state_index = 1
@@ -89,7 +89,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     state  = data.get("gw_state")
     room = data.get("room")
     browsing = data.get("browsing")
-    parts += [""] * (redis_gw_field_count - len(parts))
+    parts += [""] * (redis_gw_field_count - len(parts) )
     if recording:
         parts[redis_gw_media_duration_index] = f"{recording}"
     if streaming:
@@ -177,7 +177,7 @@ async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, parts: list):
             response = await client.get(url, params={"gw_id": gw_id}, headers=headers)
 
         data = response.json()
-        if data.get("status") == "success" and data['data']['gw_state'] != "down":
+        if data.get("status") == "success":
             updateProgressInfo(gw_id, parts, data.get("data"))
         else:
             print(f"Gateway {gw_id} returned error → delete mapping")
@@ -298,7 +298,7 @@ async def startGateway(request: Request):
     """POST /start - Start gateway for a room"""
     if not authorize(request):
         return Response(
-            json.dumps({"error": "authorization error"}),
+            json.dumps({"error": "authorization error invalid_token "}),
             status_code=401,
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             media_type="application/json"
@@ -306,7 +306,7 @@ async def startGateway(request: Request):
 
     browsing = (await request.json()).get("browsing")
     if not browsing:
-        raise HTTPException(status_code=400, detail="Missing 'rbrowsing' parameter")
+        raise HTTPException(status_code=400, detail="Missing 'browsing' parameter")
 
     room = (await request.json()).get("room")
     if not room:
@@ -349,7 +349,7 @@ async def startGateway(request: Request):
             redisClient.set(f"gateway:{gw_id}", mapping)
         else:
             raise HTTPException(status_code=503, detail=responseJson.get("error").get("detail"))
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=503, detail="Faild to parse Gateway Json response")
 
     return Response(
@@ -393,8 +393,8 @@ async def stopGateway(request: Request):
         detailsRes = responseJson.get("data", {}).get("processing_state", "")
         if "stopping" in detailsRes or "stopped" in detailsRes:
             # Mark as stopped
-            parts[redis_gw_room_index] = None
-            parts[redis_gw_browsing_index] = None
+            parts[redis_gw_room_index] = ''
+            parts[redis_gw_browsing_index] = ''
             parts[redis_gw_state_index] = "stopped"
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)
@@ -403,7 +403,11 @@ async def stopGateway(request: Request):
             responseJson["status"] = "error"
     except Exception as e:
         print("Failed to parse JSON response:", e)
-        responseJson["status"] = "error"
+        responseJson = {
+            "status": "error",
+            "error": "Failed to parse gateway response",
+            "data": gwResponse.json() if gwResponse.content else None
+        }
 
     return Response(
         content=json.dumps(responseJson),
