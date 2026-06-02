@@ -247,15 +247,8 @@ async def interact(request: Request):
                     status_code=400, detail="Invalid pairing code"
                 )
         else:
-            html_form = """
-            <html><body>
-                <h3>Enter Pairing Code</h3>
-                <form method='get' action='/interact'>
-                    <input type='text' name='pairingCode' placeholder='Pairing Code' required/>
-                    <button type='submit'>Submit</button>
-                </form>
-            </body></html>
-            """
+            with open("pairing.html", "r", encoding="utf-8") as f:
+                html_form = f.read()
             return Response(content=html_form, media_type="text/html")
 
     rawData = redisClient.get(f"gateway:{gwId}")
