@@ -6,14 +6,16 @@ const messages = {
         invalid: error => `Le code n'est pas valide ('${error}')`,
         incomplete: (count, expected) => `Le code est trop court (${count}/${expected})`,
         error: reason => `Erreur : ${reason}`,
-        chosenDomain: (id, name) => `Plateforme sélectionnée (${id}) : ${name}`
+        chosenDomain: (id, name) => `Plateforme sélectionnée (${id}) : ${name}`,
+        confirmContinue: "— appuyez sur '#' pour continuer"
     },
     en: {
         valid: code => `Code validated: ${code}`,
         invalid: error => `The code is not valid ('${error}')`,
         incomplete: (count, expected) => `The code is too short (${count}/${expected})`,
         error: reason => `Error: ${reason}`,
-        chosenDomain: (id, name) => `Platform selected (${id}): ${name}`
+        chosenDomain: (id, name) => `Platform selected (${id}): ${name}`,
+        confirmContinue: "— press '#' to continue"
     }
 };
 
@@ -40,6 +42,7 @@ function initIVR(config) {
     let selectedDomain = null;
     let pendingRoomId = null;
     let currentAudio = null;
+    let waitingConfirm = null; // { proceed: Function, roomId: string } when mapping failed
 
     function parseDomains(raw) {
         const dict = {};
@@ -65,6 +68,18 @@ function initIVR(config) {
 
     function showDomainStatus(msg) {
         document.getElementById("domain-status").textContent = msg;
+    }
+
+    function formatError(err) {
+        if (err === null || err === undefined) return String(err);
+        if (typeof err === 'string') return err;
+        if (typeof err === 'object') {
+            if (typeof err.error === 'string') return err.error;
+            if (typeof err.message === 'string') return err.message;
+            if (err.conference) return String(err.conference);
+            try { return JSON.stringify(err); } catch (e) { return String(err); }
+        }
+        return String(err);
     }
 
     function playPromptAudio(type, lang) {
@@ -137,6 +152,18 @@ function initIVR(config) {
                     showStatus(messages[lang].invalid(inputDigits.join('')));
                 }
             } else if (stage === "room") {
+                // If we are waiting for user confirmation to proceed despite mapping failure
+                if (waitingConfirm && inputDigits.join('') === (waitingConfirm.roomId || '')) {
+                    // call proceed() to resolve the room.getConferenceName() promise
+                    try {
+                        waitingConfirm.proceed();
+                    } catch (e) {
+                        console.error("Failed to proceed despite mapping error", e);
+                    }
+                    waitingConfirm = null;
+                    // keep UI; the initRoom's success callback will handle hiding UI
+                    return;
+                }
                 const roomId = inputDigits.join('');
                 if (expectedLength === 0 || inputDigits.length >= expectedLength) {
                     const room = new Room({ ...config, webrtc_domain: selectedDomain.domain });
@@ -152,10 +179,22 @@ function initIVR(config) {
                             document.removeEventListener('keydown', keyEvent);
                         },
                         (errorReason) => {
-                            console.error("Error entering room:", errorReason.error);
-                            showStatus(messages[lang].invalid(errorReason.error));
-                            digitsEl.style.visibility = "visible";
-                            showPrompt();
+                            // If the room mapping failed but the room.js provided a proceed() callback,
+                            // store it and ask the user to press '#' to continue anyway.
+                            if (errorReason && typeof errorReason.proceed === 'function') {
+                                waitingConfirm = { proceed: errorReason.proceed, roomId };
+                                console.error("Mapping failed; waiting user confirmation:", errorReason.error);
+                                const errMsg = formatError(errorReason.error);
+                                showStatus(messages[lang].invalid(errMsg) + " " + messages[lang].confirmContinue);
+                                digitsEl.style.visibility = "visible";
+                                // do not call showPrompt() to keep the state waiting for '#'
+                            } else {
+                                console.error("Error entering room:", errorReason.error);
+                                const errMsg = formatError(errorReason && errorReason.error ? errorReason.error : errorReason);
+                                showStatus(messages[lang].invalid(errMsg));
+                                digitsEl.style.visibility = "visible";
+                                showPrompt();
+                            }
                         }
                     );
                 } else {

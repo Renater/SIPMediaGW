@@ -173,10 +173,14 @@ function captureReset() {
 capture.addEventListener('input', function() {
   this.placeholder = this.value ? '' : '••••';
 });
-capture.addEventListener('keydown', function(e) {
+capture.addEventListener('keydown', async function(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
-    if (this.value.length > 0) { sendString(this.value + '#'); captureReset(); }
+    if (this.value.length > 0) {
+      await sendString(this.value + '#');
+      await captureReset();
+      await setTimeout(() => sendKey('#'), 450);
+    }
   }
 });
 
@@ -314,8 +318,12 @@ function getIcon(icon) {
 
 document.addEventListener('DOMContentLoaded', fetchIvrConfigAndRestoreState);
 
-document.getElementById('btn-enter').onclick = () => {
-  if (capture.value.length > 0) { sendString(capture.value + '#'); captureReset(); }
+document.getElementById('btn-enter').onclick = async () => {
+  if (capture.value.length > 0) {
+    await sendString(capture.value + '#');
+    await captureReset();
+    await setTimeout(() => sendKey('#'), 450);
+  }
 };
 document.getElementById('btn-del').onclick = () => {
   sendKey('*');

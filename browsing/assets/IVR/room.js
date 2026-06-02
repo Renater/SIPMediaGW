@@ -79,10 +79,19 @@ export class Room {
                         this.mappedDomain = data['meeting_instance'] || data['conference'].split('@conference.')[1];
                         resolve();
                     } else {
-                        onError(data);
+                        // Notify caller that mapping failed but expose a proceed() callback
+                        // so the caller can confirm continuation (press '#') to resolve.
+                        if (onError) {
+                            onError({
+                                error: data,
+                                proceed: () => resolve()
+                            });
+                        } else {
+                            resolve();
+                        }
                     }
                 })
-                .catch(onError);
+                .catch(() => resolve());
         });
     }
 
