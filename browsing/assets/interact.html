@@ -158,8 +158,23 @@ function renderLangSwitch() {
 function setMenuLang(lang) {
   currentLang = lang;
   renderLangSwitch();
-  if (menuDisplayed) renderMenuOptions();
-  else renderDomainButtons();
+  if (menuDisplayed) {
+    renderMenuOptions();
+  } else if (browsingName) {
+    // If a domain is already selected, do not return to the domain list.
+    // If options are already present, display them in the correct language;
+    // otherwise, display the input field.
+    if (menuOptions && menuOptions.length) {
+      renderMenuOptions();
+      menuDisplayed = true;
+      const inputRow = document.getElementById('input-row');
+      if (inputRow) inputRow.style.display = 'flex';
+    } else {
+      showInputAndPrepareMenu(browsingName);
+    }
+  } else {
+    renderDomainButtons();
+  }
 }
 
 const capture = document.getElementById('key-capture');
@@ -255,7 +270,12 @@ function renderDomainButtons() {
   menuDiv.innerHTML = '';
   const domains = Object.entries(webrtcDomains);
   if (!domains.length) return;
-  menuDiv.innerHTML = '<div style="margin-bottom:0.5em;width:100%;">Choose a service:</div>';
+  // hide the whole input row while rendering domain choices
+  const inputRow = document.getElementById('input-row');
+  if (inputRow) inputRow.style.display = 'none';
+
+  const chooseLabel = currentLang === 'fr' ? 'Choisissez un service :' : 'Choose a service:';
+  menuDiv.innerHTML = `<div style="margin-bottom:0.5em;width:100%;">${chooseLabel}</div>`;
   domains.forEach(([key, val], idx) => {
     const digit = (idx + 1).toString();
     const btn = document.createElement('button');
@@ -272,6 +292,10 @@ function showInputAndPrepareMenu(selectedDomainKey) {
   menuOptions = [];
   menuDisplayed = false;
   renderMenuOptions();
+  // show the input row when preparing the menu / input
+  const inputRow = document.getElementById('input-row');
+  if (inputRow) inputRow.style.display = 'flex';
+
   document.getElementById('key-capture').disabled = false;
   document.getElementById('key-capture').focus();
 }
