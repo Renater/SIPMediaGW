@@ -10,6 +10,8 @@ import uvicorn
 from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import RedirectResponse
+from urllib.parse import quote_plus
 
 app = FastAPI()
 
@@ -31,6 +33,18 @@ redis_gw_start_time_index = 4
 redis_gw_media_duration_index = 5
 redis_gw_transcript_progress_index = 6
 redis_gw_browsing_index = 7
+
+@app.get("/pairing")
+async def pairing_page(request: Request):
+    """
+    Serve the pairing HTML page so /pairing?error=...&pairingCode=...
+    works and pairing.html.handleQueryParams() can show the message / prefill.
+    """
+    try:
+        with open("pairing.html", "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/html")
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": "pairing.html not found"})
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -238,14 +252,28 @@ async def interact(request: Request):
             resolvedGwId = redisClient.get(f"pairing:{pairingCode}")
             if resolvedGwId:
                 # Redirect to the same endpoint with the resolved gw_id
-                redirectUrl = "{}?gwId={}".format(str(request.url).split('?')[0],resolvedGwId)
-                from fastapi.responses import RedirectResponse
-
+                redirectUrl = "{}?gwId={}".format(str(request.url).split('?')[0], resolvedGwId)
                 return RedirectResponse(url=redirectUrl, status_code=302)
             else:
-                raise HTTPException(
-                    status_code=400, detail="Invalid pairing code"
+                # Return pairing.html and inject a JS var so the page can display a translated error
+                try:
+                    with open("pairing.html", "r", encoding="utf-8") as f:
+                        html_form = f.read()
+                except FileNotFoundError:
+                    raise HTTPException(status_code=500, detail="pairing.html not found on server")
+                # inject safe JS literals
+                error_msg = "Invalid pairing code"
+                injection_script = (
+                    f'<script>window.SERVER_ERROR = {json.dumps(error_msg)}; '
+                    f'window.SERVER_PAIRING_CODE = {json.dumps(pairingCode)};</script>'
                 )
+                # insert the script before the first existing <script> so the page's JS sees it
+                if "<script" in html_form:
+                    html_with_msg = html_form.replace("<script", injection_script + "<script", 1)
+                else:
+                    # fallback: insert before </head>
+                    html_with_msg = html_form.replace("</head>", injection_script + "</head>", 1)
+                return Response(content=html_with_msg, media_type="text/html")
         else:
             with open("pairing.html", "r", encoding="utf-8") as f:
                 html_form = f.read()

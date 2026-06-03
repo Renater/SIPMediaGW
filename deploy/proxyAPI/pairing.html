@@ -64,6 +64,7 @@
     text-align: center;
     letter-spacing: 0.25em;
     font-family: monospace;
+    text-transform: uppercase; /* force visual uppercase */
   }
 
   button {
@@ -88,6 +89,12 @@
     text-align: center;
   }
 
+  /* error state for hint */
+  #hint.error {
+    color: #b00;
+    font-weight: 600;
+  }
+
   @media (max-width: 420px) {
     input { font-size: 1.6em; }
     h3 { font-size: 1.3em; }
@@ -96,9 +103,7 @@
 </head>
 
 <body>
-
 <div class="wrap">
-
   <!-- LANG -->
   <div id="lang-switch"></div>
 
@@ -111,12 +116,13 @@
     <button type="submit" id="btn">Submit</button>
   </form>
 
-  <div id="hint">Enter the code shown on the device</div>
+  <div id="msg" style="margin-top:12px;color:#b00;min-height:1.2em;"></div>
 
+  <div id="hint">Enter the code shown on the device</div>
 </div>
 
 <script>
-let lang = "fr";
+let lang = localStorage.getItem("lang") || "fr";
 
 const texts = {
   fr: {
@@ -124,16 +130,24 @@ const texts = {
     placeholder: "Code de jumelage",
     button: "Valider",
     hint: "Entrez le code affiché sur l'appareil",
-    switch_en: "English"
+    invalid_pairing: "Code d'appairage invalide."
   },
   en: {
     title: "Enter pairing code",
     placeholder: "Pairing code",
     button: "Submit",
     hint: "Enter the code shown on the device",
-    switch_fr: "Français"
+    invalid_pairing: "Invalid pairing code"
   }
 };
+
+// read server-injected vars early (may be undefined)
+const serverError = window.SERVER_ERROR || null;
+const serverPairingCode = window.SERVER_PAIRING_CODE || null;
+
+// store URL error if present
+let urlError = false;
+let urlErrorText = null;
 
 function render() {
   const sw = document.getElementById("lang-switch");
@@ -146,27 +160,64 @@ function render() {
   document.getElementById("title").textContent = texts[lang].title;
   document.getElementById("pairingCode").placeholder = texts[lang].placeholder;
   document.getElementById("btn").textContent = texts[lang].button;
-  document.getElementById("hint").textContent = texts[lang].hint;
+
+  const hintEl = document.getElementById("hint");
+  if (serverError) {
+    hintEl.textContent = texts[lang].invalid_pairing;
+    hintEl.classList.add('error');
+  } else if (urlError) {
+    hintEl.textContent = urlErrorText || texts[lang].invalid_pairing;
+    hintEl.classList.add('error');
+  } else {
+    hintEl.textContent = texts[lang].hint;
+    hintEl.classList.remove('error');
+  }
 }
 
 function setLang(l) {
   lang = l;
+  localStorage.setItem("lang", l);
   render();
 }
 
 /* UX improvements */
 const input = document.getElementById("pairingCode");
 const form = document.getElementById("form");
+const msg = document.getElementById("msg");
 
 input.focus();
 
 input.addEventListener("input", () => {
   input.placeholder = "";
+  // enforce uppercase in the value (real, not only visual)
+  const pos = input.selectionStart;
+  input.value = input.value.toUpperCase();
+  try { input.setSelectionRange(pos, pos); } catch(e) {}
 });
 
 form.addEventListener("submit", () => {
   input.value = input.value.trim();
 });
+
+// show server-provided error and/or prefill pairingCode from query params
+(function handleQueryParams(){
+  // prefill from server injection (preferred) or from query params
+  if (serverPairingCode) {
+    input.value = String(serverPairingCode).toUpperCase();
+    input.focus();
+    return;
+  }
+  const p = new URLSearchParams(window.location.search);
+  if (p.has('pairingCode')) {
+    input.value = p.get('pairingCode').toUpperCase();
+  }
+  // if error param present, store for render() and mark red
+  if (p.has('error')) {
+    urlError = true;
+    try { urlErrorText = decodeURIComponent(p.get('error')); } catch(e) { urlErrorText = p.get('error'); }
+    input.focus();
+  }
+ })();
 
 render();
 </script>
