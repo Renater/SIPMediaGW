@@ -366,6 +366,7 @@ class DockerGateway:
                                 ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]
                 res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = res.communicate()
+
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
             raise ValueError("Gateway not found")
@@ -467,22 +468,32 @@ def command(req: CommandRequest, backend: DockerGateway = Depends(get_backend)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/gateway/icon/{icon_name}")
-def get_icon(icon_name: str, gw_id: str):
+def fetchGatewayImage(gw_id: str, subdir: str, filename: str) -> Response:
     gwData = DockerGateway.get_gw_info(gw_id)
     if not gwData:
         raise HTTPException(status_code=404, detail="Gateway not found")
     gwName = gwData['Name']
     for ext in ['svg', 'png']:
-        gwSubProc = [
-            'docker', 'exec', gwName,
-            'cat', f'/var/browsing/assets/IVR/images/menu-icons/{icon_name}.{ext}'
-        ]
-        res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = res.communicate()
+        res = subprocess.Popen(
+            ['docker', 'exec', gwName, 'cat',
+             f'/var/browsing/assets/IVR/images/{subdir}/{filename}.{ext}'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out, _ = res.communicate()
         if res.returncode == 0:
-            return Response(content=out, media_type=f"image/{ext if ext != 'svg' else 'svg+xml'}")
+            media_type = 'image/svg+xml' if ext == 'svg' else f'image/{ext}'
+            return Response(content=out, media_type=media_type)
     raise HTTPException(status_code=404, detail="Icon not found")
+
+
+@app.get("/gateway/icon/{icon_name}")
+def get_icon(icon_name: str, gw_id: str):
+    return fetchGatewayImage(gw_id, "menu-icons", icon_name)
+
+
+@app.get("/gateway/logo/{logo_name}")
+def get_logo(logo_name: str, gw_id: str):
+    return fetchGatewayImage(gw_id, "domain-icons", logo_name)
 
 @app.get("/gateway/interact")
 def serve_interact_html():

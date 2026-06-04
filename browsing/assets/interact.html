@@ -77,6 +77,28 @@
     min-height: 18px;
   }
 
+  .domain-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-start;
+  }
+
+  .domain-btn img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex: 0 0 32px;
+  }
+
+  .domain-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+  }
+
   #menu-options {
     display: flex;
     flex-wrap: wrap;
@@ -270,20 +292,26 @@ function renderDomainButtons() {
   menuDiv.innerHTML = '';
   const domains = Object.entries(webrtcDomains);
   if (!domains.length) return;
-  // hide the whole input row while rendering domain choices
-  const inputRow = document.getElementById('input-row');
-  if (inputRow) inputRow.style.display = 'none';
+
+  document.getElementById('input-row').style.display = 'none';
 
   const chooseLabel = currentLang === 'fr' ? 'Choisissez un service :' : 'Choose a service:';
   menuDiv.innerHTML = `<div style="margin-bottom:0.5em;width:100%;">${chooseLabel}</div>`;
+
   domains.forEach(([key, val], idx) => {
     const digit = (idx + 1).toString();
     const btn = document.createElement('button');
-    btn.className = 'key menu-key';
-    btn.textContent = `${digit}. ${val.name || key}`;
+    btn.className = 'key menu-key domain-btn';
+    btn.title = `Press ${digit}`;
+    btn.innerHTML = `
+      <img src="${apiUrl('/logo')}/${encodeURIComponent(key)}?gw_id=${encodeURIComponent(gwId)}"
+           alt="" onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='true';this.src='./images/domain-icons/${encodeURIComponent(key)}.png'}">
+      <span>${val.name || key}</span>
+    `;
     btn.onclick = async () => { await sendKey(digit); await sendKey('#'); showInputAndPrepareMenu(key); };
     menuDiv.appendChild(btn);
   });
+
   document.getElementById('key-capture').disabled = !browsingName;
 }
 

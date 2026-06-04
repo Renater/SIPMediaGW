@@ -102,7 +102,16 @@ function initIVR(config) {
             messageEl.innerHTML = prompts[lang].domain;
             domainsEl.classList.remove("hidden");
             domainsEl.innerHTML = Object.values(domains)
-                .map(d => `<div class="domain-item"><span class="domain-id">${d.id}</span> ${d.name}</div>`)
+                .map(d => {
+                    const iconSrc = `./images/domain-icons/${encodeURIComponent(d.key)}.png`;
+                    return `<div class="domain-item" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;margin:6px 0;background:#fff;border:1px solid #e2e2e2;">
+                                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                                  <div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #ccc;border-radius:6px;font-weight:700;background:#fafafa;flex:0 0 34px;">${d.id}</div>
+                                  <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;">${d.name}</div>
+                                </div>
+                                <img src="${iconSrc}" alt="" style="width:28px;height:28px;object-fit:contain;margin-left:12px;flex:0 0 28px;" onerror="this.style.display='none'">
+                            </div>`;
+                })
                 .join("");
             playPromptAudio("platform", lang);
         } else {

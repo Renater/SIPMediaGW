@@ -571,6 +571,10 @@ async def statusGatewayProxy(request: Request):
 async def iconGateway(request: Request, icon_name: str):
     return await genericGatewayProxy(request, f"icon/{icon_name}")
 
+@app.api_route("/logo/{logo_name}", methods=["GET"])
+async def logoGateway(request: Request, logo_name: str):
+    return await genericGatewayProxy(request, f"logo/{logo_name}")
+
 @app.post("/register")
 async def registerGateway(request: Request):
     def generatePairingCode(length: int = 5) -> str:
