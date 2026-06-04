@@ -74,8 +74,9 @@ checkGwStatus() {
     done
     if [ $timer -eq $timeOut ]; then
         echo "{'res':'error','type':'The gateway failed to launch'}"
-        exit 1
+        return 1
     fi
+    return 0
 }
 
 ### get an ID and lock the corresponding file ###
@@ -173,6 +174,12 @@ docker compose -p ${GW_NAME:-"gw"$id} $COMPOSE_FILE up \
 
 if [ "$MAIN_APP" == "baresip" ]; then
     checkGwStatus "gw"$id ${timeout:-10}
+    STATUS=$?
+    if [[ $STATUS -ne 0 ]]; then
+        if [[ -z "$LOOP" ]]; then
+            exit 1
+        fi
+    fi
 fi
 
 if [ "$MAIN_APP" == "baresip" ]; then
