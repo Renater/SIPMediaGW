@@ -8,6 +8,7 @@ fi
 ### Start default video capture ###
 #ffmpeg  -f lavfi -i "smptebars=s=640x360" -vf drawtext="fontsize=60:text='RECORDING':x=(w-text_w)/2:y=(h-text_h)/2:fontcolor=White" -pix_fmt yuv420p \
 #       -video_size 640x360 -f v4l2 /dev/video0 -nostats 2> >( tee $STATE | logParse -p "Recording") &
+echo "Start recording "| logParse -p "Recording"
 
 if [ "$WITH_ALSA" == "true" ]; then
     AUDRIVE='alsa'
@@ -40,6 +41,8 @@ fi
          ; echo "/quit" | netcat -q 1 127.0.0.1 5555 ) \
             1> >( logParse -p "Recording") \
             2> >( logParse -p "Recording") &
+
+echo "FFmpeg command launched"| logParse -p "Recording"
 
 for i in {1..30}; do
     if ls ./recording/*.mp4 &> /dev/null; then

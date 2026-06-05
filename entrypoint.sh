@@ -109,6 +109,8 @@ envsubst < /var/browsing/assets/config.template.json > /var/browsing/assets/conf
 
 if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; then
 
+    echo "Start recording post-processing" | logParse -p "Recording"
+
     firstRec=$(ls -rt /var/recording/*.mp4 | head -n 1)
     DATE_TIME=$(TZ=$TZ stat --format='%W' "$firstRec" | awk '{print strftime("%Y_%m_%d_%H%M", $1)}')
 

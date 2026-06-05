@@ -83,7 +83,7 @@ checkGwStatus() {
 
 # If gw_name is provided use it to get the ID
 if [[ -n $gw_name ]]; then
-    id=$(docker compose -p $gw_name ps -a --format '{{json .Name}}'| tr -cd '0-9'| head -c1)
+    id=$(docker compose -p $gw_name ps -a --format json | jq -r '.[].Name' | tr -cd '0-9'| head -c1)
 else
     lockGw
 fi
@@ -231,6 +231,8 @@ else
                                 ;;
                         esac
                     done
+                else
+                    state="$(docker wait gw$ID)"
                 fi
                 if [[ "$MAIN_APP" == "recording" ]]; then
                     if [[ "$WITH_TRANSCRIPT" ]]; then
