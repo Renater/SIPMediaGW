@@ -83,7 +83,8 @@ checkGwStatus() {
 
 # If gw_name is provided use it to get the ID
 if [[ -n $gw_name ]]; then
-    id=$(docker compose -p $gw_name ps -a --format json | jq -r '.[].Name' | tr -cd '0-9'| head -c1)
+    id=$(docker ps -a --filter "label=com.docker.compose.project=$gw_name" --format '{{.Names}}' |
+                tr -cd '0-9' | head -c1)
 else
     lockGw
 fi
