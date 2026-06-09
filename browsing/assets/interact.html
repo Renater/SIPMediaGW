@@ -134,6 +134,30 @@
     word-break: break-all;
   }
 
+  /* Chat UI */
+  .chat-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    width: 100%;
+    align-items: center;
+  }
+  .chat-input {
+    flex: 1;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #bbb;
+    font-size: 14px;
+  }
+  .chat-send-btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #bbb;
+    background: white;
+    cursor: pointer;
+  }
+  .chat-send-btn:active { transform: scale(0.98); }
+
   @media (max-width: 420px) {
     #key-capture { font-size: 1.1em; }
     .menu-key {
@@ -262,6 +286,24 @@ async function sendString(str) {
   }
 }
 
+async function sendChat(message) {
+  const status = document.getElementById('status');
+  const log = document.getElementById('log');
+  const payload = { gw_id: gwId, payload: { command: "sendChat", param1: message } };
+  status.textContent = `Sending chat: ${message}`;
+  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
+  try {
+    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    status.textContent = `✓ ${res.status} — chat sent`;
+    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
+    if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
+  } catch (e) {
+    status.textContent = `✗ Chat error: ${e.message}`;
+    log.textContent += `\n← ${e.message}`;
+  }
+}
+
 async function fetchIvrConfigAndRestoreState() {
   if (!gwId) return;
   try {
@@ -354,13 +396,54 @@ function renderMenuOptions() {
   const menuDiv = document.getElementById('menu-options');
   menuDiv.innerHTML = '';
   if (!menuOptions.length) return;
-  menuOptions.forEach(opt => {
+
+  let chatInjected = false;
+
+  // render existing options and inject chat input directly after the chat option (no toggle)
+  for (const opt of menuOptions) {
     const btn = document.createElement('button');
     btn.className = 'key menu-key';
     btn.innerHTML = `${getIcon(opt.icon)} ${opt[currentLang] || opt['en'] || ''}`;
     btn.onclick = () => sendKey(opt.dtmf);
     menuDiv.appendChild(btn);
-  });
+
+    // if this option represents chat (icon name contains 'chat'), append visible chat row right away
+    if (!chatInjected && opt.icon && String(opt.icon).toLowerCase().includes('chat')) {
+      chatInjected = true;
+
+      const chatRow = document.createElement('div');
+      chatRow.className = 'chat-row';
+
+      const chatInput = document.createElement('input');
+      chatInput.type = 'text';
+      chatInput.className = 'chat-input';
+      chatInput.placeholder = currentLang === 'fr' ? 'Envoyer un message au chat…' : 'Send a message to chat…';
+
+      chatInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const v = chatInput.value.trim();
+          if (v.length) { await sendChat(v); chatInput.value = ''; }
+        }
+      });
+
+      const sendBtn = document.createElement('button');
+      sendBtn.className = 'chat-send-btn key';
+      sendBtn.textContent = currentLang === 'fr' ? 'Envoyer' : 'Send';
+      sendBtn.onclick = async () => {
+        const v = chatInput.value.trim();
+        if (v.length) { await sendChat(v); chatInput.value = ''; }
+      };
+
+      chatRow.appendChild(chatInput);
+      chatRow.appendChild(sendBtn);
+      menuDiv.appendChild(chatRow);
+
+      // focus first chat input when chat injected
+      setTimeout(() => chatInput.focus(), 50);
+      // DO NOT break — allow remaining menu options to render under the chat row
+    }
+  }
 }
 
 function getIcon(icon) {

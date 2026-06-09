@@ -56,7 +56,28 @@ class Visio extends UIHelper{
         if (key == "s" || key == "q")
             document.querySelector('[data-attr*="controls-screenshare"]').click();
     }
+    sendChat(message) {
+        const textarea = document.querySelector('textarea');
+        if (!textarea) {
+            return;
+        }
+        // Setter natif compatible React
+        const nativeSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            'value'
+        ).set;
+        nativeSetter.call(textarea, message);
+        // Events React
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
+        textarea.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true
+        }));
+    }
     async leave() {
         console.log('[INFO] Leave the meeting room');
         try {

@@ -214,6 +214,11 @@ class Jitsi extends UIHelper{
         if (key == "s" || key == "q")
             this.jitsiApiClient.executeCommand('toggleShareScreen');
     }
+    sendChat(message) {
+        if (this.jitsiApiClient) {
+            this.jitsiApiClient.executeCommand('sendChatMessage', message);
+        }
+    }
     leave() {
         try {
             if (this.jitsiApiClient && document.querySelector('#jitsiConferenceFrame0')) {

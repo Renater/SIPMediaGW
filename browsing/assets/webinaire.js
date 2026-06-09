@@ -182,10 +182,10 @@ class Webinaire extends UIHelper {
             document.querySelector("[data-test='startScreenShare']").click();
     }
 
-    async typeText(text) {
+    async sendChat(message) {
         const input = document.querySelector('#message-input');
         const lastValue = input.value;
-        input.value = text;
+        input.value = message;
         const tracker = input._valueTracker;
         if (tracker) {
             tracker.setValue(lastValue);

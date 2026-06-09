@@ -33,9 +33,6 @@ class Teams(Browsing):
             EC.presence_of_element_located((By.TAG_NAME, "video"))
         )
 
-    def chatHandler(self):
-        pass
-
     def unset(self):
         try:
             self.driver.execute_script(

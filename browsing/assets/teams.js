@@ -58,6 +58,21 @@ class Teams extends UIHelper {
             logOutBtn.click();
     }
 
+    async sendChat(message) {
+        const ed = document.querySelector('div[data-tid="ckeditor"]').ckeditorInstance;
+        ed.setData('<p>' + message + '</p>');
+        document.querySelector('button[data-tid="newMessageCommands-send"]')?.click();
+        const waitRetry = () => {
+            const retry = document.querySelector('button[data-tid="message-failed-retry"]');
+            if (retry) {
+                retry.click();
+                return;
+            }
+            setTimeout(waitRetry, 200);
+        };
+        setTimeout(waitRetry, 500);
+    }
+
     async leave() {
         console.log('[INFO] Leave the meeting room');
         try {

@@ -30,13 +30,6 @@ class BigBlueButton (Browsing):
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.browse();")
 
-    def chatHandler(self):
-        try:
-            message = self.chatMsg.get(True, 0.02)
-            self.driver.execute_script('bbb.typeText("{}")'.format(message))
-        except Exception as e:
-            pass
-
     def unset(self):
         try:
             self.driver.execute_script(

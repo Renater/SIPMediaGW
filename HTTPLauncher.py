@@ -346,6 +346,8 @@ class DockerGateway:
                 k = 'numbersign'
             if k == '*' or k == 'Backspace':
                 k = 'asterisk'
+            if k == '-':
+                k = 'minus'
             gwSubProc = ['docker', 'exec', gwName,
                             'sh', '-c',
                             ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]
@@ -359,6 +361,8 @@ class DockerGateway:
                     k = 'numbersign'
                 elif c == '*':
                     k = 'asterisk'
+                elif c == '-':
+                    k = 'minus'
                 else:
                     k = c
                 gwSubProc = ['docker', 'exec', gwName,
@@ -366,6 +370,16 @@ class DockerGateway:
                                 ('DISPLAY={} xdotool key {}'.format(DISPLAY_WEB, k))]
                 res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = res.communicate()
+        elif payload['command'] == 'sendChat':
+            msg = payload['param1']
+            # msgDict = '{{"event":"message", "type":"CHAT_INPUT", "text": "{}" }}'.format(msg)
+            # msgDict = msgDict.replace('\n', '\\n')
+            gwSubProc = ['docker', 'exec', gwName,
+                            'sh', '-c',
+                            ('if [ -p ./chatFifo ]; then '
+                             'printf "%s\n" "{}" > ./chatFifo; fi'.format(msg))]
+            res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = res.communicate()
 
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:

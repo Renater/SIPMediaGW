@@ -2,6 +2,7 @@
 
 import sys
 import os
+import select
 import traceback
 import queue
 import base64
@@ -32,7 +33,9 @@ class Browsing:
         if os.environ.get('AUDIO_ONLY') == "true":
             self.chromeOptions.add_argument('--headless=new')
             self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
-        self.chatMsg = queue.Queue()
+        self.chatFifo = "./chatFifo"
+        if not os.path.exists(self.chatFifo):
+            os.mkfifo(self.chatFifo)
         self.driver = None
 
     def loadJS(self, jsScript):
@@ -118,8 +121,14 @@ class Browsing:
     def browse(self):
         pass
 
-    def chatHandler(self):
-        pass
+    def chatHandler(self, timeout):
+        with open(self.chatFifo, 'r') as fd:
+            ready, _, _ = select.select([fd], [], [], timeout)
+            if not ready:
+                raise TimeoutError()
+            data = fd.read(4096)
+            if data:
+                self.driver.execute_script("window.meeting.sendChat({});".format(json.dumps(data.strip())))
 
     def interact(self):
         try:
@@ -158,7 +167,7 @@ class Browsing:
             self.driver.execute_script(menuScript)
             while self.room:
                 self.interact()
-                self.chatHandler()
+                self.chatHandler(0.01)
         except Exception as e:
             print("Error while browsing: {}".format(e), flush=True)
 

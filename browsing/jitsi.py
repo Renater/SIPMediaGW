@@ -19,14 +19,6 @@ class Jitsi (Browsing):
         # fake loading here (external_api.js loaded in jitsi.js)
         self.driver.get("file:///dev/null")
 
-    def chatHandler(self):
-        try:
-            message = self.chatMsg.get(True, 0.01).strip()
-            chatCmd = "window.jitsiApiClient.executeCommand('sendChatMessage', '{}')".format(message)
-            self.driver.execute_script(chatCmd)
-        except Exception as e:
-            pass
-
     def join(self):
         super().join()
         try:
