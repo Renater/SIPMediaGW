@@ -11,7 +11,6 @@ import time
 import threading
 import subprocess
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 
 class Browsing:
     def __init__(self, width, height, config,
@@ -43,8 +42,8 @@ class Browsing:
                                "../browsing/assets/IVR/style.css")
         self.driver.execute_script(f"window.cssPath = 'file://{cssPath}';")
         with open(jsScript, "r", encoding="utf-8") as f:
-            js_code = f.read()
-        self.driver.execute_script(js_code)
+            jsScript = f.read()
+        self.driver.execute_script(jsScript)
 
     def loadImages(self, path, lang):
         with open(os.path.join(path, "icon.png"), "rb") as f:
@@ -122,13 +121,21 @@ class Browsing:
         pass
 
     def chatHandler(self, timeout):
-        with open(self.chatFifo, 'r') as fd:
+        fd = os.open(self.chatFifo, os.O_RDONLY | os.O_NONBLOCK)
+        try:
             ready, _, _ = select.select([fd], [], [], timeout)
             if not ready:
                 raise TimeoutError()
-            data = fd.read(4096)
+            data = os.read(fd, 4096)
             if data:
+                self.driver.execute_script(
+                    "window.meeting.sendChat(arguments[0]);",
+                    data.decode().strip()
+                )
                 self.driver.execute_script("window.meeting.sendChat({});".format(json.dumps(data.strip())))
+        finally:
+            os.close(fd)
+            return
 
     def interact(self):
         try:
@@ -155,6 +162,7 @@ class Browsing:
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
                             self.config['lang'])
+
             menuScript = "menu=new Menu({}, {}); \
                           menu.img['icon'] = '{}'; \
                           menu.img['dtmf'] = '{}'; \
@@ -165,6 +173,7 @@ class Browsing:
                             self.iconB64, self.dtmfB64, json.dumps(self.menuIcons))
             self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
             self.driver.execute_script(menuScript)
+
             while self.room:
                 self.interact()
                 self.chatHandler(0.01)
@@ -184,5 +193,3 @@ class Browsing:
                 print("Browsing stopped", flush=True)
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
-
-
