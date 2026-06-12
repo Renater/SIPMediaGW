@@ -16,7 +16,7 @@ class Browsing:
     def __init__(self, width, height, config,
                  modName=None, room=None, name=None,
                  service=None, chromeOptions=None,
-                 inputs=None):
+                 inputs=None, readPairingCode=None):
         self.url = ''
         self.room = room if room else {}
         self.name = name if name else ''
@@ -27,6 +27,7 @@ class Browsing:
         self.initScript = ''
         self.screenShared = False
         self.userInputs = inputs
+        self.readPairingCode = readPairingCode
         self.service = service
         self.chromeOptions = chromeOptions
         if os.environ.get('AUDIO_ONLY') == "true":
@@ -173,9 +174,11 @@ class Browsing:
                             self.iconB64, self.dtmfB64, json.dumps(self.menuIcons))
             self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/IVR/menu.js'))
             self.driver.execute_script(menuScript)
+            self.readPairingCode(self.driver)
 
             while self.room:
                 self.interact()
+                self.readPairingCode(self.driver)
                 self.chatHandler(0.01)
         except Exception as e:
             print("Error while browsing: {}".format(e), flush=True)

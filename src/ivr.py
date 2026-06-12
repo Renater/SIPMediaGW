@@ -63,18 +63,57 @@ class IVR:
         except:
             pass
 
-    def _readPairingCode(self):
-        """Read PAIRING_CODE from /etc/environment (returns '' if not set)."""
+    def readPairingCode(self, driver):
         try:
+            pairingCode = ''
             with open('/etc/environment') as f:
                 for line in f:
                     line = line.strip()
                     if line.startswith('PAIRING_CODE='):
-                        # Strip possible surrounding quotes
-                        return line.split('=', 1)[1].strip().strip('"\'')
+                        pairingCode = line.split('=', 1)[1].strip().strip('"\'')
+                        break
+            lastPairingInfo = driver.execute_script("return window.pairingInfo;")
+            if lastPairingInfo and lastPairingInfo.get('pairingCode') == pairingCode:
+                return
+            if os.getenv('GW_PROXY') and os.getenv('QR_CODE_URL') and pairingCode:
+                reverse = os.getenv('GW_REVERSE_PROXY') or os.getenv('GW_PROXY')
+                qrCodeUrl = os.getenv('QR_CODE_URL').format(
+                    reverse_proxy=reverse,
+                    code=pairingCode
+                )
+                pairingUrl = qrCodeUrl.split('?')[0]
+
+                # Generate QR PNG as base64 (no data: prefix)
+                try:
+                    qr = qrcode.QRCode(box_size=4, border=2)
+                    qr.add_data(qrCodeUrl)
+                    qr.make(fit=True)
+                    img = qr.make_image(fill_color="black", back_color="white")
+                    buffered = BytesIO()
+                    img.save(buffered, format="PNG")
+                    qrB64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                except Exception:
+                    qrB64 = ''
+
+                pairingInfo = {
+                    "pairingCode": pairingCode,
+                    "qrCodeB64": qrB64,
+                    "pairingUrl": pairingUrl
+                }
+            else:
+                pairingInfo = { "pairingCode": "" }
+
+            # inject safely as JS object
+            try:
+                driver.execute_script("window.pairingInfo = arguments[0];", pairingInfo)
+                driver.execute_script("window.updateQrCode();")
+                print("IVR: QR Code URL: {}".format(qrCodeUrl), flush=True)
+                print("IVR: Pairing Code: {}, Pairing URL: {}".format(pairingCode, pairingUrl), flush=True)
+            except Exception:
+                # best-effort, ignore if driver not ready
+                pass
         except Exception:
             pass
-        return ''
 
     def setUrl(self):
         configFile = os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/config.json')
@@ -137,68 +176,16 @@ class IVR:
     def prompt(self):
         startTime = time.time()
         browsingName = ''
-        pairingCode = self._readPairingCode()
-        if os.getenv('GW_PROXY') and os.getenv('QR_CODE_URL') and pairingCode:
-            qrCodeUrl = os.getenv('QR_CODE_URL').format(
-                reverse_proxy=os.getenv('GW_REVERSE_PROXY') or os.getenv('GW_PROXY'),
-                code=pairingCode
-            )
-            pairingUrl = qrCodeUrl.split('?')[0]
-
-            # Generate QR code in base64
-            qr = qrcode.QRCode(box_size=4, border=2)
-            qr.add_data(qrCodeUrl)
-            qr.make(fit=True)
-            img = qr.make_image(fill_color="black", back_color="white")
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            qrB64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-            # Wait for JS to be ready (max 5s)
-            try:
-                WebDriverWait(self.driver, 5).until(
-                    lambda d: d.execute_script("return !!window.showQrCode")
-                )
-            except Exception:
-                print("IVR error: showQrCode JS function not available", flush=True)
-                return {}
-
-            # Inject QR code
-            self.driver.execute_script(
-                "window.showQrCode(arguments[0], arguments[1], arguments[2]);",
-                qrB64, pairingCode, pairingUrl
-            )
-            print("IVR: QR Code URL: {}".format(qrCodeUrl), flush=True)
-            print("IVR: Pairing Code: {}, Pairing URL: {}".format(pairingCode, pairingUrl), flush=True)
+        jsScript = os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/menu.js')
+        with open(jsScript, "r", encoding="utf-8") as f:
+            jsScript = f.read()
+        self.driver.execute_script(jsScript)
+        self.readPairingCode(self.driver)
 
         while True:
             if self.IVRTimeout and time.time() > ( startTime + self.IVRTimeout ):
                 print("IVR Timeout", flush=True)
                 return {}
-            # Detect a changed PAIRING_CODE in /etc/environment and update UI
-            newPairingCode = self._readPairingCode()
-            if (os.getenv('GW_PROXY') and os.getenv('QR_CODE_URL') and
-                newPairingCode != pairingCode):
-                # Regenerate QR code in base64
-                qrCodeUrl = os.getenv('QR_CODE_URL').format(
-                    reverse_proxy=os.getenv('GW_REVERSE_PROXY') or os.getenv('GW_PROXY'),
-                    code=newPairingCode
-                )
-                pairingUrl = qrCodeUrl.split('?')[0]
-                qr = qrcode.QRCode(box_size=4, border=2)
-                qr.add_data(qrCodeUrl)
-                qr.make(fit=True)
-                img = qr.make_image(fill_color="black", back_color="white")
-                buffered = BytesIO()
-                img.save(buffered, format="PNG")
-                qrB64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-                self.driver.execute_script(
-                    "window.updateQrCode(arguments[0], arguments[1], arguments[2]);",
-                    qrB64, newPairingCode, pairingUrl
-                )
-                pairingCode = newPairingCode
-                print("IVR: QR Code URL: {}".format(qrCodeUrl), flush=True)
-                print("IVR: Pairing Code: {}, Pairing URL: {}".format(newPairingCode, pairingUrl), flush=True)
             try:
                 if not browsingName:
                     browsingName = self.driver.execute_script("return window.browsing")
@@ -210,6 +197,7 @@ class IVR:
                         print("IVR: room: {}".format(room['roomName']), flush=True)
                         return browsingName, room
                 self.interact()
+                self.readPairingCode(self.driver)
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
                 print("IVR error: {}".format(e), flush=True)
@@ -228,7 +216,7 @@ class IVR:
         self.browsingObj = browsingObj(self.width, self.height, self.config,
                                        self.browsingName, room, self.name,
                                        self.service, self.chromeOptions,
-                                       self.userInputs)
+                                       self.userInputs, self.readPairingCode)
         self.browsingObj.run()
 
     def run(self):
