@@ -54,6 +54,20 @@ if inputs['from']:
 dispWidth = int(inputs['res'].split('x')[0])
 dispHeight = int(inputs['res'].split('x')[1])
 
+# Launch chrome driver
+cmd = [
+    "chromedriver",
+    "--port=9515",
+    "--host=0.0.0.0",
+    "--allowed-ips="
+]
+subprocess.Popen(
+    cmd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True
+)
+
 # instanciate IVR
 ivr = IVR(
     width=dispWidth,
