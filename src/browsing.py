@@ -150,8 +150,10 @@ class Browsing:
 
     def run(self):
         try:
-            self.driver = webdriver.Chrome(service=self.service,
-                                           options=self.chromeOptions)
+            self.driver = webdriver.Remote(
+                command_executor="http://127.0.0.1:9515",
+                options=self.chromeOptions
+            )
             self.loadPage()
             self.join()
             while True:

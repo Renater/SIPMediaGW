@@ -191,6 +191,31 @@ class Jitsi extends UIHelper{
             return 0;
         }
     }
+    async slideShot() {
+        try {
+            const sharing = await this.jitsiApiClient.getContentSharingParticipants();
+
+            if (!sharing?.sharingParticipantIds?.length) {
+                return null;
+            }
+
+            // Give the UI a moment to switch to the shared content
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const screenshot = await this.jitsiApiClient.captureLargeVideoScreenshot();
+            const dataURL = screenshot?.dataURL;
+
+            if (!dataURL) {
+                return null;
+            }
+
+            return dataURL.split(",")[1];
+
+        } catch (e) {
+            console.error("slideShot failed:", e);
+            return null;
+        }
+    }
     interact(key) {
         if (key == "1")
             this.jitsiApiClient.executeCommand('toggleAudio');

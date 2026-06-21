@@ -9,6 +9,8 @@ import traceback
 import urllib.parse
 import qrcode
 import base64
+import subprocess
+import requests
 from io import BytesIO
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -157,9 +159,10 @@ class IVR:
             self.setUrl()
             if not self.url:
                 return
-            self.service = Service(executable_path='/usr/bin/chromedriver')
-            self.driver = webdriver.Chrome(service=self.service,
-                                           options=self.chromeOptions)
+            self.driver = webdriver.Remote(
+                command_executor="http://127.0.0.1:9515",
+                options=self.chromeOptions
+            )
             self.driver.get(self.url)
             return
         except Exception as e:

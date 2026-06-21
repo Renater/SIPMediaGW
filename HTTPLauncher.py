@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from typing import Optional, Dict, Any
 import os
 import subprocess
@@ -12,6 +14,7 @@ import json
 import argparse
 import uvicorn
 from functools import lru_cache
+import urllib.request
 
 app = FastAPI(title="SIP Media Gateway API", version="1.0.0")
 app.add_middleware(
@@ -328,17 +331,36 @@ class DockerGateway:
             "webrtc_domains": webrtcDomains
         }
 
-    def send_command(self, gw_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        gwData = DockerGateway.get_gw_info(gw_id)
+    def getSeleniumSessionId(self, gwId: str) -> str:
+        seleniumSessionId = ''
+        try:
+            with urllib.request.urlopen('http://127.0.0.1:951{}/sessions'.format(gwId), timeout=3) as resp:
+                data = json.load(resp)
+                sid = ''
+                if isinstance(data, dict):
+                    sid = data.get('sessionId', '') or ''
+                if not sid:
+                    val = data.get('value')
+                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], dict):
+                        sid = val[0].get('id') or val[0].get('sessionId') or ''
+            seleniumSessionId = (sid or '').strip().replace('"', '')
+            return seleniumSessionId
+        except Exception:
+            print("Selenium Session Id not found")
+
+    def sendCommand(self, gwUid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        gwData = DockerGateway.get_gw_info(gwUid)
         if gwData is None:
             raise ValueError("Gateway not found")
         gwName = gwData['Name']
 
-        gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'echo $DISPLAY_WEB']
+        gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'printf "%s\\n%s" "$DISPLAY_WEB" "$GW_ID"']
         res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = res.communicate()
-        DISPLAY_WEB = out.decode().strip()
-        print(f"[COMMAND] id={gw_id} payload={payload}")
+        lines = out.decode().splitlines()
+        DISPLAY_WEB = lines[0].strip() if len(lines) > 0 else ''
+        gwId = lines[1].strip() if len(lines) > 1 else ''
+        print(f"[COMMAND] id={gwName} payload={payload}")
 
         if payload['command'] == 'sendKey':
             k = payload['param1']
@@ -372,15 +394,34 @@ class DockerGateway:
                 out, err = res.communicate()
         elif payload['command'] == 'sendChat':
             msg = payload['param1']
-            # msgDict = '{{"event":"message", "type":"CHAT_INPUT", "text": "{}" }}'.format(msg)
-            # msgDict = msgDict.replace('\n', '\\n')
             gwSubProc = ['docker', 'exec', gwName,
                             'sh', '-c',
                             ('if [ -p ./chatFifo ]; then '
                              'printf "%s\n" "{}" > ./chatFifo; fi'.format(msg))]
             res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = res.communicate()
-
+        elif payload['command'] == 'endCall':
+            gwSubProc = ['docker', 'exec', gwName,
+                            'sh', '-c',
+                            ('echo "/hangup" | netcat -q 1 127.0.0.1 5555')]
+            res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = res.communicate()
+        elif payload['command'] == 'slideShot':
+            chromeOptions = Options()
+            chromeOptions.add_argument("--headless")
+            chromeOptions.add_argument("--no-sandbox")
+            chromeOptions.add_argument("--disable-dev-shm-usage")
+            seleniumSessionId =self.getSeleniumSessionId(gwId)
+            driver = webdriver.Remote(
+                        command_executor='http://localhost:951{}'.format(gwId),
+                        options=chromeOptions
+                    )
+            sessionToClose = driver.session_id
+            driver.session_id = seleniumSessionId
+            slideImgB64 = driver.execute_script("return window.meeting.slideShot();")
+            driver.session_id = sessionToClose
+            driver.close()
+            return {"ack": True, "slideImg": slideImgB64}
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
             raise ValueError("Gateway not found")
@@ -471,7 +512,7 @@ def gateway_ivr_config(gw_id: str, backend: DockerGateway = Depends(get_backend)
 @app.post("/gateway/command", response_model=CommandResponse)
 def command(req: CommandRequest, backend: DockerGateway = Depends(get_backend)):
     try:
-        result = backend.send_command(req.gw_id, req.payload)
+        result = backend.sendCommand(req.gw_id, req.payload)
         return CommandResponse(status="success", data=result)
     except ValueError as ve:
         # 403 for stopped gateway, 404 for not found (backend decides)

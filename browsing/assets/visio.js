@@ -41,7 +41,58 @@ class Visio extends UIHelper{
             console.error('[✗] Prejoin process failed:', error);
         }
     }
+    async slideShot() {
+        try {
+            const selector = "video.lk-participant-media-video[data-lk-source='screen_share']";
+            // short wait for the element to appear if necessary
+            const wait = ms => new Promise(res => setTimeout(res, ms));
+            let video = document.querySelector(selector);
+            const maxWait = 2000;
+            const step = 100;
+            let waited = 0;
+            while (!video && waited < maxWait) {
+                await wait(step);
+                waited += step;
+                video = document.querySelector(selector);
+            }
+            if (!video) {
+                return null;
+            }
+            // await the video to have valid dimensions
+            if (!video.videoWidth || !video.videoHeight) {
+                await new Promise(resolve => {
+                    const onLoaded = () => {
+                        video.removeEventListener('loadeddata', onLoaded);
+                        resolve();
+                    };
+                    // fallback timeout if the event doesn't arrive
+                    const t = setTimeout(() => {
+                        video.removeEventListener('loadeddata', onLoaded);
+                        resolve();
+                    }, 1000);
+                    video.addEventListener('loadeddata', onLoaded);
+                });
+            }
+            const width = video.videoWidth || video.clientWidth || 640;
+            const height = video.videoHeight || video.clientHeight || Math.round(width * 9 / 16);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
 
+            ctx.drawImage(video, 0, 0, width, height);
+
+            const dataURL = canvas.toDataURL('image/png');
+            if (!dataURL) {
+                return null;
+            }
+            // return the base64 part (without "data:image/png;base64,")
+            return dataURL.split(',')[1];
+        } catch (e) {
+            console.error("slideShot failed:", e);
+            return null;
+        }
+    }
     interact(key) {
         if (key == "1")
             document.querySelector('[aria-label*="Ctrl+d"]').click();

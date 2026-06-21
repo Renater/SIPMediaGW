@@ -11,6 +11,8 @@ services:
       default:
         aliases:
           - "${ROOM}"
+    ports:
+      - 951${ID}:9515
     tmpfs:
       - /tmp
     volumes:
