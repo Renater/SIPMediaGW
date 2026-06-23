@@ -79,7 +79,6 @@
       top: 50svh;
       transform: translate(-50%, -50%);
     }
-    #slide-preview img { max-height: calc(70svh - 84px); }
   }
   #lang-switch {
     margin-bottom: 1em;
@@ -99,44 +98,70 @@
     cursor: default;
   }
   #input-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+    display: none; /* hidden by default to avoid initial flash; JS will show it when appropriate */
+    flex-wrap: nowrap;
+    align-items: stretch; /* stretch so action buttons can match inputs height */
+    gap: 12px;
     margin-bottom: 1em;
+    margin-top: 60px;
   }
-  #input-label {
-    font-size: 1em;
-    white-space: nowrap;
-  }
-  #key-capture {
-    flex: 1;
-    min-width: 100px;
-    font-size: 1.3em;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #bbb;
-    background: #fff;
-    letter-spacing: 0.2em;
-    font-family: monospace;
-  }
-  .key {
-    height: 40px;
-    padding: 0 14px;
-    border: 1px solid #bbb;
-    border-radius: 6px;
-    background: white;
-    font-size: 13px;
-    cursor: pointer;
-    font-family: monospace;
-    white-space: nowrap;
-  }
-  .key:active { background: #e0e0e0; transform: scale(0.94); }
-
+  /* left inputs column */
+  #input-row #inputs { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: space-between; min-height: calc(40px * 2 + 6px); }
+  .input-line { display: flex; gap: 8px; align-items: center; width: 100%; min-height: 40px; }
+  .input-line label { min-width: 140px; white-space: nowrap; font-size: 1em; }
+  .input-line input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid #bbb; background: #fff; font-family: monospace; height: 40px; box-sizing: border-box; }
+  #key-capture { letter-spacing: 0.2em; font-size: 1.15em; min-width: 120px; }
+  #display-name { font-size: 1em; }
+   .key {
+     height: 40px;
+     padding: 0 14px;
+     border: 1px solid #bbb;
+     border-radius: 6px;
+     background: white;
+     font-size: 13px;
+     cursor: pointer;
+     font-family: monospace;
+     white-space: nowrap;
+   }
+   .key:active { background: #e0e0e0; transform: scale(0.94); }
+  /* action column: distribute buttons to match the two input rows */
   #action-btns {
     display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* put Enter top, Del bottom */
     gap: 8px;
     flex-shrink: 0;
+    align-items: center;
+    width: 72px;
+    padding: 6px 0;
+    /* ensure column height follows #inputs (they share the same parent) */
+  }
+  #action-btns .key {
+    width: 56px;
+    height: 40px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    font-size: 13px;
+  }
+  #action-btns .action-ico { font-size: 16px; line-height: 1; }
+  #action-btns .action-label { display: none; } /* keep UI minimal */
+
+  /* show label on wider viewports */
+  @media (min-width: 720px) {
+    #action-btns { width: 96px; }
+    #action-btns .key { width: 84px; }
+    #action-btns .action-label { display: inline-block; font-size: 12px; }
+  }
+  /* responsive: move actions under inputs on narrow viewports */
+  @media (max-width: 520px) {
+    #input-row { flex-direction: column; align-items: stretch; }
+    #action-btns { flex-direction: row; width: 100%; gap: 8px; padding: 0; }
+    #action-btns .key { width: 100%; height: 40px; }
+    .input-line label { min-width: 110px; }
   }
 
   #status {
@@ -277,9 +302,22 @@
 <div class="kb-wrap">
   <div id="lang-switch"></div>
   <div id="input-row">
-    <label for="key-capture" id="input-label">Type here:</label>
-    <input id="key-capture" autocomplete="off" />
-    <div id="action-btns">
+    <div id="inputs">
+      <div class="input-line">
+        <label for="key-capture" id="input-label">Meeting Name:</label>
+        <input id="key-capture"
+               autocomplete="off"
+               autocapitalize="none"
+               autocorrect="off"
+               spellcheck="false"
+               inputmode="text" />
+      </div>
+      <div class="input-line">
+        <label for="display-name" id="display-label" style="font-size:0.9em;">Display name:</label>
+        <input id="display-name" autocomplete="off" />
+      </div>
+    </div>
+    <div id="action-btns" aria-hidden="false">
       <button id="btn-enter" type="button" class="key" tabindex="-1">Enter</button>
       <button id="btn-del" type="button" class="key" tabindex="-1">←</button>
     </div>
@@ -346,7 +384,8 @@ function renderLangSwitch() {
     <button onclick="setMenuLang('fr')" ${currentLang === 'fr' ? 'disabled' : ''}>🇫🇷 Français</button>
     <button onclick="setMenuLang('en')" ${currentLang === 'en' ? 'disabled' : ''}>🇬🇧 English</button>
   `;
-  document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Tapez ici :' : 'Type here:';
+  // use Meeting Name / Nom de la réunion
+  document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Nom de la réunion :' : 'Meeting Name:';
   document.getElementById('btn-enter').textContent = currentLang === 'fr' ? 'Entrée' : 'Enter';
   const endBtn = document.getElementById('btn-endcall');
   if (endBtn) endBtn.textContent = currentLang === 'fr' ? "Mettre fin à l'appel" : "End call";
@@ -360,6 +399,9 @@ function renderLangSwitch() {
   if (fs) fs.textContent = currentLang === 'fr' ? 'Agrandir' : 'Full screen';
   const dis = document.getElementById('slide-discard');
   if (dis) dis.textContent = currentLang === 'fr' ? 'Supprimer' : 'Discard';
+  // translate display-name label as well
+  const dlab = document.getElementById('display-label');
+  if (dlab) dlab.textContent = currentLang === 'fr' ? 'Nom affiché :' : 'Display name:';
 }
 function setMenuLang(lang) {
   currentLang = lang;
@@ -386,9 +428,30 @@ function setMenuLang(lang) {
 const capture = document.getElementById('key-capture');
 capture.placeholder = '••••';
 
-function captureReset() {
-  capture.value = '';
-  capture.placeholder = '••••';
+// Display name input references and helpers
+const displayInput = document.getElementById('display-name');
+const displayLabel = document.getElementById('display-label');
+if (displayInput) {
+  displayInput.placeholder = currentLang === 'fr' ? 'Nom affiché' : 'Display name';
+  displayInput.disabled = true; // disabled until fetched
+}
+
+async function sendDisplayName(name) {
+  if (!gwId) return;
+  const status = document.getElementById('status');
+  const log = document.getElementById('log');
+  const payload = { gw_id: gwId, payload: { command: "displayName", param1: name } };
+  if (status) status.textContent = currentLang === 'fr' ? 'Envoi: nom affiché…' : 'Sending: display name…';
+  if (log) log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
+  try {
+    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    if (status) status.textContent = `✓ ${res.status} — display name`;
+    if (log) log.textContent += `\n← ${res.status} ${text.slice(0,120)}`;
+  } catch (e) {
+    if (status) status.textContent = `✗ Display name error`;
+    if (log) log.textContent += `\n← ${e.message}`;
+  }
 }
 
 capture.addEventListener('input', function() {
@@ -397,6 +460,7 @@ capture.addEventListener('input', function() {
 capture.addEventListener('keydown', async function(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
+    await sendDisplayName(displayInput.value.trim());
     if (this.value.length > 0) {
       await sendString(this.value + '#');
       await captureReset();
@@ -483,6 +547,26 @@ async function sendChat(message) {
   }
 }
 
+async function fetchDisplayName() {
+  if (!gwId) return;
+  displayInput.disabled = true;
+  try {
+    const res = await fetch(apiUrl('/command'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gw_id: gwId, payload: { command: 'displayName' } })
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    const name = json?.data?.displayName || json?.data?.displayname || '';
+    displayInput.value = name || '';
+  } catch (e) {
+    console.error('fetchDisplayName error', e);
+  } finally {
+    displayInput.disabled = false;
+  }
+}
+
 async function fetchIvrConfigAndRestoreState() {
   if (!gwId) return;
   try {
@@ -551,7 +635,23 @@ function showInputAndPrepareMenu(selectedDomainKey) {
   if (inputRow) inputRow.style.display = 'flex';
 
   document.getElementById('key-capture').disabled = false;
-  document.getElementById('key-capture').focus();
+  // Focus logic: prefer focusing the display-name field if it's empty,
+  // otherwise focus the key-capture input so user can type meeting code quickly.
+  // Do NOT steal focus if the user is already interacting with one of the inputs.
+  const captureEl = document.getElementById('key-capture');
+  const displayEl = document.getElementById('display-name');
+  try {
+    const active = document.activeElement;
+    const inputsContainer = document.getElementById('inputs');
+    const userIsInteracting = active &&
+                              inputsContainer &&
+                              inputsContainer.contains(active) &&
+                              (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+    if (!userIsInteracting) {
+      if (displayEl && !displayEl.value.trim()) { displayEl.focus(); }
+      else if (captureEl) { captureEl.focus(); }
+    }
+  } catch (e) { /* ignore focus errors */ }
 
   // update slide controls visibility (hide during input)
   updateSlideControlsVisibility();
@@ -654,10 +754,12 @@ function getIcon(icon) {
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchIvrConfigAndRestoreState();
+  fetchDisplayName();
   // call after initial render to hide slide-controls when appropriate
   updateSlideControlsVisibility();
 });
 document.getElementById('btn-enter').onclick = async () => {
+  await sendDisplayName(displayInput.value.trim());
   if (capture.value.length > 0) {
     await sendString(capture.value + '#');
     await captureReset();

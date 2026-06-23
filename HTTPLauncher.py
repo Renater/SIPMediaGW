@@ -331,7 +331,7 @@ class DockerGateway:
             "webrtc_domains": webrtcDomains
         }
 
-    def getSeleniumSessionId(self, gwId: str) -> str:
+    def getSeleniumSessionId(self, gwId):
         seleniumSessionId = ''
         try:
             with urllib.request.urlopen('http://127.0.0.1:951{}/sessions'.format(gwId), timeout=3) as resp:
@@ -422,6 +422,47 @@ class DockerGateway:
             driver.session_id = sessionToClose
             driver.close()
             return {"ack": True, "slideImg": slideImgB64}
+        elif payload['command'] == 'displayName':
+            # safe read of optional param1
+            default = payload.get('param1', None)
+            res = {"ack": True}
+            chromeOptions = Options()
+            chromeOptions.add_argument("--headless")
+            chromeOptions.add_argument("--no-sandbox")
+            chromeOptions.add_argument("--disable-dev-shm-usage")
+            seleniumSessionId = self.getSeleniumSessionId(gwId)
+            driver = webdriver.Remote(
+                        command_executor='http://localhost:951{}'.format(gwId),
+                        options=chromeOptions
+                    )
+            sessionToClose = driver.session_id
+            driver.session_id = seleniumSessionId
+            try:
+                if isinstance(default, str) and default != '':
+                    driver.execute_script("""
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('displayName', arguments[0]);
+                        history.replaceState(
+                            {},
+                            '',
+                            `${location.pathname}?${params.toString()}`
+                        );
+                    """, default)
+                else:
+                    name = driver.execute_script(
+                        "let name=new URLSearchParams(window.location.search).get('displayName'); return name;")
+                    res["displayName"] = name
+            finally:
+                # always restore session id and close driver
+                try:
+                    driver.session_id = sessionToClose
+                except Exception:
+                    pass
+                try:
+                    driver.close()
+                except Exception:
+                    pass
+            return res
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
             raise ValueError("Gateway not found")
