@@ -68,6 +68,15 @@ subprocess.Popen(
     text=True
 )
 
+for _ in range(100): # 10 s max
+    try:
+        with socket.create_connection(("127.0.0.1", 9515), timeout=0.2):
+            break
+    except OSError:
+        time.sleep(0.1)
+else:
+    raise RuntimeError("Chromedriver did not start")
+
 # instanciate IVR
 ivr = IVR(
     width=dispWidth,
@@ -76,6 +85,8 @@ ivr = IVR(
     name=os.environ.get('USER_NAME'),
     browsingName=os.environ.get('BROWSING')
 )
+# Launch the browser (warm up)
+ivr.launchBrowser("about:blank")
 
 def browse(args):
     args['ivr'].run()
