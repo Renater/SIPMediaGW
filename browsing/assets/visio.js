@@ -104,8 +104,24 @@ class Visio extends UIHelper{
             document.querySelector('button[data-attr*="controls-hand-raise"], button[data-attr*="controls-hand-lower"]').click();
         if (key == "5")
             document.querySelector('button[data-attr*="controls-participants-closed"], button[data-attr*="controls-participants-open"]').click();
-        if (key == "s" || key == "q")
+        if (key == "s" || key == "q") {
             document.querySelector('[data-attr*="controls-screenshare"]').click();
+
+            const interval = setInterval(() => {
+                const tile = document.querySelector('[data-lk-source="screen_share"]');
+                if (!tile) return;
+
+                const ignoreBtn = [...tile.querySelectorAll('button')]
+                    .find(btn => /ignore/i.test(btn.textContent));
+
+                if (ignoreBtn) {
+                    clearInterval(interval);
+                    ignoreBtn.click();
+                }
+            }, 200);
+
+            setTimeout(() => clearInterval(interval), 5000); // sécurité
+        }
     }
     sendChat(message) {
         const textarea = document.querySelector('textarea');

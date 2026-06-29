@@ -9,7 +9,7 @@ import subprocess
 import signal
 import threading
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../src")
+sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../../src")
 from ivr import IVR
 
 def parseEnvFile(envPath):
@@ -76,8 +76,8 @@ def exitHandler():
     )
 
 def browse(ivr):
-    ivr.chromeOptions.arguments.remove('--start-fullscreen')
-    ivr.chromeOptions.arguments.remove('--kiosk')
+    # ivr.chromeOptions.arguments.remove('--start-fullscreen')
+    # ivr.chromeOptions.arguments.remove('--kiosk')
     #ivr.chromeOptions.add_argument('--app=file:///dev/null')
     ivr.run()
     print('Exit IVR')
@@ -87,10 +87,11 @@ signal.signal(signal.SIGTERM, exitHandler)
 signal.signal(signal.SIGINT, exitHandler)
 
 # Set environment variables
-envPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../.env')
+envPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../.env')
 envVars = parseEnvFile(envPath)
 for key, value in envVars.items():
-    os.environ[key] = value
+    if key != 'DISPLAY':
+        os.environ[key] = value
 
 def envsubst(string):
     return re.sub(
@@ -99,8 +100,8 @@ def envsubst(string):
         string
     )
 
-templatePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../browsing/assets/config.template.json')
-configPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../browsing/assets/config.json')
+templatePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../browsing/assets/config.template.json')
+configPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../browsing/assets/config.json')
 
 with open(templatePath) as file:
     content = file.read()
@@ -115,21 +116,41 @@ def loadJS(driver, jsScript):
     driver.execute_script(js_code)
 
 # Launch IVR
+os.environ['ID'] = "0"
 # os.environ['AUDIO_ONLY'] = "true"
-# mixedRoomDomainId = '1.2483803751'
+mixedRoomDomainId = ''
+#os.environ['GW_NAME'] = "yo"
+os.environ['HOST_IP'] = "192.168.1.21"
+os.environ['GW_PROXY'] = "http://192.168.1.21:9000"
 demoMode = False
 
-ivr = IVR(width='1536', height='864', browsingName='', roomName='', name='Meeting Room')
+cmd = [
+    "chromedriver",
+    "--port=9515",
+    "--host=0.0.0.0",
+    "--allowed-ips=127.0.0.1,192.168.92.1"
+]
+subprocess.Popen(
+    cmd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True
+)
+ivr = IVR(width='1280', height='720', browsingName='visio', roomName='chz-xkgp-zif', mixedId=mixedRoomDomainId, name='Meeting Room')
+ivr.chromeOptions.arguments.remove('--start-fullscreen')
+ivr.chromeOptions.arguments.remove('--kiosk')
+ivr.launchBrowser("about:blank")
+#ivr.driver.get("about:blank")
 browseThread = threading.Thread(target=browse, args=(ivr,))
 browseThread.start()
 
 if demoMode:
     while not ivr.driver:
         time.sleep(0.1)
-    loadJS(ivr.driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/screen.js'))
+    loadJS(ivr.driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../../browsing/assets/IVR/screen.js'))
     time.sleep(1)
     driver = ivr.driver
-    loadJS(ivr.driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/demo.js'))
+    loadJS(ivr.driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../../browsing/assets/IVR/demo.js'))
     ivr.driver.execute_script("""window.onclick = async function(){
                                 await dialer.pressSequence(["1", "#"], 1000);
                                 await new Promise(r => setTimeout(r, 1000));
@@ -144,8 +165,8 @@ if demoMode:
     while not driver.execute_script("return document.querySelector('#menu_icon');"):
         time.sleep(1)
 
-    loadJS(driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/screen.js'))
-    loadJS(driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/demo.js'))
+    loadJS(driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../../browsing/assets/IVR/screen.js'))
+    loadJS(driver, os.path.join(os.path.dirname(os.path.normpath(__file__)), '../../browsing/assets/IVR/demo.js'))
     driver.execute_script("""window.onclick = async function(){
                                 await dialer.pressSequence(["1","1"], 1500);
                                 await dialer.pressSequence(["2","2"], 1500);
