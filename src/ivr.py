@@ -154,16 +154,17 @@ class IVR:
         prefs['intl.accept_languages'] = f'{locale},{normalized}'
         self.chromeOptions.add_experimental_option('prefs', prefs)
 
-    def launchBrowser(self):
+    def launchBrowser(self, url=None):
         try:
             self.setUrl()
-            if not self.url:
+            if not self.url and not url:
                 return
-            self.driver = webdriver.Remote(
-                command_executor="http://127.0.0.1:9515",
-                options=self.chromeOptions
-            )
-            self.driver.get(self.url)
+            if not self.driver:
+                self.driver = webdriver.Remote(
+                    command_executor="http://127.0.0.1:9515",
+                    options=self.chromeOptions
+                )
+            self.driver.get(url or self.url)
             return
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
