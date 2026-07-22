@@ -37,6 +37,14 @@ class Browsing:
         if not os.path.exists(self.chatFifo):
             os.mkfifo(self.chatFifo)
         self.driver = None
+        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}')".format(
+                                                    self.room['config']['webrtc_domain'],
+                                                    self.room['roomName'],
+                                                    self.room['displayName'],
+                                                    self.room['config']['lang'],
+                                                    json.dumps(self.room['config']['ivr_prompts']),
+                                                    self.room['roomToken'],
+                                                    os.environ.get('AUDIO_ONLY'))
 
     def loadJS(self, jsScript):
         cssPath = os.path.join(os.path.dirname(__file__),
@@ -80,14 +88,6 @@ class Browsing:
                                  '../browsing/assets/uihelper.js'))
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),
                                  '../browsing/assets/{}.js'.format(self.modName)))
-        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}')".format(
-                                                    self.room['config']['webrtc_domain'],
-                                                    self.room['roomName'],
-                                                    self.room['displayName'],
-                                                    self.room['config']['lang'],
-                                                    json.dumps(self.room['config']['ivr_prompts']),
-                                                    self.room['roomToken'],
-                                                    os.environ.get('AUDIO_ONLY'))
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.join();")
 
