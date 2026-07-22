@@ -463,6 +463,36 @@ class DockerGateway:
                 except Exception:
                     pass
             return res
+        elif payload['command'] == 'roomName':
+            # safe read of optional param1
+            default = payload.get('param1', None)
+            res = {"ack": True}
+            chromeOptions = Options()
+            chromeOptions.add_argument("--headless")
+            chromeOptions.add_argument("--no-sandbox")
+            chromeOptions.add_argument("--disable-dev-shm-usage")
+            seleniumSessionId = self.getSeleniumSessionId(gwId)
+            driver = webdriver.Remote(
+                        command_executor='http://localhost:951{}'.format(gwId),
+                        options=chromeOptions
+                    )
+            sessionToClose = driver.session_id
+            driver.session_id = seleniumSessionId
+            try:
+                driver.execute_script("""
+                    window.inputRoomName = arguments[0];
+                    document.dispatchEvent(new KeyboardEvent('keydown', {'key': '#'}));;""", default)
+            finally:
+                # always restore session id and close driver
+                try:
+                    driver.session_id = sessionToClose
+                except Exception:
+                    pass
+                try:
+                    driver.close()
+                except Exception:
+                    pass
+            return res
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:
             raise ValueError("Gateway not found")

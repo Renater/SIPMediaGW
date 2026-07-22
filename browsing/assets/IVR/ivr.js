@@ -161,6 +161,9 @@ function initIVR(config) {
                     showStatus(messages[lang].invalid(inputDigits.join('')));
                 }
             } else if (stage === "room") {
+                if(window.inputRoomName){
+                    inputDigits = Array.from(window.inputRoomName);
+                }
                 // If we are waiting for user confirmation to proceed despite mapping failure
                 if (waitingConfirm && inputDigits.join('') === (waitingConfirm.roomId || '')) {
                     // call proceed() to resolve the room.getConferenceName() promise

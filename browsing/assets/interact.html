@@ -428,6 +428,11 @@ function setMenuLang(lang) {
 const capture = document.getElementById('key-capture');
 capture.placeholder = '••••';
 
+function captureReset() {
+  capture.value = '';
+  capture.placeholder = '••••';
+}
+
 // Display name input references and helpers
 const displayInput = document.getElementById('display-name');
 const displayLabel = document.getElementById('display-label');
@@ -462,7 +467,8 @@ capture.addEventListener('keydown', async function(e) {
     e.preventDefault();
     await sendDisplayName(displayInput.value.trim());
     if (this.value.length > 0) {
-      await sendString(this.value + '#');
+      //await sendString(this.value + '#');
+      await sendRoomName(this.value);
       await captureReset();
       await setTimeout(() => sendKey('#'), 450);
     }
@@ -523,6 +529,24 @@ async function sendString(str) {
     status.textContent = `✓ ${res.status} — string: ${str}`;
     log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
     if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
+  } catch(e) {
+    status.textContent = `✗ Error: ${e.message}`;
+    log.textContent += `\n← ${e.message}`;
+  }
+}
+
+async function sendRoomName(param1) {
+  const status = document.getElementById('status');
+  const log = document.getElementById('log');
+  const payload = { gw_id: gwId, payload: { command: "roomName", param1 } };
+  status.textContent = `Sending: ${param1}`;
+  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
+  try {
+    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    status.textContent = `✓ ${res.status} — room name: ${param1}`;
+    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
+    if ((param1 === '#' || param1 === 'Enter') && !pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
   } catch(e) {
     status.textContent = `✗ Error: ${e.message}`;
     log.textContent += `\n← ${e.message}`;
@@ -761,7 +785,8 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('btn-enter').onclick = async () => {
   await sendDisplayName(displayInput.value.trim());
   if (capture.value.length > 0) {
-    await sendString(capture.value + '#');
+    //await sendString(capture.value + '#');
+    await sendRoomName(capture.value);
     await captureReset();
     await setTimeout(() => sendKey('#'), 450);
   }
