@@ -252,7 +252,7 @@ class Menu {
 
 window.updateQrCode = function() {
     pairingInfo = window.pairingInfo;
-    if (pairingInfo) {
+    if (pairingInfo && pairingInfo.pairingCode != "") {
         qrB64 = pairingInfo.qrCodeB64;
         pairingCode = pairingInfo.pairingCode;
         pairingUrl = pairingInfo.pairingUrl;
