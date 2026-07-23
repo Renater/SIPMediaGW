@@ -348,6 +348,30 @@ class DockerGateway:
         except Exception:
             print("Selenium Session Id not found")
 
+    def executeInExistingChromeSession(self, gwId: str, script: str, *args):
+        chromeOptions = Options()
+        chromeOptions.add_argument("--headless")
+        chromeOptions.add_argument("--no-sandbox")
+        chromeOptions.add_argument("--disable-dev-shm-usage")
+        seleniumSessionId = self.getSeleniumSessionId(gwId)
+        driver = webdriver.Remote(
+                    command_executor='http://localhost:951{}'.format(gwId),
+                    options=chromeOptions
+                )
+        sessionToClose = driver.session_id
+        driver.session_id = seleniumSessionId
+        try:
+            return driver.execute_script(script, *args)
+        finally:
+            try:
+                driver.session_id = sessionToClose
+            except Exception:
+                pass
+            try:
+                driver.close()
+            except Exception:
+                pass
+
     def sendCommand(self, gwUid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         gwData = DockerGateway.get_gw_info(gwUid)
         if gwData is None:
@@ -407,91 +431,49 @@ class DockerGateway:
             res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = res.communicate()
         elif payload['command'] == 'slideShot':
-            chromeOptions = Options()
-            chromeOptions.add_argument("--headless")
-            chromeOptions.add_argument("--no-sandbox")
-            chromeOptions.add_argument("--disable-dev-shm-usage")
-            seleniumSessionId =self.getSeleniumSessionId(gwId)
-            driver = webdriver.Remote(
-                        command_executor='http://localhost:951{}'.format(gwId),
-                        options=chromeOptions
-                    )
-            sessionToClose = driver.session_id
-            driver.session_id = seleniumSessionId
-            slideImgB64 = driver.execute_script("return window.meeting.slideShot();")
-            driver.session_id = sessionToClose
-            driver.close()
+            slideImgB64 = self.executeInExistingChromeSession(
+                gwId,
+                "return window.meeting.slideShot();"
+            )
             return {"ack": True, "slideImg": slideImgB64}
+        elif payload['command'] == 'microphone':
+            microphoneState = payload.get('param1')
+            if microphoneState not in ('on', 'off'):
+                raise ValueError("microphone param1 must be 'on' or 'off'")
+            self.executeInExistingChromeSession(
+                gwId,
+                "return window.meeting.microphone(arguments[0]);",
+                microphoneState
+            )
+            return {"ack": True, "microphone": microphoneState}
         elif payload['command'] == 'displayName':
             # safe read of optional param1
             default = payload.get('param1', None)
             res = {"ack": True}
-            chromeOptions = Options()
-            chromeOptions.add_argument("--headless")
-            chromeOptions.add_argument("--no-sandbox")
-            chromeOptions.add_argument("--disable-dev-shm-usage")
-            seleniumSessionId = self.getSeleniumSessionId(gwId)
-            driver = webdriver.Remote(
-                        command_executor='http://localhost:951{}'.format(gwId),
-                        options=chromeOptions
-                    )
-            sessionToClose = driver.session_id
-            driver.session_id = seleniumSessionId
-            try:
-                if isinstance(default, str) and default != '':
-                    driver.execute_script("""
-                        const params = new URLSearchParams(window.location.search);
-                        params.set('displayName', arguments[0]);
-                        history.replaceState(
-                            {},
-                            '',
-                            `${location.pathname}?${params.toString()}`
-                        );
-                    """, default)
-                else:
-                    name = driver.execute_script(
-                        "let name=new URLSearchParams(window.location.search).get('displayName'); return name;")
-                    res["displayName"] = name
-            finally:
-                # always restore session id and close driver
-                try:
-                    driver.session_id = sessionToClose
-                except Exception:
-                    pass
-                try:
-                    driver.close()
-                except Exception:
-                    pass
+            if isinstance(default, str) and default != '':
+                self.executeInExistingChromeSession(gwId, """
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('displayName', arguments[0]);
+                    history.replaceState(
+                        {},
+                        '',
+                        `${location.pathname}?${params.toString()}`
+                    );
+                """, default)
+            else:
+                name = self.executeInExistingChromeSession(
+                    gwId,
+                    "let name=new URLSearchParams(window.location.search).get('displayName'); return name;"
+                )
+                res["displayName"] = name
             return res
         elif payload['command'] == 'roomName':
             # safe read of optional param1
             default = payload.get('param1', None)
             res = {"ack": True}
-            chromeOptions = Options()
-            chromeOptions.add_argument("--headless")
-            chromeOptions.add_argument("--no-sandbox")
-            chromeOptions.add_argument("--disable-dev-shm-usage")
-            seleniumSessionId = self.getSeleniumSessionId(gwId)
-            driver = webdriver.Remote(
-                        command_executor='http://localhost:951{}'.format(gwId),
-                        options=chromeOptions
-                    )
-            sessionToClose = driver.session_id
-            driver.session_id = seleniumSessionId
-            try:
-                driver.execute_script("""
-                    window.inputRoomName = arguments[0];
-                    document.dispatchEvent(new KeyboardEvent('keydown', {'key': '#'}));;""", default)
-            finally:
-                # always restore session id and close driver
-                try:
-                    driver.session_id = sessionToClose
-                except Exception:
-                    pass
-                try:
-                    driver.close()
-                except Exception:
-                    pass
+            self.executeInExistingChromeSession(gwId, """
+                window.inputRoomName = arguments[0];
+                document.dispatchEvent(new KeyboardEvent('keydown', {'key': '#'}));;""", default)
             return res
         #status = DockerGateway.get_gateway_docker_status(gw_id)
         if status is None:

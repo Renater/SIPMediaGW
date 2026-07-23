@@ -93,6 +93,20 @@ class Visio extends UIHelper{
             return null;
         }
     }
+    microphone(param) {
+        const microphoneButton = document.querySelector('[aria-label*="Ctrl+d"]');
+        if (!microphoneButton) {
+            console.error('[✗] Microphone button not found');
+            return;
+        }
+
+        const muted = microphoneButton.getAttribute('aria-pressed') === 'true';
+        const shouldToggle = (param === 'on' && muted) || (param === 'off' && !muted);
+
+        if (shouldToggle) {
+            microphoneButton.click();
+        }
+    }
     interact(key) {
         if (key == "1")
             document.querySelector('[aria-label*="Ctrl+d"]').click();
@@ -120,7 +134,7 @@ class Visio extends UIHelper{
                 }
             }, 200);
 
-            setTimeout(() => clearInterval(interval), 5000); // sécurité
+            setTimeout(() => clearInterval(interval), 5000);
         }
     }
     sendChat(message) {
