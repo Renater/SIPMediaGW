@@ -67,7 +67,7 @@
   #slide-preview img { width: 100%; height: auto; display:block; border-radius:6px; order: 1; max-height: calc(80vh - 84px); object-fit: contain; }
   #slide-preview .small { font-size:12px; padding:6px 8px; height:32px; line-height:18px; }
   /* avoid content under the top-right button */
-  .kb-wrap { padding-right: 6.5rem; }
+  .kb-wrap { padding-right: 0; }
   /* make it less intrusive on very small screens */
   @media (max-width: 420px) {
     #endcall-footer { top: 0.6rem; right: 0.6rem; }
@@ -107,9 +107,20 @@
   }
   /* left inputs column */
   #input-row #inputs { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: space-between; min-height: calc(40px * 2 + 6px); }
-  .input-line { display: flex; gap: 8px; align-items: center; width: 100%; min-height: 40px; }
-  .input-line label { min-width: 140px; white-space: nowrap; font-size: 1em; }
-  .input-line input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid #bbb; background: #fff; font-family: monospace; height: 40px; box-sizing: border-box; }
+  .input-line { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%; min-height: 40px; }
+  .input-line.display-line { margin-bottom: 16px; }
+  .input-line .input-field-row { display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 100%; }
+  .field-stack { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .meeting-input-row { display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 100%; }
+  .meeting-input-row .input-field-row { flex: 1; }
+  .input-line label { display: block; margin-bottom: 4px; font-size: 1em; font-weight: 600; color: #222; }
+  .input-line input { width: 100%; flex: 1; padding: 10px 12px; border-radius: 6px; border: 1px solid #bbb; background: #fff; font-family: monospace; height: 40px; box-sizing: border-box; }
+  .room-name-hint { font-size: 0.9em; color: #666; line-height: 1.35; min-height: 1.2em; padding: 0; }
+  input::placeholder {
+    color: #999;
+    font-style: italic;
+    opacity: 1;
+  }
   #key-capture { letter-spacing: 0.2em; font-size: 1.15em; min-width: 120px; }
   #display-name { font-size: 1em; }
    .key {
@@ -127,25 +138,34 @@
   /* action column: distribute buttons to match the two input rows */
   #action-btns {
     display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* put Enter top, Del bottom */
+    flex-direction: row;
+    justify-content: space-between;
     gap: 8px;
-    flex-shrink: 0;
-    align-items: center;
-    width: 72px;
-    padding: 6px 0;
-    /* ensure column height follows #inputs (they share the same parent) */
+    width: 100%;
+    padding: 0;
+    margin-top: 0;
   }
   #action-btns .key {
-    width: 56px;
+    flex: 1 1 0;
+    min-width: 0;
     height: 40px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px;
+    padding: 0 12px;
     font-size: 13px;
+    margin: 0;
+    background: #f2f6ff;
+    border: 1px solid #aac2ff;
+    color: #1f3f7f;
+  }
+  #action-btns .key:hover {
+    background: #e5edff;
+  }
+  #action-btns .key:active {
+    background: #dfe8ff;
   }
   #action-btns .action-ico { font-size: 16px; line-height: 1; }
   #action-btns .action-label { display: none; } /* keep UI minimal */
@@ -159,9 +179,14 @@
   /* responsive: move actions under inputs on narrow viewports */
   @media (max-width: 520px) {
     #input-row { flex-direction: column; align-items: stretch; }
-    #action-btns { flex-direction: row; width: 100%; gap: 8px; padding: 0; }
-    #action-btns .key { width: 100%; height: 40px; }
-    .input-line label { min-width: 110px; }
+    #input-row #inputs { gap: 12px; }
+    .input-line { flex-direction: column; align-items: stretch; }
+    .input-line .input-field-row { flex-direction: column; align-items: stretch; }
+    .input-line label { min-width: auto; text-align: left; }
+    .meeting-input-row { flex-direction: column; align-items: stretch; }
+    #action-btns { flex-direction: row; width: 100%; gap: 8px; padding: 0; justify-content: space-between; }
+    #action-btns .key { width: calc(50% - 4px); height: 40px; }
+    .room-name-hint { margin-left: 0; margin-bottom: 12px; }
   }
 
   #status {
@@ -185,12 +210,25 @@
     flex: 0 0 32px;
   }
 
-  .domain-btn span {
+  /* domain text container: split name and host on two lines (name then host) */
+  .domain-text { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 0; flex: 1 1 auto; }
+  .domain-name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
-    flex: 1;
+    font-weight: 600;
+  }
+  .domain-host {
+    white-space: nowrap;
+    color: #666;
+    font-size: 0.85em;
+    opacity: 0.9;
+  }
+  .label-hint {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: 400;
+    margin-left: 6px;
   }
 
   #menu-options {
@@ -290,10 +328,18 @@
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
   }
+  .room-name-hint {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #666;
+    line-height: 1.35;
+    min-height: 1.2em;
+    padding: 0;
+  }
 
   @media (max-width: 420px) {
     #key-capture { font-size: 1.1em; }
-    .menu-key {
     #lang-switch button { padding: 4px 8px; font-size: 12px; }
   }
 </style>
@@ -303,23 +349,35 @@
   <div id="lang-switch"></div>
   <div id="input-row">
     <div id="inputs">
-      <div class="input-line">
-        <label for="key-capture" id="input-label">Meeting Name:</label>
-        <input id="key-capture"
-               autocomplete="off"
-               autocapitalize="none"
-               autocorrect="off"
-               spellcheck="false"
-               inputmode="text" />
+      <!-- Display name first -->
+      <div class="input-line display-line">
+        <div class="input-field-row">
+          <label for="display-name" id="display-label">Display name</label>
+          <div class="field-stack">
+            <input id="display-name" autocomplete="off" placeholder="Your display name" />
+          </div>
+        </div>
       </div>
+
+      <!-- Meeting name below display name, with hint below the label and above the input -->
       <div class="input-line">
-        <label for="display-name" id="display-label" style="font-size:0.9em;">Display name:</label>
-        <input id="display-name" autocomplete="off" />
+        <div class="input-field-row">
+          <label for="key-capture" id="input-label">Meeting Name</label>
+          <div id="room-name-hint" class="room-name-hint" aria-live="polite"></div>
+          <div class="field-stack">
+            <input id="key-capture"
+                   autocomplete="off"
+                   autocapitalize="none"
+                   autocorrect="off"
+                   spellcheck="false"
+                   inputmode="text" />
+            <div id="action-btns" aria-hidden="false">
+              <button id="btn-enter" type="button" class="key" tabindex="-1" title="Send meeting name">Enter</button>
+              <button id="btn-del" type="button" class="key" tabindex="-1" title="Send star key">←</button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div id="action-btns" aria-hidden="false">
-      <button id="btn-enter" type="button" class="key" tabindex="-1">Enter</button>
-      <button id="btn-del" type="button" class="key" tabindex="-1">←</button>
     </div>
   </div>
   <div id="status">Ready</div>
@@ -362,6 +420,7 @@ const gwId = urlParams.get('gwId');
 let pollingStarted = false;
 let ivrMenus = {};
 let webrtcDomains = {};
+let roomNameInfo = {};
 let browsingName = '';
 let menuOptions = [];
 let menuDisplayed = false;
@@ -378,6 +437,37 @@ function updateSlideControlsVisibility() {
                        'none';
 }
 
+function getRoomNamePlaceholder() {
+  const captureEl = document.getElementById('key-capture');
+  if (!captureEl) return '';
+  const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
+  const lang = currentLang === 'fr' ? 'fr' : 'en';
+  const fallback = lang === 'fr' ? 'Entrez le nom de la réunion' : 'Enter the meeting name';
+  return selectedInfo?.placeholder?.[lang] || selectedInfo?.placeholder?.en || fallback;
+}
+
+function updateRoomNameInputUi() {
+  const captureEl = document.getElementById('key-capture');
+  const hintEl = document.getElementById('room-name-hint');
+  if (!captureEl) return;
+
+  const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
+  const lang = currentLang === 'fr' ? 'fr' : 'en';
+  const placeholder = getRoomNamePlaceholder();
+  const hint = selectedInfo?.hint?.[lang] || selectedInfo?.hint?.en || '';
+
+  const labelEl = document.getElementById('input-label');
+  if (labelEl) {
+    labelEl.textContent = currentLang === 'fr' ? 'Nom de la réunion' : 'Meeting Name';
+  }
+
+  captureEl.placeholder = captureEl.value ? '' : placeholder;
+  if (hintEl) {
+    hintEl.textContent = hint;
+    hintEl.style.display = hint ? 'block' : 'none';
+  }
+}
+
 function renderLangSwitch() {
   const langDiv = document.getElementById('lang-switch');
   langDiv.innerHTML = `
@@ -385,10 +475,15 @@ function renderLangSwitch() {
     <button onclick="setMenuLang('en')" ${currentLang === 'en' ? 'disabled' : ''}>🇬🇧 English</button>
   `;
   // use Meeting Name / Nom de la réunion
-  document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Nom de la réunion :' : 'Meeting Name:';
+  document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Nom de la réunion' : 'Meeting Name';
   document.getElementById('btn-enter').textContent = currentLang === 'fr' ? 'Entrée' : 'Enter';
+  const enterBtn = document.getElementById('btn-enter');
+  if (enterBtn) enterBtn.title = currentLang === 'fr' ? 'Envoyer le nom de la réunion' : 'Send meeting name';
+  const delBtn = document.getElementById('btn-del');
+  if (delBtn) delBtn.title = currentLang === 'fr' ? 'Envoyer la touche étoile' : 'Send star key';
   const endBtn = document.getElementById('btn-endcall');
-  if (endBtn) endBtn.textContent = currentLang === 'fr' ? "Mettre fin à l'appel" : "End call";
+  if (endBtn) endBtn.textContent = currentLang === 'fr' ? 'Fin d’appel' : 'End call';
+  if (endBtn) endBtn.title = currentLang === 'fr' ? 'Mettre fin à l’appel' : 'End the call';
   const ss = document.getElementById('btn-slideShot');
   if (ss) ss.textContent = currentLang === 'fr' ? 'Capture' : 'Capture';
   const dl = document.getElementById('slide-download');
@@ -401,7 +496,8 @@ function renderLangSwitch() {
   if (dis) dis.textContent = currentLang === 'fr' ? 'Supprimer' : 'Discard';
   // translate display-name label as well
   const dlab = document.getElementById('display-label');
-  if (dlab) dlab.textContent = currentLang === 'fr' ? 'Nom affiché :' : 'Display name:';
+  if (dlab) dlab.textContent = currentLang === 'fr' ? 'Nom affiché' : 'Display Name';
+  updateRoomNameInputUi();
 }
 function setMenuLang(lang) {
   currentLang = lang;
@@ -426,11 +522,11 @@ function setMenuLang(lang) {
 }
 
 const capture = document.getElementById('key-capture');
-capture.placeholder = '••••';
+updateRoomNameInputUi();
 
 function captureReset() {
   capture.value = '';
-  capture.placeholder = '••••';
+  updateRoomNameInputUi();
 }
 
 // Display name input references and helpers
@@ -460,7 +556,7 @@ async function sendDisplayName(name) {
 }
 
 capture.addEventListener('input', function() {
-  this.placeholder = this.value ? '' : '••••';
+  this.placeholder = this.value ? '' : getRoomNamePlaceholder();
 });
 capture.addEventListener('keydown', async function(e) {
   if (e.key === 'Enter') {
@@ -598,6 +694,7 @@ async function fetchIvrConfigAndRestoreState() {
     const data = await res.json();
     ivrMenus = data.menus || {};
     webrtcDomains = data.webrtc_domains || {};
+    roomNameInfo = data.room_name_info || {};
     renderLangSwitch();
     const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
     if (!statusRes.ok) { renderDomainButtons(); return; }
@@ -636,10 +733,19 @@ function renderDomainButtons() {
     const btn = document.createElement('button');
     btn.className = 'key menu-key domain-btn';
     btn.title = `Press ${digit}`;
+    // prefer explicit domain if provided, otherwise try to extract from name in parentheses
+    const rawName = val.name || key;
+    const nameOnly = rawName.replace(/\s*\(.*\)$/, '').trim();
+    let host = val.domain || '';
+    if (!host) {
+      const m = rawName.match(/\(([^)]+)\)\s*$/);
+      host = m ? m[1] : '';
+    }
+    const hostHtml = host ? `<span class="domain-host">(${host})</span>` : '';
     btn.innerHTML = `
       <img src="${apiUrl('/logo')}/${encodeURIComponent(key)}?gw_id=${encodeURIComponent(gwId)}"
            alt="" onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='true';this.src='./images/domain-icons/${encodeURIComponent(key)}.png'}">
-      <span>${val.name || key}</span>
+      <div class="domain-text"><span class="domain-name">${nameOnly}</span>${hostHtml}</div>
     `;
     btn.onclick = async () => { await sendKey(digit); await sendKey('#'); showInputAndPrepareMenu(key); };
     menuDiv.appendChild(btn);
@@ -659,6 +765,7 @@ function showInputAndPrepareMenu(selectedDomainKey) {
   if (inputRow) inputRow.style.display = 'flex';
 
   document.getElementById('key-capture').disabled = false;
+  updateRoomNameInputUi();
   // Focus logic: prefer focusing the display-name field if it's empty,
   // otherwise focus the key-capture input so user can type meeting code quickly.
   // Do NOT steal focus if the user is already interacting with one of the inputs.

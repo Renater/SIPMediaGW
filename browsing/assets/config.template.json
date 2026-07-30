@@ -1,95 +1,409 @@
 {
-    "min_ivr_digit_length": "${IVR_DIGIT_LENGTH}",
-    "webrtc_domains": ${WEBRTC_DOMAINS},
-    "menus": {
-        "jitsi": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
-        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"},
-        { "dtmf": 6, "en": "Show / hide tile view", "fr": "Activer / Désactiver la vue mosaïque", "icon": "mosaic_icon"},
-        { "dtmf": 7, "en": "Activate / Desactivate the lobby", "fr": "Activer / Désactiver la salle d'attente", "icon": "lobby_icon"},
-        { "dtmf": 8, "en": "Mute everyone", "fr": "Couper tous les micros", "icon": "muteall_icon"}
-        ]},
-        "bigbluebutton": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
-        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"},
-        { "dtmf": 6, "en": "Accept recording", "fr": "Accepter l'enregistrement", "icon": "accept_icon"}
-        ]},
-        "webinaire": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
-        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"},
-        { "dtmf": 6, "en": "Accept recording", "fr": "Accepter l'enregistrement", "icon": "accept_icon"}
-        ]},
-        "bbbesr": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
-        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"},
-        { "dtmf": 6, "en": "Accept recording", "fr": "Accepter l'enregistrement", "icon": "accept_icon"}
-        ]},
-        "visio": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
-        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"}
-        ]},
-        "livekit": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" }
-        ]},
-        "teams": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon"},
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon"},
-        { "dtmf": 5, "en": "Open / Close the participants panel", "fr": "Ouvrir / Fermer la liste des participants", "icon": "participants_icon"}
-        ]},
-        "googlemeet": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon" },
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon" },
-        { "dtmf": 5, "en": "Open / Close participants", "fr": "Ouvrir / Fermer les participants", "icon": "participants_icon" }
-        ]},
-        "nextcloud": {"options": [
-        { "dtmf": 1, "en": "Mute / Unmute", "fr": "Muet / Actif", "icon": "microphone_icon" },
-        { "dtmf": 2, "en": "Start / Stop camera", "fr": "Démarrer / Arrêter la caméra", "icon": "camera_icon" },
-        { "dtmf": 3, "en": "Open / Close chat", "fr": "Ouvrir / Fermer le chat", "icon": "chat_icon" },
-        { "dtmf": 4, "en": "Raise / Lower your hand", "fr": "Lever / Baisser la main", "icon": "hand_icon" }
-        ]}
+  "min_ivr_digit_length": "${IVR_DIGIT_LENGTH}",
+  "webrtc_domains": ${WEBRTC_DOMAINS},
+  "room_name_info": {
+    "jitsi": {
+      "hint": { "en": "Jitsi conference name",
+                "fr": "Nom de la visioconférence Jitsi" },
+      "placeholder": { "en": "my-metting-1234",
+                       "fr": "ma-reunion-1234" }
     },
-    "conf_mapper": {
-        "url": "${CONFMAPPER}"
+    "bigbluebutton": {
+      "hint": { "en": "BigBlueButton conference name",
+                "fr": "Nom de la visioconférence BigBlueButton" },
+      "placeholder": { "en": "my-metting-1234",
+                       "fr": "ma-reunion-1234" }
     },
-    "auth_token": {
-        "jwt": "${AUTH_TOKEN}",
-        "url": "${TOKEN_API_URL}",
-        "secure_room_regexp": "${ROOM_REGEXP}",
-        "webinaire_token": "${WEBINAIRE_TOKEN}"
+    "webinaire": {
+      "hint": { "en": "9-digit code of the BBB conference",
+                "fr": "Code à 9 chiffres de la visioconférence BBB" },
+      "placeholder": { "en": "123456789",
+                       "fr": "123456789" }
     },
-    "ivr_tts": "${IVR_TTS}",
-    "lang": "${IVR_LANG}",
-    "ivr_prompts" : {
-        "fr": {
-            "domain": "Veuillez entrer le numéro de la plateforme suivi de #<br>(utilisez * pour corriger)",
-            "room": "Veuillez entrer le numéro de votre conférence suivi de #<br>(utilisez * pour corriger)",
-            "password": "Veuillez entrer le mot de passe suivi de #<br>(utilisez * pour corriger)"
-        },
-        "en": {
-            "domain": "Please enter the platform number followed by #<br>(use * to correct)",
-            "room": "Please enter your conference number followed by #<br>(use * to correct)",
-            "password": "Please enter the password followed by #<br>(use * to correct)"
-        }
+    "bbbesr": {
+      "hint": { "en": "Full access URL of the BBB conference obtained from Marsha, Greenlight...",
+                "fr": "Url complet d'accès de la visioconférence BBB obtenu depuis Marsha, Greenlight..." },
+      "placeholder": { "en": "https://my-specific-bbb-platform-link/...",
+                       "fr": "https://ma-plateforme-bbb-specifique/..." }
+    },
+    "visio": {
+      "hint": { "en": "Visio conference name",
+                "fr": "Nom de la visioconférence Visio" },
+      "placeholder": { "en": "abc-defg-hij",
+                       "fr": "abc-defg-hij" }
+    },
+    "livekit": {
+      "hint": { "en": "LiveKit conference name",
+                "fr": "Nom de la visioconférence LiveKit" },
+      "placeholder": { "en": "my-metting-1234",
+                       "fr": "ma-reunion-1234" }
+    },
+    "teams": {
+      "hint": { "en": "Teams conference name",
+                "fr": "Nom de la visioconférence Teams" },
+      "placeholder": { "en": "my-metting-1234",
+                       "fr": "ma-reunion-1234" }
+    },
+    "googlemeet": {
+      "hint": { "en": "Google Meet conference name",
+                "fr": "Nom de la visioconférence Google Meet" },
+      "placeholder": { "en": "my-metting-1234",
+                        "fr": "ma-reunion-1234" }
+    },
+    "nextcloud": {
+      "hint": { "en": "Nextcloud conference name",
+                "fr": "Nom de la visioconférence Nextcloud" },
+      "placeholder": { "en": "my-metting-1234",
+                       "fr": "ma-reunion-1234" }
     }
+  },
+  "menus": {
+    "jitsi": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close the participants panel",
+          "fr": "Ouvrir / Fermer la liste des participants",
+          "icon": "participants_icon"
+        },
+        {
+          "dtmf": 6,
+          "en": "Show / hide tile view",
+          "fr": "Activer / Désactiver la vue mosaïque",
+          "icon": "mosaic_icon"
+        },
+        {
+          "dtmf": 7,
+          "en": "Activate / Desactivate the lobby",
+          "fr": "Activer / Désactiver la salle d'attente",
+          "icon": "lobby_icon"
+        },
+        {
+          "dtmf": 8,
+          "en": "Mute everyone",
+          "fr": "Couper tous les micros",
+          "icon": "muteall_icon"
+        }
+      ]
+    },
+    "bigbluebutton": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close the participants panel",
+          "fr": "Ouvrir / Fermer la liste des participants",
+          "icon": "participants_icon"
+        },
+        {
+          "dtmf": 6,
+          "en": "Accept recording",
+          "fr": "Accepter l'enregistrement",
+          "icon": "accept_icon"
+        }
+      ]
+    },
+    "webinaire": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close the participants panel",
+          "fr": "Ouvrir / Fermer la liste des participants",
+          "icon": "participants_icon"
+        },
+        {
+          "dtmf": 6,
+          "en": "Accept recording",
+          "fr": "Accepter l'enregistrement",
+          "icon": "accept_icon"
+        }
+      ]
+    },
+    "bbbesr": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close the participants panel",
+          "fr": "Ouvrir / Fermer la liste des participants",
+          "icon": "participants_icon"
+        },
+        {
+          "dtmf": 6,
+          "en": "Accept recording",
+          "fr": "Accepter l'enregistrement",
+          "icon": "accept_icon"
+        }
+      ]
+    },
+    "visio": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close the participants panel",
+          "fr": "Ouvrir / Fermer la liste des participants",
+          "icon": "participants_icon"
+        }
+      ]
+    },
+    "livekit": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        }
+      ]
+    },
+    "teams": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close the participants panel",
+          "fr": "Ouvrir / Fermer la liste des participants",
+          "icon": "participants_icon"
+        }
+      ]
+    },
+    "googlemeet": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Open / Close participants",
+          "fr": "Ouvrir / Fermer les participants",
+          "icon": "participants_icon"
+        }
+      ]
+    },
+    "nextcloud": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Open / Close chat",
+          "fr": "Ouvrir / Fermer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        }
+      ]
+    }
+  },
+  "conf_mapper": {
+    "url": "${CONFMAPPER}"
+  },
+  "auth_token": {
+    "jwt": "${AUTH_TOKEN}",
+    "url": "${TOKEN_API_URL}",
+    "secure_room_regexp": "${ROOM_REGEXP}",
+    "webinaire_token": "${WEBINAIRE_TOKEN}"
+  },
+  "ivr_tts": "${IVR_TTS}",
+  "lang": "${IVR_LANG}",
+  "ivr_prompts": {
+    "fr": {
+      "domain": "Veuillez entrer le numéro de la plateforme suivi de #<br>(utilisez * pour corriger)",
+      "room": "Veuillez entrer le numéro de votre conférence suivi de #<br>(utilisez * pour corriger)",
+      "password": "Veuillez entrer le mot de passe suivi de #<br>(utilisez * pour corriger)"
+    },
+    "en": {
+      "domain": "Please enter the platform number followed by #<br>(use * to correct)",
+      "room": "Please enter your conference number followed by #<br>(use * to correct)",
+      "password": "Please enter the password followed by #<br>(use * to correct)"
+    }
+  }
 }

@@ -324,11 +324,13 @@ class DockerGateway:
         # 3. Return menu and webrtc_domains
         menus = browsingConfig.get('menus', {})
         webrtcDomains = browsingConfig.get('webrtc_domains', {})
+        roomNameInfo = browsingConfig.get('room_name_info', {})
 
         return {
             "status": "success",
             "menus": menus,
-            "webrtc_domains": webrtcDomains
+            "webrtc_domains": webrtcDomains,
+            "room_name_info": roomNameInfo
         }
 
     def getSeleniumSessionId(self, gwId):
