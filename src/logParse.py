@@ -536,6 +536,30 @@ def main() -> None:
                     eventDict = parseEventDict(line)
                     if eventDict and eventDict.get("class") == "call":
                         lastType = str(eventDict.get("type") or "").strip()
+
+                        ### Call established: trace the connected endpoint ###
+                        # CALL_ESTABLISHED is the only event signalling that a
+                        # SIP endpoint is actually connected. Without it, an idle
+                        # gateway and a gateway sitting in the IVR are
+                        # indistinguishable (room/browsing are set later, only
+                        # once a conference is joined).
+                        if lastType == "CALL_ESTABLISHED":
+                            appendHistory(
+                                historyFile,
+                                "call_established",
+                                {
+                                    "timestamp": isoZ(utcNow()),
+                                    "callId": str(eventDict.get("id") or "").strip(),
+                                    "sourceURI": normalizeSipUri(
+                                        str(eventDict.get("peeruri") or "").strip()
+                                    ),
+                                    "peerDisplayName": str(
+                                        eventDict.get("peerdisplayname") or ""
+                                    ).strip(),
+                                },
+                            )
+                            continue
+
                         if lastType != "CALL_CLOSED":
                             continue
 
