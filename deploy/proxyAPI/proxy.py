@@ -154,6 +154,8 @@ def getGatewayStatusFromRedis(gw_id: str):
     transcript = getPart(parts, redis_gw_transcript_progress_index)
     browsing = getPart(parts, redis_gw_browsing_index)
     gwType = getPart(parts, redis_gw_type_index)
+    peerUri = getPart(parts, redis_gw_peer_uri_index)
+    peerName = getPart(parts, redis_gw_peer_name_index)
     return {
         "status": "success",
         "data": {
@@ -162,6 +164,8 @@ def getGatewayStatusFromRedis(gw_id: str):
             "gw_state": state,
             "room": cleanPart(room),
             "browsing": cleanPart(browsing),
+            "peer_uri": cleanPart(peerUri),
+            "peer_name": cleanPart(peerName),
             "media_duration": media_duration,
             "transcript_progress": transcript
         }
@@ -668,7 +672,7 @@ async def registerGateway(request: Request):
             peerName      = None
 
         # Build new mapping
-        # format : gwIp|state|type|room|startTime|media|transcript|browsing
+        # format : gwIp|state|type|room|startTime|media|transcript|browsing|peerUri|peerName
         gwValue = (
             f"{gwIp}|{gwState}|{gwType}|{roomName}|{startTime}|"
             f"{mediaduration}|{transcriptprog}|{browsing}|{peerUri}|{peerName}"
