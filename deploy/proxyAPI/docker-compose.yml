@@ -13,6 +13,8 @@ services:
     working_dir: /app
     environment:
       - REDIS_HOST=redis
+      - PROXY_TOKEN=${PROXY_TOKEN:?set PROXY_TOKEN in deploy/proxyAPI/.env}
+      - PROXY_ADMIN_TOKEN=${PROXY_ADMIN_TOKEN:?set PROXY_ADMIN_TOKEN in deploy/proxyAPI/.env}
     volumes:
       - .:/app
     command: >

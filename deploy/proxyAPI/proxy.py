@@ -18,8 +18,11 @@ app = FastAPI()
 redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           port=int(os.getenv('REDIS_PORT', '6379')),
                           decode_responses=True)
-allowedToken = "1234"
-adminToken = "admin-secret-key"  # Change this to a secure admin key
+# Tokens are read from the environment. The compose file requires both to
+# be set; the fallbacks below only apply when running the proxy directly,
+# for development or tests.
+allowedToken = os.getenv("PROXY_TOKEN", "1234")
+adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
 
 # Redis Mapping:
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>"
