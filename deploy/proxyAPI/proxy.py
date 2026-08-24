@@ -18,9 +18,7 @@ app = FastAPI()
 redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           port=int(os.getenv('REDIS_PORT', '6379')),
                           decode_responses=True)
-# Tokens are read from the environment. The compose file requires both to
-# be set; the fallbacks below only apply when running the proxy directly,
-# for development or tests.
+
 allowedToken = os.getenv("PROXY_TOKEN", "1234")
 adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
 
