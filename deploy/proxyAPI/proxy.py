@@ -196,6 +196,8 @@ async def adminStatus(request: Request):
         transcript = getPart(parts, redis_gw_transcript_progress_index)
         browsing = getPart(parts, redis_gw_browsing_index)
         gwType = getPart(parts, redis_gw_type_index)
+        peerUri = getPart(parts, redis_gw_peer_uri_index)
+        peerName = getPart(parts, redis_gw_peer_name_index)
 
         result[gw_id] = {
             "gateway": gwIp,
