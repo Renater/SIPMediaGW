@@ -15,7 +15,9 @@ from urllib.parse import quote_plus
 
 app = FastAPI()
 
-redisClient = redis.Redis(host='127.0.0.1', port=6379, decode_responses=True)
+redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
+                          port=int(os.getenv('REDIS_PORT', '6379')),
+                          decode_responses=True)
 allowedToken = "1234"
 adminToken = "admin-secret-key"  # Change this to a secure admin key
 
