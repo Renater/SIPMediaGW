@@ -1,9 +1,0 @@
-.vagrant/
-__pycache__
-.pytest_cache
-logs/
-.coverage
-.ruff_cache/
-.vscode/
-browsing/assets/config.json
-deploy/proxyAPI/.env
