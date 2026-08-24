@@ -11,8 +11,8 @@ services:
     image: python:3.12-slim
     container_name: proxy
     working_dir: /app
-    environment:
-      - REDIS_HOST=redis
+    env_file:
+      - .env
     volumes:
       - .:/app
     command: >
