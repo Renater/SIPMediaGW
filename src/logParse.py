@@ -479,7 +479,7 @@ def main() -> None:
     videoAutoIndex = -1
     lastFinalCallId: Optional[str] = None
 
-    callStartLogged = False
+    gwStartLogged = False
 
     for raw in sys.stdin:
         cleaned = ansiEscapeRegex.sub("", raw)
@@ -496,8 +496,8 @@ def main() -> None:
                 continue
 
             try:
-                ### Call start ###
-                if (not callStartLogged) and ("Web browsing URL:" in line):
+                ### Gateway start ###
+                if (not gwStartLogged) and ("Web browsing URL:" in line):
                     dt = utcNow()
                     url = ""
                     if "URL:" in line:
@@ -505,10 +505,10 @@ def main() -> None:
 
                     appendHistory(
                         historyFile,
-                        "call_start",
+                        "gw_start",
                         {"raw": rawTimestamp(dt), "timestamp": isoZ(dt), "url": url},
                     )
-                    callStartLogged = True
+                    gwStartLogged = True
                     continue
 
                 ### Room ###
@@ -536,6 +536,25 @@ def main() -> None:
                     eventDict = parseEventDict(line)
                     if eventDict and eventDict.get("class") == "call":
                         lastType = str(eventDict.get("type") or "").strip()
+
+                        ### Call established: trace the connected endpoint ###
+                        if lastType == "CALL_ESTABLISHED":
+                            appendHistory(
+                                historyFile,
+                                "call_start",
+                                {
+                                    "timestamp": isoZ(utcNow()),
+                                    "callId": str(eventDict.get("id") or "").strip(),
+                                    "sourceURI": normalizeSipUri(
+                                        str(eventDict.get("peeruri") or "").strip()
+                                    ),
+                                    "peerDisplayName": str(
+                                        eventDict.get("peerdisplayname") or ""
+                                    ).strip(),
+                                },
+                            )
+                            continue
+
                         if lastType != "CALL_CLOSED":
                             continue
 
