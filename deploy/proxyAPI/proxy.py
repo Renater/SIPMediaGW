@@ -146,10 +146,12 @@ def getGatewayStatusFromRedis(gw_id: str):
     media_duration = getPart(parts, redis_gw_media_duration_index)
     transcript = getPart(parts, redis_gw_transcript_progress_index)
     browsing = getPart(parts, redis_gw_browsing_index)
+    gwType = getPart(parts, redis_gw_type_index)
     return {
         "status": "success",
         "data": {
             "gw_id": gw_id,
+            "gw_type": cleanPart(gwType),
             "gw_state": state,
             "room": cleanPart(room),
             "browsing": cleanPart(browsing),
@@ -182,9 +184,11 @@ async def adminStatus(request: Request):
         media_duration = getPart(parts, redis_gw_media_duration_index)
         transcript = getPart(parts, redis_gw_transcript_progress_index)
         browsing = getPart(parts, redis_gw_browsing_index)
+        gwType = getPart(parts, redis_gw_type_index)
 
         result[gw_id] = {
             "gateway": gwIp,
+            "type": cleanPart(gwType),
             "status": state,
             "room": room if room else None,
             "media_duration": media_duration,
