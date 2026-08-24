@@ -153,6 +153,31 @@ class DockerGateway:
                 result.setdefault(key, []).append(parsed)
         return result
 
+    @staticmethod
+    def parseDisplayName(raw: str) -> str:
+        """
+        Strip the routing prefix from the peer display name.
+
+        Endpoints encode the dialled service in the display name as
+        "<targetLen>-<target><name>", where <target> is the service prefix
+        ("0" for the IVR, "3.<room>" for the Visio service):
+
+            "1-0TOTO"                -> "TOTO"
+            "12-3.azertyuiopTOTO"    -> "TOTO"
+
+        Mirrors the decoding performed in src/event_handler.py on
+        CALL_ESTABLISHED. Returns the input unchanged when it carries no
+        routing prefix.
+        """
+        value = (raw or "").strip()
+        if not value:
+            return ""
+        try:
+            prefix, remainder = value.split("-", 1)
+            return remainder[int(prefix):].strip()
+        except (ValueError, IndexError):
+            return value
+
     def start_gateway(self, req: StartRequest) -> Dict[str, Any]:
         print(f"[START CONTAINER] for gateway room={req.room} main_app={req.main_app}")
         gwSubProc = ['./SIPMediaGW.sh']
@@ -290,6 +315,18 @@ class DockerGateway:
         history = self.parseHistoryFile(historyFile)
         resp["browsing"] = ""
         resp["room"] = ""
+        resp["peer_uri"] = ""
+        resp["peer_name"] = ""
+        # A call_established entry means a SIP endpoint is connected, even when
+        # no conference has been joined yet (room/browsing are set later, once
+        # the IVR selection completes).
+        if 'call_established' in history:
+            established = history['call_established'][-1]
+            if isinstance(established, dict):
+                resp["peer_uri"] = established.get("sourceURI", "") or ""
+                resp["peer_name"] = self.parseDisplayName(
+                    established.get("peerDisplayName", "")
+                )
         if 'call_start' in history:
             if 'room' in history:
                 resp["room"] = history['room'][-1]['value']
