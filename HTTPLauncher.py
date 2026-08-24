@@ -317,17 +317,17 @@ class DockerGateway:
         resp["room"] = ""
         resp["peer_uri"] = ""
         resp["peer_name"] = ""
-        # A call_established entry means a SIP endpoint is connected, even when
+        # A call_start entry means a SIP endpoint is connected, even when
         # no conference has been joined yet (room/browsing are set later, once
         # the IVR selection completes).
-        if 'call_established' in history:
-            established = history['call_established'][-1]
-            if isinstance(established, dict):
-                resp["peer_uri"] = established.get("sourceURI", "") or ""
-                resp["peer_name"] = self.parseDisplayName(
-                    established.get("peerDisplayName", "")
-                )
         if 'call_start' in history:
+            call = history['call_start'][-1]
+            if isinstance(call, dict):
+                resp["peer_uri"] = call.get("sourceURI", "") or ""
+                resp["peer_name"] = self.parseDisplayName(
+                    call.get("peerDisplayName", "")
+                )
+        if 'gw_start' in history:
             if 'room' in history:
                 resp["room"] = history['room'][-1]['value']
             if 'browsing' in history:
