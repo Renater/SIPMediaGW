@@ -15,7 +15,9 @@ from urllib.parse import quote_plus
 
 app = FastAPI()
 
-redisClient = redis.Redis(host='127.0.0.1', port=6379, decode_responses=True)
+redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
+                          port=int(os.getenv('REDIS_PORT', '6379')),
+                          decode_responses=True)
 allowedToken = "1234"
 adminToken = "admin-secret-key"  # Change this to a secure admin key
 
@@ -35,6 +37,18 @@ redis_gw_transcript_progress_index = 6
 redis_gw_browsing_index = 7
 redis_gw_peer_uri_index = 8
 redis_gw_peer_name_index = 9
+
+
+def getPart(parts: list, index: int):
+    """Safely read a mapping field, tolerating entries written before new
+    fields were appended."""
+    return parts[index] if len(parts) > index else None
+
+
+def cleanPart(value):
+    """Normalise a mapping field: empty and 'None' are returned as None."""
+    return value if value and value != "" and value != "None" else None
+
 
 @app.get("/pairing")
 async def pairing_page(request: Request):
@@ -93,7 +107,7 @@ def findAvailableGateway():
         value = redisClient.get(key)
         parts = value.split("|")
         gwIp = parts[redis_gw_ip_index]
-        state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
+        state = getPart(parts, redis_gw_state_index)
         if state == "started":
             return [key, gwIp]
     return None
@@ -133,22 +147,20 @@ def getGatewayStatusFromRedis(gw_id: str):
         return None
     parts = rawValue.split("|")
     gwIp = parts[redis_gw_ip_index]
-    room = parts[redis_gw_room_index] if len(parts) > redis_gw_room_index else None
-    state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
-    media_duration = parts[redis_gw_media_duration_index] if len(parts) > redis_gw_media_duration_index else None
-    transcript = parts[redis_gw_transcript_progress_index] if len(parts) > redis_gw_transcript_progress_index else None
-    browsing = parts[redis_gw_browsing_index] if len(parts) > redis_gw_transcript_progress_index else None
-    peerUri = parts[redis_gw_peer_uri_index] if len(parts) > redis_gw_peer_uri_index else None
-    peerName = parts[redis_gw_peer_name_index] if len(parts) > redis_gw_peer_name_index else None
+    room = getPart(parts, redis_gw_room_index)
+    state = getPart(parts, redis_gw_state_index)
+    media_duration = getPart(parts, redis_gw_media_duration_index)
+    transcript = getPart(parts, redis_gw_transcript_progress_index)
+    browsing = getPart(parts, redis_gw_browsing_index)
+    gwType = getPart(parts, redis_gw_type_index)
     return {
         "status": "success",
         "data": {
             "gw_id": gw_id,
+            "gw_type": cleanPart(gwType),
             "gw_state": state,
-            "room": room if room and room != "" and room != "None" else None,
-            "browsing": browsing if browsing and browsing != "" and browsing != "None" else None,
-            "peer_uri": peerUri if peerUri and peerUri != "" and peerUri != "None" else None,
-            "peer_name": peerName if peerName and peerName != "" and peerName != "None" else None,
+            "room": cleanPart(room),
+            "browsing": cleanPart(browsing),
             "media_duration": media_duration,
             "transcript_progress": transcript
         }
@@ -173,16 +185,16 @@ async def adminStatus(request: Request):
             continue
         parts = raw.split("|")
         gwIp = parts[redis_gw_ip_index]
-        room = parts[redis_gw_room_index] if len(parts) > redis_gw_room_index else None
-        state = parts[redis_gw_state_index] if len(parts) > redis_gw_state_index else None
-        media_duration = parts[redis_gw_media_duration_index] if len(parts) > redis_gw_media_duration_index else None
-        transcript = parts[redis_gw_transcript_progress_index] if len(parts) > redis_gw_transcript_progress_index else None
-        browsing = parts[redis_gw_browsing_index] if len(parts) > redis_gw_browsing_index else None
-        peerUri = parts[redis_gw_peer_uri_index] if len(parts) > redis_gw_peer_uri_index else None
-        peerName = parts[redis_gw_peer_name_index] if len(parts) > redis_gw_peer_name_index else None
+        room = getPart(parts, redis_gw_room_index)
+        state = getPart(parts, redis_gw_state_index)
+        media_duration = getPart(parts, redis_gw_media_duration_index)
+        transcript = getPart(parts, redis_gw_transcript_progress_index)
+        browsing = getPart(parts, redis_gw_browsing_index)
+        gwType = getPart(parts, redis_gw_type_index)
 
         result[gw_id] = {
             "gateway": gwIp,
+            "type": cleanPart(gwType),
             "status": state,
             "room": room if room else None,
             "media_duration": media_duration,
@@ -428,6 +440,7 @@ async def stopGateway(request: Request):
         detailsRes = responseJson.get("data", {}).get("processing_state", "")
         if "stopping" in detailsRes or "stopped" in detailsRes:
             # Mark as stopped
+            parts += [""] * (redis_gw_field_count - len(parts))
             parts[redis_gw_room_index] = ''
             parts[redis_gw_browsing_index] = ''
             parts[redis_gw_peer_uri_index] = ''
@@ -475,7 +488,7 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
             if not rawValue:
                 continue
             parts = rawValue.split("|")
-            gwRoom = parts[redis_gw_room_index] if len(parts) > redis_gw_room_index else None
+            gwRoom = getPart(parts, redis_gw_room_index)
             if gwRoom == room:
                 gw_id = key.split(":")[-1]
                 break
@@ -490,7 +503,7 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
     gwIp = parts[redis_gw_ip_index]
 
     # ----- Refresh baresip gateways on demand --------------------
-    gw_type = parts[redis_gw_type_index] if len(parts) > redis_gw_type_index else None
+    gw_type = getPart(parts, redis_gw_type_index)
     if gw_type == "baresip":
         # call the on‑demand monitor to get a fresh status
         await monitorOneGateway(gw_id, gwIp)
