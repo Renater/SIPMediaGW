@@ -227,13 +227,8 @@ async def gatewayIdFromPeerUri(request: Request, peer_uri: str = None):
     a given SIP endpoint.
 
     Endpoints know their own registration URI but not the identifier of the
-    gateway they are calling, which is regenerated on every container
-    recreation. This lets a room-side client obtain it in order to issue
+    gateway they are calling. This lets a room-side SIP client obtain it in order to issue
     control commands for the duration of the call.
-
-    The registration URI is the only identity every SIP endpoint knows about
-    itself, whatever the vendor, so the mechanism is not tied to a single
-    ecosystem.
 
     Only gateways with an established call carry a peer_uri, so an endpoint
     that is not in a call cannot be resolved.
