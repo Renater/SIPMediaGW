@@ -328,8 +328,6 @@ class DockerGateway:
                 resp["peer_name"] = self.parseDisplayName(
                     call.get("peerDisplayName", "")
                 )
-                # ISO 8601 UTC; consumers derive the live call duration
-                # from it rather than polling a counter.
                 resp["call_started"] = call.get("timestamp", "") or ""
         if 'gw_start' in history:
             if 'room' in history:
