@@ -124,13 +124,6 @@ def authorizeRoom(request: Request):
     token = authHeader.split(" ", 1)[1]
     return token == roomToken or token == allowedToken
 
-def authorizeRoom(request: Request):
-    """Check if request has a valid room or operational token"""
-    authHeader = request.headers.get("Authorization")
-    if not authHeader or not re.match(r"^Bearer ", authHeader):
-        return False
-    token = authHeader.split(" ", 1)[1]
-    return token == allowedToken or (roomToken and token == roomToken)
 
 def findAvailableGateway():
     for key in redisClient.scan_iter(match="gateway:*"):
