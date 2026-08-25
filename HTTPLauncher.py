@@ -317,6 +317,7 @@ class DockerGateway:
         resp["room"] = ""
         resp["peer_uri"] = ""
         resp["peer_name"] = ""
+        resp["call_started"] = ""
         # A call_start entry means a SIP endpoint is connected, even when
         # no conference has been joined yet (room/browsing are set later, once
         # the IVR selection completes).
@@ -327,6 +328,9 @@ class DockerGateway:
                 resp["peer_name"] = self.parseDisplayName(
                     call.get("peerDisplayName", "")
                 )
+                # ISO 8601 UTC; consumers derive the live call duration
+                # from it rather than polling a counter.
+                resp["call_started"] = call.get("timestamp", "") or ""
         if 'gw_start' in history:
             if 'room' in history:
                 resp["room"] = history['room'][-1]['value']

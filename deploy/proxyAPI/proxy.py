@@ -23,10 +23,10 @@ allowedToken = os.getenv("PROXY_TOKEN", "1234")
 adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
 
 # Redis Mapping:
-# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>"
+# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>|<call_started>"
 # state: started | working | stopped
 
-redis_gw_field_count = 10
+redis_gw_field_count = 11
 
 redis_gw_ip_index = 0
 redis_gw_state_index = 1
@@ -38,6 +38,7 @@ redis_gw_transcript_progress_index = 6
 redis_gw_browsing_index = 7
 redis_gw_peer_uri_index = 8
 redis_gw_peer_name_index = 9
+redis_gw_call_started_index = 10
 
 
 def getPart(parts: list, index: int):
@@ -122,6 +123,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     browsing = data.get("browsing")
     peerUri = data.get("peer_uri")
     peerName = data.get("peer_name")
+    callStarted = data.get("call_started")
     parts += [""] * (redis_gw_field_count - len(parts) )
     if recording:
         parts[redis_gw_media_duration_index] = f"{recording}"
@@ -138,6 +140,7 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     parts[redis_gw_browsing_index] = f"{browsing}" if browsing else "None"
     parts[redis_gw_peer_uri_index] = f"{peerUri}" if peerUri else "None"
     parts[redis_gw_peer_name_index] = f"{peerName}" if peerName else "None"
+    parts[redis_gw_call_started_index] = f"{callStarted}" if callStarted else "None"
 
     mapping = "|".join(parts)
     redisClient.set(f"gateway:{gw_id}", mapping)
@@ -156,6 +159,7 @@ def getGatewayStatusFromRedis(gw_id: str):
     gwType = getPart(parts, redis_gw_type_index)
     peerUri = getPart(parts, redis_gw_peer_uri_index)
     peerName = getPart(parts, redis_gw_peer_name_index)
+    callStarted = getPart(parts, redis_gw_call_started_index)
     return {
         "status": "success",
         "data": {
@@ -166,6 +170,7 @@ def getGatewayStatusFromRedis(gw_id: str):
             "browsing": cleanPart(browsing),
             "peer_uri": cleanPart(peerUri),
             "peer_name": cleanPart(peerName),
+            "call_started": cleanPart(callStarted),
             "media_duration": media_duration,
             "transcript_progress": transcript
         }
@@ -198,6 +203,7 @@ async def adminStatus(request: Request):
         gwType = getPart(parts, redis_gw_type_index)
         peerUri = getPart(parts, redis_gw_peer_uri_index)
         peerName = getPart(parts, redis_gw_peer_name_index)
+        callStarted = getPart(parts, redis_gw_call_started_index)
 
         result[gw_id] = {
             "gateway": gwIp,
@@ -208,7 +214,8 @@ async def adminStatus(request: Request):
             "transcript_progress": transcript,
             "browsing": browsing if browsing else None,
             "peer_uri": peerUri if peerUri else None,
-            "peer_name": peerName if peerName else None
+            "peer_name": peerName if peerName else None,
+            "call_started": callStarted if callStarted else None
         }
     return result
 
@@ -452,6 +459,7 @@ async def stopGateway(request: Request):
             parts[redis_gw_browsing_index] = ''
             parts[redis_gw_peer_uri_index] = ''
             parts[redis_gw_peer_name_index] = ''
+            parts[redis_gw_call_started_index] = ''
             parts[redis_gw_state_index] = "stopped"
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)
@@ -662,6 +670,7 @@ async def registerGateway(request: Request):
             browsing      = parts[redis_gw_browsing_index]
             peerUri       = parts[redis_gw_peer_uri_index]
             peerName      = parts[redis_gw_peer_name_index]
+            callStarted   = parts[redis_gw_call_started_index]
         else:
             # No mapping found => reset
             gwState = "started"
@@ -672,12 +681,13 @@ async def registerGateway(request: Request):
             browsing      = None
             peerUri       = None
             peerName      = None
+            callStarted   = None
 
         # Build new mapping
-        # format : gwIp|state|type|room|startTime|media|transcript|browsing|peerUri|peerName
+        # format : gwIp|state|type|room|startTime|media|transcript|browsing|peerUri|peerName|callStarted
         gwValue = (
             f"{gwIp}|{gwState}|{gwType}|{roomName}|{startTime}|"
-            f"{mediaduration}|{transcriptprog}|{browsing}|{peerUri}|{peerName}"
+            f"{mediaduration}|{transcriptprog}|{browsing}|{peerUri}|{peerName}|{callStarted}"
         )
         redisClient.set(f"gateway:{gwId}", gwValue)
         print(f"Gateway registered / updated: {gwId} ({gwIp})")
