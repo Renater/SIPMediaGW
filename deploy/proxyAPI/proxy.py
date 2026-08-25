@@ -187,6 +187,15 @@ async def adminStatus(request: Request):
             media_type="application/json"
         )
 
+    # Redis stores pairing:<code> -> gw_id, while the console needs the
+    # reverse. Codes have a short TTL, so the value only holds at the
+    # time of the request.
+    pairingByGateway = {}
+    for pairingKey in redisClient.scan_iter(match="pairing:*"):
+        pairedGwId = redisClient.get(pairingKey)
+        if pairedGwId:
+            pairingByGateway[pairedGwId] = pairingKey.split(":", 1)[1]
+
     result = {}
     for key in redisClient.scan_iter(match="gateway:*"):
         gw_id = key.split(":")[-1]
@@ -215,7 +224,8 @@ async def adminStatus(request: Request):
             "browsing": browsing if browsing else None,
             "peer_uri": peerUri if peerUri else None,
             "peer_name": peerName if peerName else None,
-            "call_started": callStarted if callStarted else None
+            "call_started": callStarted if callStarted else None,
+            "pairing_code": pairingByGateway.get(gw_id)
         }
     return result
 
