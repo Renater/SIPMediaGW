@@ -25,11 +25,6 @@ adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
 # gateway id. Empty by default, which keeps /gateway_id closed: the route is
 # only enabled on deployments where endpoints can be trusted to hold a secret.
 roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
-# Room-side clients only need to resolve their own gateway id. A dedicated
-# token lets them do so without also being able to reach the gateway
-# lifecycle routes, since it has to be readable in every room endpoint.
-# Empty by default: the operational token then remains the only one accepted.
-roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 # Redis Mapping:
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>|<call_started>"
