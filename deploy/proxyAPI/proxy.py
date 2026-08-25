@@ -21,6 +21,15 @@ redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
 
 allowedToken = os.getenv("PROXY_TOKEN", "1234")
 adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
+# Dedicated token for room-side clients, which only need to resolve their own
+# gateway id. Empty by default, which keeps /gateway_id closed: the route is
+# only enabled on deployments where endpoints can be trusted to hold a secret.
+roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
+# Room-side clients only need to resolve their own gateway id. A dedicated
+# token lets them do so without also being able to reach the gateway
+# lifecycle routes, since it has to be readable in every room endpoint.
+# Empty by default: the operational token then remains the only one accepted.
+roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 # Redis Mapping:
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>|<call_started>"
@@ -104,6 +113,30 @@ def authorizeAdmin(request: Request):
     token = authHeader.split(" ", 1)[1]
     return token == adminToken
 
+def authorizeRoom(request: Request):
+    """
+    Check if request has a valid room token.
+
+    Returns False when PROXY_ROOM_TOKEN is unset, which disables the route
+    altogether. The operational token is accepted as well, so a client that
+    already holds one does not need a second secret.
+    """
+    if not roomToken:
+        return False
+    authHeader = request.headers.get("Authorization")
+    if not authHeader or not re.match(r"^Bearer ", authHeader):
+        return False
+    token = authHeader.split(" ", 1)[1]
+    return token == roomToken or token == allowedToken
+
+def authorizeRoom(request: Request):
+    """Check if request has a valid room or operational token"""
+    authHeader = request.headers.get("Authorization")
+    if not authHeader or not re.match(r"^Bearer ", authHeader):
+        return False
+    token = authHeader.split(" ", 1)[1]
+    return token == allowedToken or (roomToken and token == roomToken)
+
 def findAvailableGateway():
     for key in redisClient.scan_iter(match="gateway:*"):
         value = redisClient.get(key)
@@ -174,6 +207,87 @@ def getGatewayStatusFromRedis(gw_id: str):
             "media_duration": media_duration,
             "transcript_progress": transcript
         }
+    }
+
+def normalizeSipUri(uri: str) -> str:
+    """
+    Accept both "user@domain" and "sip:user@domain".
+
+    Endpoints report their own identity without the scheme, while the gateway
+    records it normalised. Mirrors normalizeSipUri() in src/logParse.py.
+    """
+    cleanUri = (uri or "").strip()
+    if not cleanUri:
+        return ""
+    if cleanUri.startswith("sip:"):
+        return cleanUri
+    if "@" in cleanUri:
+        return "sip:" + cleanUri
+    return cleanUri
+
+@app.get("/gateway_id")
+async def gatewayIdFromPeerUri(request: Request, peer_uri: str = None):
+    """
+    GET /gateway_id?peer_uri=<sip uri> - Resolve the gateway currently serving
+    a given SIP endpoint.
+
+    Endpoints know their own registration URI but not the identifier of the
+    gateway they are calling, which is regenerated on every container
+    recreation. This lets a room-side client obtain it in order to issue
+    control commands for the duration of the call.
+
+    The registration URI is the only identity every SIP endpoint knows about
+    itself, whatever the vendor, so the mechanism is not tied to a single
+    ecosystem.
+
+    Only gateways with an established call carry a peer_uri, so an endpoint
+    that is not in a call cannot be resolved.
+    """
+    if not authorizeRoom(request):
+        return Response(
+            json.dumps({"error": "authorization error"}),
+            status_code=401,
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            media_type="application/json"
+        )
+
+    if not peer_uri:
+        raise HTTPException(status_code=400, detail="Missing 'peer_uri' parameter")
+
+    wanted = normalizeSipUri(peer_uri).lower()
+
+    # A gateway torn down after a hangup may still hold a mapping until the
+    # next monitor cycle, so the most recently established call wins.
+    best = None
+    for key in redisClient.scan_iter(match="gateway:*"):
+        rawValue = redisClient.get(key)
+        if not rawValue:
+            continue
+        parts = rawValue.split("|")
+
+        peerUri = cleanPart(getPart(parts, redis_gw_peer_uri_index))
+        if not peerUri or normalizeSipUri(peerUri).lower() != wanted:
+            continue
+
+        callStarted = cleanPart(getPart(parts, redis_gw_call_started_index)) or ""
+        if best is None or callStarted > best["call_started"]:
+            best = {
+                "gw_id": key.split(":")[-1],
+                "room": cleanPart(getPart(parts, redis_gw_room_index)),
+                "browsing": cleanPart(getPart(parts, redis_gw_browsing_index)),
+                "call_started": callStarted,
+            }
+
+    if not best:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No gateway currently serving '{peer_uri}'"
+        )
+
+    return {
+        "gw_id": best["gw_id"],
+        "room": best["room"],
+        "browsing": best["browsing"],
     }
 
 @app.get("/admin/statuses")
