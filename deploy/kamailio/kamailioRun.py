@@ -58,8 +58,9 @@ except:
 
 kamRunCmd='kamailio -DD -E'
 
-if os.getenv("SIP_DOMAIN"):
-    kamRunCmd+= ' --alias {}'.format(os.getenv("SIP_DOMAIN"))
+for sipDomain in os.getenv("SIP_DOMAIN", "").split(","):
+    if sipDomain.strip():
+        kamRunCmd+= ' --alias {}'.format(sipDomain.strip())
 
 if os.getenv("PUBLIC_IP"):
     kamRunCmd+= ' --alias {}'.format(os.getenv("PUBLIC_IP"))
