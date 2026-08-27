@@ -2,7 +2,6 @@
 
 import sys
 import os
-import select
 import traceback
 import queue
 import base64
@@ -33,9 +32,6 @@ class Browsing:
         if os.environ.get('AUDIO_ONLY') == "true":
             self.chromeOptions.add_argument('--headless=new')
             self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
-        self.chatFifo = "./chatFifo"
-        if not os.path.exists(self.chatFifo):
-            os.mkfifo(self.chatFifo)
         self.driver = None
         self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}')".format(
                                                     self.room['config']['webrtc_domain'],
@@ -121,23 +117,6 @@ class Browsing:
     def browse(self):
         pass
 
-    def chatHandler(self, timeout):
-        fd = os.open(self.chatFifo, os.O_RDONLY | os.O_NONBLOCK)
-        try:
-            ready, _, _ = select.select([fd], [], [], timeout)
-            if not ready:
-                raise TimeoutError()
-            data = os.read(fd, 4096)
-            if data:
-                self.driver.execute_script(
-                    "window.meeting.sendChat(arguments[0]);",
-                    data.decode().strip()
-                )
-                self.driver.execute_script("window.meeting.sendChat({});".format(json.dumps(data.strip())))
-        finally:
-            os.close(fd)
-            return
-
     def interact(self):
         try:
             inKey = self.userInputs.get(True, 0.02)
@@ -181,7 +160,6 @@ class Browsing:
             while self.room:
                 self.interact()
                 self.readPairingCode(self.driver)
-                self.chatHandler(0.01)
         except Exception as e:
             print("Error while browsing: {}".format(e), flush=True)
 
