@@ -459,12 +459,15 @@ class DockerGateway:
                 out, err = res.communicate()
         elif payload['command'] == 'sendChat':
             msg = payload['param1']
-            gwSubProc = ['docker', 'exec', gwName,
-                            'sh', '-c',
-                            ('if [ -p ./chatFifo ]; then '
-                             'printf "%s\n" "{}" > ./chatFifo; fi'.format(msg))]
-            res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, err = res.communicate()
+            ok = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.sendChat) ? "
+                "window.meeting.sendChat(arguments[0]) : false;",
+                msg
+            )
+            if not ok:
+                raise ValueError("sendChat failed or not supported by this connector")
+            return {"ack": True, "sendChat": True}
         elif payload['command'] == 'endCall':
             gwSubProc = ['docker', 'exec', gwName,
                             'sh', '-c',
