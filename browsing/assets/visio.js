@@ -93,17 +93,32 @@ class Visio extends UIHelper{
             return null;
         }
     }
+    mediaState() {
+        const el = document.getElementById('media-state');
+        if (!el) {
+            console.error('[✗] media-state element not found');
+            return null;
+        }
+        return {
+            microphone: el.dataset.microphoneEnabled === 'true',
+            camera: el.dataset.cameraEnabled === 'true'
+        };
+    }
     microphone(param) {
-        const microphoneButton = document.querySelector('[aria-label*="Ctrl+d"]');
-        if (!microphoneButton) {
-            console.error('[✗] Microphone button not found');
+        const state = this.mediaState();
+        if (!state) {
             return;
         }
 
-        const muted = microphoneButton.getAttribute('aria-pressed') === 'true';
-        const shouldToggle = (param === 'on' && muted) || (param === 'off' && !muted);
+        const shouldToggle = (param === 'on' && !state.microphone) ||
+                             (param === 'off' && state.microphone);
 
         if (shouldToggle) {
+            const microphoneButton = document.querySelector('[aria-label*="Ctrl+d"]');
+            if (!microphoneButton) {
+                console.error('[✗] Microphone button not found');
+                return;
+            }
             microphoneButton.click();
         }
     }

@@ -491,6 +491,13 @@ class DockerGateway:
                 raise ValueError(
                     "reaction '{}' not supported by this connector".format(reactionName))
             return {"ack": True, "reaction": reactionName}
+        elif payload['command'] == 'mediaState':
+            mediaState = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.mediaState) ? "
+                "window.meeting.mediaState() : null;"
+            )
+            return {"ack": True, "mediaState": mediaState}
         elif payload['command'] == 'microphone':
             microphoneState = payload.get('param1')
             if microphoneState not in ('on', 'off'):
