@@ -190,27 +190,46 @@ class Visio extends UIHelper{
             setTimeout(() => clearInterval(interval), 5000);
         }
     }
-    sendChat(message) {
-        const textarea = document.querySelector('textarea');
-        if (!textarea) {
-            return;
+    async sendChat(message) {
+        if (!message || !String(message).trim()) {
+            console.error('[\u2717] Empty chat message');
+            return false;
         }
-        // Setter natif compatible React
+        // The chat textarea is only mounted while the chat panel is open.
+        const closed = document.querySelector('[data-attr="controls-chat-closed"]');
+        if (closed) {
+            closed.click();
+        }
+        let textarea;
+        try {
+            textarea = await this.waitForElement('textarea', { visible: true }, 5000);
+        } catch (e) {
+            console.error('[\u2717] Chat textarea not reachable');
+            return false;
+        }
+        // Native setter, so that React registers the new value
         const nativeSetter = Object.getOwnPropertyDescriptor(
             window.HTMLTextAreaElement.prototype,
             'value'
         ).set;
         nativeSetter.call(textarea, message);
-        // Events React
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-        textarea.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
-            keyCode: 13,
-            which: 13,
-            bubbles: true
-        }));
+        // The send button stays disabled until React has re-rendered.
+        const sendButton = textarea.parentElement.querySelector('button');
+        if (!sendButton) {
+            console.error('[\u2717] Chat send button not found');
+            return false;
+        }
+        const start = Date.now();
+        while (sendButton.disabled) {
+            if (Date.now() - start > 5000) {
+                console.error('[\u2717] Chat send button stayed disabled');
+                return false;
+            }
+            await new Promise(r => setTimeout(r, 50));
+        }
+        sendButton.click();
+        return true;
     }
     async leave() {
         console.log('[INFO] Leave the meeting room');
