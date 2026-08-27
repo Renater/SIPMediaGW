@@ -122,7 +122,45 @@ class Visio extends UIHelper{
             microphoneButton.click();
         }
     }
+    async reaction(name) {
+        const known = ['thumbs-up', 'thumbs-down', 'clapping-hands', 'red-heart',
+                       'face-with-tears-of-joy', 'face-with-open-mouth',
+                       'party-popper', 'folded-hands'];
+        if (!known.includes(name)) {
+            console.error('[✗] Unknown reaction: ' + name);
+            return false;
+        }
+        const toggle = document.querySelector('[data-attr="reactions-toggle"]');
+        if (!toggle) {
+            console.error('[✗] Reactions toggle not found');
+            return false;
+        }
+        if (toggle.getAttribute('aria-expanded') !== 'true') {
+            toggle.click();
+        }
+        try {
+            const button = await this.waitForElement(
+                '[data-attr="send-reaction-' + name + '"]', { clickable: true }, 2000);
+            button.click();
+        } catch (e) {
+            console.error('[✗] Reaction button not reachable: ' + name);
+            return false;
+        } finally {
+            if (toggle.getAttribute('aria-expanded') === 'true') {
+                toggle.click();
+            }
+        }
+        return true;
+    }
     interact(key) {
+        const reactionKeys = {
+            "6": "thumbs-up",
+            "7": "red-heart",
+            "8": "clapping-hands",
+            "9": "face-with-tears-of-joy"
+        };
+        if (key in reactionKeys)
+            this.reaction(reactionKeys[key]);
         if (key == "1")
             document.querySelector('[aria-label*="Ctrl+d"]').click();
         if (key == "2")
