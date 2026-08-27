@@ -477,6 +477,20 @@ class DockerGateway:
                 "return window.meeting.slideShot();"
             )
             return {"ack": True, "slideImg": slideImgB64}
+        elif payload['command'] == 'reaction':
+            reactionName = payload.get('param1')
+            if not reactionName:
+                raise ValueError("reaction requires param1")
+            ok = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.reaction) ? "
+                "window.meeting.reaction(arguments[0]) : false;",
+                reactionName
+            )
+            if not ok:
+                raise ValueError(
+                    "reaction '{}' not supported by this connector".format(reactionName))
+            return {"ack": True, "reaction": reactionName}
         elif payload['command'] == 'microphone':
             microphoneState = payload.get('param1')
             if microphoneState not in ('on', 'off'):
