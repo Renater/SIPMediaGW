@@ -32,6 +32,7 @@
     "assets_url": "",
     "cleaner_blacklist": [],
     "api_token": "1234",
+    "scale_method": "buffer",
     "cleanup_threshold_seconds": 600
 }
 

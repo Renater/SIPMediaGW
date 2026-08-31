@@ -32,6 +32,7 @@ Example configuration (JSON)
     "root_password": "secret"
   },
   "cpu_per_gw": 4,
+  "scale_method": "buffer",
   "auto_scale_threshold": {
     "default": {
       "00:00:00": {"unlockedMin": 2, "loadMax": 0.7},
@@ -58,6 +59,7 @@ Public methods
   - Destroy instances marked to_stop=1 and remove instances without a public IP after a timeout.
 - scale(scaleTime=None, incallsNum=None)
   - Compute current and target capacity using database queries and thresholds, then call upScale/downScale.
+  - `scale_method` in the JSON config selects the formula (`buffer` by default, which is the historical behaviour; `floor` uses a minimum total GW count).
 
 Important notes and known issues
 - configure currently opens files without using a context manager — consider with open(...) for safety.

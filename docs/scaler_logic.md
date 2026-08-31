@@ -31,11 +31,14 @@ The scaling behavior is driven by thresholds defined in `scaler.json`, configura
 
 | Parameter       | Description                                                                 |
 |----------------|-----------------------------------------------------------------------------|
-| `unlockedMin`   | Minimum number of **available** gateways before triggering scale-up         |
+| `scale_method`  | `buffer` (default, historical) or `floor`. Omitted key means `buffer`.      |
+| `unlockedMin`   | **buffer:** min **available** GWs. **floor:** min **total** GW count.       |
 | `loadMax`       | Maximum allowed **usage ratio** (`busy / registered`) before scaling occurs |
 | `cpu_per_gw`    | Number of vCPUs assigned per SIPMediaGW instance (typically 4)              |
 
 ---
+
+With `scale_method` omitted or set to `buffer`, the decision flow below is unchanged. With `"scale_method": "floor"`, `unlockedMin` is a floor on **total** capacity: restore that floor, scale up if `busy/registered > loadMax`, then release surplus down to `max(unlockedMin, ceil(busy / loadMax))` (capped by `maxGw`).
 
 ##  Decision Flow
 
