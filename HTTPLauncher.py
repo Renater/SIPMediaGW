@@ -501,6 +501,13 @@ class DockerGateway:
                 "window.meeting.mediaState() : null;"
             )
             return {"ack": True, "mediaState": mediaState}
+        elif payload['command'] == 'panelState':
+            panelState = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.panelState) ? "
+                "window.meeting.panelState() : null;"
+            )
+            return {"ack": True, "panelState": panelState}
         elif payload['command'] == 'microphone':
             microphoneState = payload.get('param1')
             if microphoneState not in ('on', 'off'):

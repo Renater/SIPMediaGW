@@ -160,6 +160,26 @@ class Visio extends UIHelper{
         }
         return true;
     }
+    panelState() {
+        // Visio's side panels (chat, participants, info) carry a data-attr
+        // suffixed -closed or -open, and are mutually exclusive: opening one
+        // closes the one that was open. The raise-hand button follows another
+        // convention, its label naming the available action, so -hand-lower
+        // means the hand is currently raised.
+        //
+        // The meeting tools panel (toggle-tools) is left out: its data-attr is
+        // the same whether it is open or closed, so its state cannot be
+        // observed this way.
+        const open = (name) =>
+            document.querySelector('[data-attr="controls-' + name + '-open"]') !== null;
+        return {
+            chat: open('chat'),
+            participants: open('participants'),
+            info: open('info'),
+            handRaised:
+                document.querySelector('[data-attr="controls-hand-lower"]') !== null
+        };
+    }
     interact(key) {
         const reactionKeys = {
             "6": "thumbs-up",
@@ -179,6 +199,8 @@ class Visio extends UIHelper{
             document.querySelector('button[data-attr*="controls-hand-raise"], button[data-attr*="controls-hand-lower"]').click();
         if (key == "5")
             document.querySelector('button[data-attr*="controls-participants-closed"], button[data-attr*="controls-participants-open"]').click();
+        if (key == "0")
+            document.querySelector('button[data-attr*="controls-info-closed"], button[data-attr*="controls-info-open"]').click();
         if (key == "s" || key == "q") {
             document.querySelector('[data-attr*="controls-screenshare"]').click();
 
