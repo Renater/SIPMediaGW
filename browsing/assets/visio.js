@@ -99,9 +99,17 @@ class Visio extends UIHelper{
             console.error('[✗] media-state element not found');
             return null;
         }
+        // Publish permissions are optional: they are only exposed by Visio
+        // instances that carry the can-publish attributes. Undefined is
+        // reported as null so that a client can tell "not allowed to publish"
+        // from "this instance does not say", instead of assuming the former.
+        const canPublish = (value) =>
+            value === undefined ? null : value === 'true';
         return {
             microphone: el.dataset.microphoneEnabled === 'true',
-            camera: el.dataset.cameraEnabled === 'true'
+            camera: el.dataset.cameraEnabled === 'true',
+            canPublishMicrophone: canPublish(el.dataset.canPublishMicrophone),
+            canPublishCamera: canPublish(el.dataset.canPublishCamera)
         };
     }
     microphone(param) {
