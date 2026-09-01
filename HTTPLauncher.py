@@ -501,6 +501,13 @@ class DockerGateway:
                 "window.meeting.mediaState() : null;"
             )
             return {"ack": True, "mediaState": mediaState}
+        elif payload['command'] == 'uiState':
+            uiState = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.uiState) ? "
+                "window.meeting.uiState() : null;"
+            )
+            return {"ack": True, "uiState": uiState}
         elif payload['command'] == 'panelState':
             panelState = self.executeInExistingChromeSession(
                 gwId,
