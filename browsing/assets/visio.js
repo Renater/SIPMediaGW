@@ -231,6 +231,11 @@ class Visio extends UIHelper{
         sendButton.click();
         return true;
     }
+    hasLeft() {
+        // Visio redirects to /feedback once the participant is out of the
+        // conference, including when it evicts an idle one.
+        return window.location.pathname.startsWith('/feedback');
+    }
     async leave() {
         console.log('[INFO] Leave the meeting room');
         try {
