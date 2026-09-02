@@ -158,7 +158,10 @@ Normal requests:
 curl -H "Authorization: Bearer 1234" -X POST -d '{"room":"math101"}' http://localhost:9000/start
 ```
 
-Admin requests:
+Admin requests (`PROXY_ADMIN_TOKEN` must be set, there is no default):
 ```bash
-curl -H "Authorization: Bearer admin-secret-key" http://localhost:9000/admin/statuses
+curl -H "Authorization: Bearer $PROXY_ADMIN_TOKEN" http://localhost:9000/admin/statuses
+# HTTP Basic is accepted too (any user name, the admin token as password),
+# which lets a browser open admin pages through its native prompt:
+curl -u admin:$PROXY_ADMIN_TOKEN http://localhost:9000/admin/statuses
 ```

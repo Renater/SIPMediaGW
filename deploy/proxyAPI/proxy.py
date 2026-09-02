@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import base64
 import redis
 import os
 import httpx
@@ -20,7 +21,9 @@ redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           decode_responses=True)
 
 allowedToken = os.getenv("PROXY_TOKEN", "1234")
-adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
+# No default: an unset PROXY_ADMIN_TOKEN disables admin routes (same
+# convention as PROXY_ROOM_TOKEN) instead of exposing a well-known secret.
+adminToken = os.getenv("PROXY_ADMIN_TOKEN", "")
 # Dedicated token for room-side clients, which only need to resolve their own
 # gateway id. Empty by default, which keeps /gateway_id closed: the route is
 # only enabled on deployments where endpoints can be trusted to hold a secret.
@@ -102,11 +105,23 @@ def authorize(request: Request):
 
 def authorizeAdmin(request: Request):
     """Check if request has valid admin token"""
-    authHeader = request.headers.get("Authorization")
-    if not authHeader or not re.match(r"^Bearer ", authHeader):
+    if not adminToken:
         return False
-    token = authHeader.split(" ", 1)[1]
-    return token == adminToken
+    authHeader = request.headers.get("Authorization")
+    if not authHeader:
+        return False
+    if re.match(r"^Bearer ", authHeader):
+        return authHeader.split(" ", 1)[1] == adminToken
+    # HTTP Basic lets a browser reach admin pages through its native
+    # prompt: any user name, the admin token as password.
+    if re.match(r"^Basic ", authHeader):
+        try:
+            decoded = base64.b64decode(authHeader.split(" ", 1)[1]).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            return False
+        _, _, password = decoded.partition(":")
+        return password == adminToken
+    return False
 
 def authorizeRoom(request: Request):
     """
@@ -280,7 +295,7 @@ async def adminStatus(request: Request):
         return Response(
             json.dumps({"error": "authorization error"}),
             status_code=401,
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            headers={"WWW-Authenticate": 'Basic realm="SIPMediaGW admin", Bearer error="invalid_token"'},
             media_type="application/json"
         )
 
