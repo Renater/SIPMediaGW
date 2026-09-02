@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import base64
 import redis
 import os
 import httpx
@@ -107,10 +108,20 @@ def authorizeAdmin(request: Request):
     if not adminToken:
         return False
     authHeader = request.headers.get("Authorization")
-    if not authHeader or not re.match(r"^Bearer ", authHeader):
+    if not authHeader:
         return False
-    token = authHeader.split(" ", 1)[1]
-    return token == adminToken
+    if re.match(r"^Bearer ", authHeader):
+        return authHeader.split(" ", 1)[1] == adminToken
+    # HTTP Basic lets a browser reach admin pages through its native
+    # prompt: any user name, the admin token as password.
+    if re.match(r"^Basic ", authHeader):
+        try:
+            decoded = base64.b64decode(authHeader.split(" ", 1)[1]).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            return False
+        _, _, password = decoded.partition(":")
+        return password == adminToken
+    return False
 
 def authorizeRoom(request: Request):
     """
@@ -284,7 +295,7 @@ async def adminStatus(request: Request):
         return Response(
             json.dumps({"error": "authorization error"}),
             status_code=401,
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            headers={"WWW-Authenticate": 'Basic realm="SIPMediaGW admin", Bearer error="invalid_token"'},
             media_type="application/json"
         )
 

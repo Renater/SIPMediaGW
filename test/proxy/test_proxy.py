@@ -26,6 +26,28 @@ def test_authorize_admin_valid_token():
         assert proxy.authorizeAdmin(request) is True
 
 
+def test_authorize_admin_valid_basic_password():
+    import base64
+    creds = base64.b64encode(b"admin:admin-secret-key").decode()
+    request = Mock(headers={"Authorization": f"Basic {creds}"})
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'):
+        assert proxy.authorizeAdmin(request) is True
+
+
+def test_authorize_admin_invalid_basic_password():
+    import base64
+    creds = base64.b64encode(b"admin:wrong").decode()
+    request = Mock(headers={"Authorization": f"Basic {creds}"})
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'):
+        assert proxy.authorizeAdmin(request) is False
+
+
+def test_authorize_admin_malformed_basic():
+    request = Mock(headers={"Authorization": "Basic %%%not-base64%%%"})
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'):
+        assert proxy.authorizeAdmin(request) is False
+
+
 def test_authorize_admin_refuses_when_token_unset():
     request = Mock(headers={"Authorization": "Bearer "})
     with patch.object(proxy, 'adminToken', ''):
@@ -103,6 +125,7 @@ def test_adminStatus_requires_admin_token(client, redis_mock):
 
     assert response.status_code == 401
     assert response.json()["error"] == "authorization error"
+    assert "Basic realm=" in response.headers["WWW-Authenticate"]
 
 def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
     redis_mock.scan_iter.return_value = ["gateway:gw1"]
