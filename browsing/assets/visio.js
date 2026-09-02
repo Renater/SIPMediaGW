@@ -160,6 +160,12 @@ class Visio extends UIHelper{
         }
         return true;
     }
+    uiState() {
+        return {
+            media: this.mediaState(),
+            panels: this.panelState()
+        };
+    }
     panelState() {
         // Visio's side panels (chat, participants, info) carry a data-attr
         // suffixed -closed or -open, and are mutually exclusive: opening one
