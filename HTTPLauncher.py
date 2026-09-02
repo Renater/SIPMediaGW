@@ -515,6 +515,16 @@ class DockerGateway:
                 "window.meeting.panelState() : null;"
             )
             return {"ack": True, "panelState": panelState}
+        elif payload['command'] == 'camera':
+            cameraState = payload.get('param1')
+            if cameraState not in ('on', 'off'):
+                raise ValueError("camera param1 must be 'on' or 'off'")
+            self.executeInExistingChromeSession(
+                gwId,
+                "return window.meeting.camera(arguments[0]);",
+                cameraState
+            )
+            return {"ack": True, "camera": cameraState}
         elif payload['command'] == 'microphone':
             microphoneState = payload.get('param1')
             if microphoneState not in ('on', 'off'):

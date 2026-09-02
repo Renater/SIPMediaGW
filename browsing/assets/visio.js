@@ -130,6 +130,24 @@ class Visio extends UIHelper{
             microphoneButton.click();
         }
     }
+    camera(param) {
+        const state = this.mediaState();
+        if (!state) {
+            return;
+        }
+
+        const shouldToggle = (param === 'on' && !state.camera) ||
+                             (param === 'off' && state.camera);
+
+        if (shouldToggle) {
+            const cameraButton = document.querySelector('[aria-label*="Ctrl+e"]');
+            if (!cameraButton) {
+                console.error('[\u2717] Camera button not found');
+                return;
+            }
+            cameraButton.click();
+        }
+    }
     async reaction(name) {
         const known = ['thumbs-up', 'thumbs-down', 'clapping-hands', 'red-heart',
                        'face-with-tears-of-joy', 'face-with-open-mouth',
