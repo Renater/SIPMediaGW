@@ -20,7 +20,9 @@ redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           decode_responses=True)
 
 allowedToken = os.getenv("PROXY_TOKEN", "1234")
-adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
+# No default: an unset PROXY_ADMIN_TOKEN disables admin routes (same
+# convention as PROXY_ROOM_TOKEN) instead of exposing a well-known secret.
+adminToken = os.getenv("PROXY_ADMIN_TOKEN", "")
 # Dedicated token for room-side clients, which only need to resolve their own
 # gateway id. Empty by default, which keeps /gateway_id closed: the route is
 # only enabled on deployments where endpoints can be trusted to hold a secret.
@@ -102,6 +104,8 @@ def authorize(request: Request):
 
 def authorizeAdmin(request: Request):
     """Check if request has valid admin token"""
+    if not adminToken:
+        return False
     authHeader = request.headers.get("Authorization")
     if not authHeader or not re.match(r"^Bearer ", authHeader):
         return False

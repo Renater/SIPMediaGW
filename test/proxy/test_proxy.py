@@ -22,7 +22,14 @@ def test_authorize_invalid_token():
 
 def test_authorize_admin_valid_token():
     request = Mock(headers={"Authorization": "Bearer admin-secret-key"})
-    assert proxy.authorizeAdmin(request) is True
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'):
+        assert proxy.authorizeAdmin(request) is True
+
+
+def test_authorize_admin_refuses_when_token_unset():
+    request = Mock(headers={"Authorization": "Bearer "})
+    with patch.object(proxy, 'adminToken', ''):
+        assert proxy.authorizeAdmin(request) is False
 
 
 def test_findAvailableGateway_returns_started_gateway(redis_mock):
@@ -102,6 +109,7 @@ def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
     redis_mock.get.return_value = "1.2.3.4|working|media|room|00:00:00|00:05:30|40%|ROOM"
 
     with patch.object(proxy, 'redisClient', redis_mock), \
+        patch.object(proxy, 'adminToken', 'admin-secret-key'), \
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.get(
         "/admin/statuses",
@@ -972,6 +980,7 @@ def test_adminStatus_with_empty_gateway_mapping(client, redis_mock):
     redis_mock.get.return_value = None  # Empty mapping
 
     with patch.object(proxy, 'redisClient', redis_mock), \
+        patch.object(proxy, 'adminToken', 'admin-secret-key'), \
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
         response = client.get(
             "/admin/statuses",
