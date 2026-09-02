@@ -31,20 +31,23 @@ The scaling behavior is driven by thresholds defined in `scaler.json`, configura
 
 | Parameter       | Description                                                                 |
 |----------------|-----------------------------------------------------------------------------|
-| `scale_method`  | `buffer` (default, historical) or `floor`. Omitted key means `buffer`.      |
-| `unlockedMin`   | **buffer:** min **available** GWs. **floor:** min **total** GW count.       |
+| `unlockedMin`   | Minimum number of **available** gateways to keep as an idle buffer          |
+| `minGw`         | Floor on the **total** number of gateways, whatever the load                |
 | `loadMax`       | Maximum allowed **usage ratio** (`busy / registered`) before scaling occurs |
 | `cpu_per_gw`    | Number of vCPUs assigned per SIPMediaGW instance (typically 4)              |
 
----
+`unlockedMin` and `minGw` are both optional and are expressed per time slot. An
+omitted key counts as `0`, so a configuration that only sets `unlockedMin` keeps
+the historical behaviour. Setting both is allowed: the target capacity satisfies
+whichever is the more demanding at that moment.
 
-With `scale_method` omitted or set to `buffer`, the decision flow below is unchanged. With `"scale_method": "floor"`, `unlockedMin` is a floor on **total** capacity: restore that floor, scale up if `busy/registered > loadMax`, then release surplus down to `max(unlockedMin, ceil(busy / loadMax))` (capped by `maxGw`).
+---
 
 ##  Decision Flow
 
 | Decision Steps | Diagram |
 |----------------|---------|
-|**1. Collect current metrics**: `available`, `busy`, `registered`<br><br>**2. Ensure Minimum Availability Buffer**<br>- If `available < unlockedMin`, upscale to restore buffer.<br><br>**3. Compute Minimum Required Capacity**<br>- `minCapacity = busy + unlockedMin`<br><br>**4. Determine Target Capacity**<br>- `targetCapacity = max(minCapacity, busy / loadMax)`<br><br>**5. Adjust Deployment Accordingly**<br>- If `targetCapacity > available`: upscale<br>- If `targetCapacity < available`: downscale  | <img src="sipmediagw_autoscaling_logic.png" width=50% height=100%> |
+|**1. Collect current metrics**: `available`, `busy`, `registered`<br><br>**2. Compute Minimum Required Capacity**<br>- `minCapacity = max(minGw, busy + unlockedMin)`<br><br>**3. Determine Target Capacity**<br>- `targetCapacity = min(maxGw, max(minCapacity, busy / loadMax))`<br><br>**4. Adjust Deployment Accordingly**<br>- If `targetCapacity > registered`: upscale<br>- If `targetCapacity < registered`: downscale  | <img src="sipmediagw_autoscaling_logic.png" width=50% height=100%> |
 
 ---
 
@@ -83,7 +86,16 @@ With `scale_method` omitted or set to `buffer`, the decision flow below is uncha
 
 ---
 
-### 🧯 Case 4: Instance Not Registered
+### 🏗️ Case 4: Floor Enforced by `minGw`
+- `registered = 1`, `busy = 0`, `available = 1`
+- `unlockedMin = 0`, `minGw = 3`, `loadMax = 0.7`
+- No call, so the buffer asks for nothing, but the floor does
+- `minCapacity = max(3, 0 + 0) = 3` → scale up by 2 instances
+- With `unlockedMin = 2` on top: `minCapacity = max(3, 2 + 0) = 3`, same target
+
+---
+
+### 🧯 Case 5: Instance Not Registered
 - A new SIPMediaGW VM is deployed but not registered in Kamailio within 10 minutes
 - It is considered broken and deleted automatically
 - Ensures resilience and self-healing behavior

@@ -59,18 +59,8 @@ class Scaler:
     def getReadyToRunCapacity(self):
         pass
 
-    def _scaleMethod(self):
-        method = self.config.get('scale_method') or 'buffer'
-        if isinstance(method, str):
-            method = method.strip().lower()
-        else:
-            method = 'buffer'
-        if method not in ('buffer', 'floor'):
-            print('Unknown scale_method={}, using buffer'.format(method), flush=True)
-            return 'buffer'
-        return method
-
-    def _currentSlot(self, scaleTime=None):
+    # Scaling logic based on current load and time of the day
+    def scale(self, scaleTime=None, incallsNum=None):
         weekday = dt.datetime.now().strftime('%A').lower()  # e.g. 'monday', 'saturday'
         thresholdConfig = self.config['auto_scale_threshold']
         if weekday in thresholdConfig:
@@ -82,33 +72,19 @@ class Scaler:
             scaleTime = dt.datetime.now().strftime("%H:%M:%S")
         th = min([ i for i in list(thresholdTimeLine.keys()) if i <= scaleTime],
                 key=lambda x:abs(getSeconds(x)-getSeconds(scaleTime)))
-        return thresholdTimeLine, th, scaleTime
-
-    # Scaling logic based on current load and time of the day
-    def scale(self, scaleTime=None, incallsNum=None):
-        if self._scaleMethod() == 'floor':
-            return self._scaleFloor(scaleTime, incallsNum)
-        return self._scaleBuffer(scaleTime, incallsNum)
-
-    def _scaleBuffer(self, scaleTime=None, incallsNum=None):
-        # unlockedMin is a buffer of ready (idle) gateways — historical formula.
-        thresholdTimeLine, th, scaleTime = self._currentSlot(scaleTime)
 
         # Get current capacity and ready to run capacity
         currentCapacity = self.getCurrentCapacity()
         readyToRunNum  = self.getReadyToRunCapacity()
 
+        # 'unlockedMin' is a buffer of ready (idle) gateways, 'minGw' a floor on
+        # the total number of gateways. Both are optional and both are honoured,
+        # so a time slot can ask for a floor, a buffer, or the two combined.
+        unlockedMin = thresholdTimeLine[th].get('unlockedMin', 0)
+        minGw = thresholdTimeLine[th].get('minGw', 0)
 
         inCallNum = incallsNum if incallsNum else (currentCapacity - readyToRunNum )
-        minCapacity = thresholdTimeLine[th]['unlockedMin'] + inCallNum
-        if readyToRunNum < thresholdTimeLine[th]['unlockedMin']:
-            targetCapacity = min((currentCapacity + thresholdTimeLine[th]['unlockedMin']
-                                  - readyToRunNum),
-                                  thresholdTimeLine[th]['maxGw'])
-            capacityIncrease = math.ceil(targetCapacity - currentCapacity)
-            if capacityIncrease > 0:
-                self.upScale(math.ceil(capacityIncrease*self.config['cpu_per_gw']))
-                currentCapacity = currentCapacity + capacityIncrease
+        minCapacity = max(minGw, unlockedMin + inCallNum)
 
         targetCapacity = min(thresholdTimeLine[th]['maxGw'],
                              max(minCapacity, inCallNum/thresholdTimeLine[th]['loadMax']))
@@ -120,40 +96,4 @@ class Scaler:
         if capacityIncrease < 0:
             # Downscale
             self.downScale(abs(capacityIncrease))
-        return 0
-
-    def _scaleFloor(self, scaleTime=None, incallsNum=None):
-        # unlockedMin is a floor on total gateway count.
-        thresholdTimeLine, th, scaleTime = self._currentSlot(scaleTime)
-        unlockedMin = thresholdTimeLine[th]['unlockedMin']
-        loadMax = thresholdTimeLine[th]['loadMax']
-        maxGw = thresholdTimeLine[th]['maxGw']
-
-        currentCapacity = self.getCurrentCapacity()
-        readyToRunNum = self.getReadyToRunCapacity()
-        inCallNum = incallsNum if incallsNum else (currentCapacity - readyToRunNum)
-        loadRatio = (inCallNum / currentCapacity) if currentCapacity > 0 else 0.0
-
-        if currentCapacity < unlockedMin:
-            floorTarget = min(unlockedMin, maxGw)
-            capacityIncrease = math.ceil(floorTarget - currentCapacity)
-            if capacityIncrease > 0:
-                self.upScale(math.ceil(capacityIncrease*self.config['cpu_per_gw']))
-                currentCapacity = currentCapacity + capacityIncrease
-
-        if currentCapacity > 0 and loadRatio > loadMax:
-            loadTarget = min(maxGw, math.ceil(inCallNum / loadMax))
-            capacityIncrease = math.ceil(loadTarget - currentCapacity)
-            if capacityIncrease > 0:
-                self.upScale(math.ceil(capacityIncrease*self.config['cpu_per_gw']))
-                currentCapacity = currentCapacity + capacityIncrease
-
-        if inCallNum > 0:
-            sustainTarget = max(unlockedMin, math.ceil(inCallNum / loadMax))
-        else:
-            sustainTarget = unlockedMin
-        sustainTarget = min(sustainTarget, maxGw)
-        capacityDecrease = currentCapacity - sustainTarget
-        if capacityDecrease > 0:
-            self.downScale(capacityDecrease)
         return 0
