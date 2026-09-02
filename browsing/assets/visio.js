@@ -161,10 +161,6 @@ class Visio extends UIHelper{
         return true;
     }
     uiState() {
-        // Single read for clients that need the whole picture at once: a room
-        // endpoint refreshing its buttons, or the companion page. Each call
-        // costs a round trip to the gateway, so asking for media and panel
-        // state separately doubles it for no reason.
         return {
             media: this.mediaState(),
             panels: this.panelState()
