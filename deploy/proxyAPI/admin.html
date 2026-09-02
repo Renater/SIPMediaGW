@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gateway Manager</title>
+<link rel="stylesheet" href="/admin/static/admin.css">
+<link rel="icon" type="image/svg+xml" href="/admin/static/favicon.svg">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Gateway Manager</h1>
+    <div class="sub" id="subtitle"></div>
+  </div>
+  <div class="spacer"></div>
+  <span class="stamp" id="stamp"></span>
+  <button id="refresh"></button>
+  <button id="lang" class="lang" title="Language"></button>
+</header>
+<main>
+  <div class="summary">
+    <div class="stat"><b id="nTotal">–</b><span id="lTotal"></span></div>
+    <div class="stat free"><b id="nFree">–</b><span id="lFree"></span></div>
+    <div class="stat idle"><b id="nIdle">–</b><span id="lIdle"></span></div>
+    <div class="stat ivr"><b id="nIvr">–</b><span id="lIvr"></span></div>
+    <div class="stat call"><b id="nCall">–</b><span id="lCall"></span></div>
+  </div>
+  <div class="board">
+    <div class="toolbar">
+      <input type="search" id="search" autocomplete="off">
+      <span class="shown" id="shown"></span>
+      <label><input type="checkbox" id="auto" checked> <span id="lAuto"></span> <span id="countdown"></span></label>
+    </div>
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
+<div class="toast" id="toast" hidden></div>
+<script src="/admin/static/admin.js" defer></script>
+</body>
+</html>
