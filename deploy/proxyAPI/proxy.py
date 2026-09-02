@@ -315,13 +315,13 @@ async def adminStatus(request: Request):
             "gateway": gwIp,
             "type": cleanPart(gwType),
             "status": state,
-            "room": room if room else None,
+            "room": cleanPart(room),
             "media_duration": media_duration,
             "transcript_progress": transcript,
-            "browsing": browsing if browsing else None,
-            "peer_uri": peerUri if peerUri else None,
-            "peer_name": peerName if peerName else None,
-            "call_started": callStarted if callStarted else None,
+            "browsing": cleanPart(browsing),
+            "peer_uri": cleanPart(peerUri),
+            "peer_name": cleanPart(peerName),
+            "call_started": cleanPart(callStarted),
             "pairing_code": pairingByGateway.get(gw_id)
         }
     return result
