@@ -71,6 +71,67 @@ async def pairing_page(request: Request):
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": "pairing.html not found"})
 
+def adminUnauthorized():
+    """401 for admin pages: Basic challenge so a browser prompts natively."""
+    return Response(
+        json.dumps({"error": "authorization error"}),
+        status_code=401,
+        headers={"WWW-Authenticate": 'Basic realm="SIPMediaGW admin", Bearer error="invalid_token"'},
+        media_type="application/json"
+    )
+
+adminStaticFiles = {"admin.css": "text/css", "admin.js": "application/javascript",
+                    "favicon.svg": "image/svg+xml"}
+
+@app.get("/admin/")
+async def admin_page(request: Request):
+    """
+    Serve the admin console. Same credentials as /admin/statuses: the browser
+    re-sends them on the page's own calls. CSS and JS are external files so
+    the page can carry a strict Content-Security-Policy (no inline code).
+    """
+    if not authorizeAdmin(request):
+        return adminUnauthorized()
+    try:
+        with open("admin.html", "r", encoding="utf-8") as f:
+            return Response(
+                content=f.read(),
+                media_type="text/html",
+                headers={"Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'"}
+            )
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": "admin.html not found"})
+
+@app.get("/admin/static/{file_name}")
+async def admin_static(request: Request, file_name: str):
+    """Serve the console's CSS/JS (whitelist, no directory access)."""
+    if not authorizeAdmin(request):
+        return adminUnauthorized()
+    mediaType = adminStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    try:
+        with open(file_name, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type=mediaType)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
+# Connector icons (deploy/proxyAPI/icons, same set as the IVR's domain-icons),
+# kept inside deploy/proxyAPI so the proxy stays a self-contained deployment unit.
+adminIconsDir = os.getenv("ADMIN_ICONS_DIR", "icons")
+
+@app.get("/admin/icons/{name}")
+async def admin_icon(request: Request, name: str):
+    """Serve a connector icon (<name>.png) from the mounted icons directory."""
+    if not authorizeAdmin(request):
+        return adminUnauthorized()
+    if not re.fullmatch(r"[a-z0-9]+", name):
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    path = os.path.join(adminIconsDir, f"{name}.png")
+    if not os.path.isfile(path):
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    return FileResponse(path, media_type="image/png")
+
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(

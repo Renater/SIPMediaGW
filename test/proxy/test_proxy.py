@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
+from unittest.mock import Mock, patch, MagicMock, AsyncMock, mock_open
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from deploy.proxyAPI import proxy
@@ -188,6 +188,78 @@ def test_fetchAndStoreGatewayStatus_deletes_mapping_on_error(redis_mock):
         asyncio.run(proxy._fetchAndStoreGatewayStatus("gw1", "127.0.0.1", ["1.2.3.4"]))
 
     redis_mock.delete.assert_called_once_with("gateway:gw1")
+
+
+# ----------------------- Admin console page ============
+def _basic(token="admin-secret-key"):
+    import base64
+    return {"Authorization": "Basic " + base64.b64encode(f"admin:{token}".encode()).decode()}
+
+
+def test_admin_page_requires_admin_token(client):
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
+        response = client.get("/admin/")
+
+    assert response.status_code == 401
+    assert "Basic realm=" in response.headers["WWW-Authenticate"]
+
+
+def test_admin_page_served_with_strict_csp(client):
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)), \
+        patch('builtins.open', mock_open(read_data="<html>console</html>")):
+        response = client.get("/admin/", headers=_basic())
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
+    assert "console" in response.text
+
+
+def test_admin_static_serves_whitelisted_files(client):
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)), \
+        patch('builtins.open', mock_open(read_data="body{}")):
+        response = client.get("/admin/static/admin.css", headers=_basic())
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/css")
+
+
+def test_admin_static_rejects_unknown_file(client):
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
+        response = client.get("/admin/static/proxy.py", headers=_basic())
+
+    assert response.status_code == 404
+
+
+def test_admin_static_requires_admin_token(client):
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
+        response = client.get("/admin/static/admin.js")
+
+    assert response.status_code == 401
+
+
+def test_admin_icon_served_from_icons_dir(client, tmp_path):
+    (tmp_path / "visio.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'adminIconsDir', str(tmp_path)), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
+        response = client.get("/admin/icons/visio", headers=_basic())
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+
+
+def test_admin_icon_rejects_path_traversal_and_unknown(client, tmp_path):
+    with patch.object(proxy, 'adminToken', 'admin-secret-key'), \
+        patch.object(proxy, 'adminIconsDir', str(tmp_path)), \
+        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
+        assert client.get("/admin/icons/..%2Fproxy", headers=_basic()).status_code == 404
+        assert client.get("/admin/icons/unknown", headers=_basic()).status_code == 404
 
 
 # ----------------------- Authorization Edge Cases ============
