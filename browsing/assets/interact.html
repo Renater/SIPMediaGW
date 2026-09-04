@@ -424,6 +424,11 @@ let roomNameInfo = {};
 let browsingName = '';
 let menuOptions = [];
 let menuDisplayed = false;
+const POLL_MS = 2000;
+// Signature of the screen implied by the gateway state. Redrawing on every
+// poll would clear a half-typed conference id and reset the scroll position,
+// so the page only rebuilds when this value changes.
+let lastScreen = null;
 let currentLang = 'en';
 
 // ensure updateSlideControlsVisibility exists early so DOMContentLoaded can call it
@@ -701,6 +706,7 @@ async function fetchIvrConfigAndRestoreState() {
     const statusData = await statusRes.json();
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
+    lastScreen = `${bn || ''}|${rn || ''}`;
     if (rn && bn) {
       menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
       menuDisplayed = true;
@@ -789,10 +795,12 @@ function showInputAndPrepareMenu(selectedDomainKey) {
 }
 
 async function checkGwStatus() {
-  if (!gwId) return setTimeout(checkGwStatus, 2000);
+  if (!gwId) return setTimeout(checkGwStatus, POLL_MS);
   try {
     const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
-    if (!statusRes.ok) { document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — Stopping polling.`; return; }
+    // A transient failure must not silence the page for good: it keeps
+    // polling, more slowly, so a passing outage is recovered from.
+    if (!statusRes.ok) { document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — retrying…`; return setTimeout(checkGwStatus, POLL_MS * 5); }
     const statusData = await statusRes.json();
     if (statusData.data?.gw_state === "down") {
       document.getElementById('status').textContent = `Gateway down ("exited") — Returning to interact…`;
@@ -802,17 +810,33 @@ async function checkGwStatus() {
     }
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
-    if (rn && bn && !menuDisplayed) {
-      menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
-      renderMenuOptions();
-      menuDisplayed = true;
-    } else {
-      bn ? showInputAndPrepareMenu(bn) : (menuOptions = [], menuDisplayed = false, renderDomainButtons());
-      setTimeout(checkGwStatus, 2000);
+
+    // The gateway is the source of truth: the platform and the conference id
+    // can be entered on the endpoint keypad just as well as here, so the
+    // screen follows the reported state instead of what this page last did.
+    const screen = `${bn || ''}|${rn || ''}`;
+    if (screen !== lastScreen) {
+      lastScreen = screen;
+      if (rn && bn) {
+        menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
+        menuDisplayed = true;
+        renderMenuOptions();
+      } else if (bn) {
+        showInputAndPrepareMenu(bn);
+      } else {
+        menuOptions = [];
+        menuDisplayed = false;
+        renderDomainButtons();
+      }
     }
   } catch(e) {
-    document.getElementById('status').textContent = `Status error — Stopping polling.`;
+    document.getElementById('status').textContent = `Status error — retrying…`;
+    return setTimeout(checkGwStatus, POLL_MS * 5);
   }
+  // Polling used to stop for good once the menu was drawn. The page then sat
+  // on a call that had already ended, and never saw a platform picked from
+  // the room keypad.
+  setTimeout(checkGwStatus, POLL_MS);
 }
 
 function renderMenuOptions() {
@@ -888,6 +912,9 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchDisplayName();
   // call after initial render to hide slide-controls when appropriate
   updateSlideControlsVisibility();
+  // Polling used to start only once the user had pressed something, so a page
+  // opened on an idle gateway never noticed the room joining a conference.
+  if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, POLL_MS); }
 });
 document.getElementById('btn-enter').onclick = async () => {
   await sendDisplayName(displayInput.value.trim());
