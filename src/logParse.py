@@ -19,6 +19,9 @@ import requests
 ### Config ###
 
 postUrl = os.environ.get("LOG_PUSH_URL", "").strip()
+# Optional shared secret expected by the receiver. Unset keeps the previous
+# behaviour: the push carries no Authorization header.
+postToken = os.environ.get("LOG_PUSH_TOKEN", "").strip()
 
 ### Regex ###
 
@@ -446,10 +449,13 @@ def pushHistory(historyPath: str) -> None:
             return
 
         payload = buildPayloadFromLines(lines, postUrl)
+        headers = {"Accept": "text/plain"}
+        if postToken:
+            headers["Authorization"] = f"Bearer {postToken}"
         resp = requests.post(
             postUrl,
             json=payload,
-            headers={"Accept": "text/plain"},
+            headers=headers,
             timeout=10,
         )
 
