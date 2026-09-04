@@ -87,7 +87,7 @@ def test_updateProgressInfo_updates_redis_mapping(redis_mock):
     with patch.object(proxy, 'redisClient', redis_mock):
         proxy.updateProgressInfo("gw1", parts, data)
 
-    expected = "1.2.3.4|working|media|room1|00:00:00|00:05:30|50%|JITSI"
+    expected = "1.2.3.4|working|media|room1|00:00:00|00:05:30|50%|JITSI|None|None|None"
 
     print(redis_mock.set.call_args)
     assert redis_mock.set.call_count == 1
@@ -144,11 +144,16 @@ def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
     assert response.json() == {
         "gw1": {
             "gateway": "1.2.3.4",
+            "type": "media",
             "status": "working",
             "room": "room",
             "media_duration": "00:05:30",
             "transcript_progress": "40%",
-            "browsing":'ROOM'
+            "browsing": 'ROOM',
+            "peer_uri": None,
+            "peer_name": None,
+            "call_started": None,
+            "pairing_code": None
         }
     }
 
@@ -294,7 +299,7 @@ def test_updateProgressInfo_with_state_down(redis_mock):
     with patch.object(proxy, 'redisClient', redis_mock):
         proxy.updateProgressInfo("gw1", parts, data)
 
-    expected = "1.2.3.4|started|media|None||||IDLE"
+    expected = "1.2.3.4|started|media|None||||IDLE|None|None|None"
     assert redis_mock.set.call_args[0] == ("gateway:gw1", expected)
 
 
@@ -309,7 +314,7 @@ def test_updateProgressInfo_with_streaming_duration(redis_mock):
     with patch.object(proxy, 'redisClient', redis_mock):
         proxy.updateProgressInfo("gw1", parts, data)
 
-    expected = "1.2.3.4|started|media|room1|0|00:10:20||STREAMING"
+    expected = "1.2.3.4|started|media|room1|0|00:10:20||STREAMING|None|None|None"
     assert redis_mock.set.call_args[0] == ("gateway:gw1", expected)
 
 
