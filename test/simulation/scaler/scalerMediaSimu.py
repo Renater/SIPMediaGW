@@ -51,8 +51,8 @@ def unlockGw(config, username):
         parts = value.split("|")
         gwIp = parts[0]
         state = parts[1] if len(parts) > 1 else None
-        if state == "working":
-            redisClient.set(username, f"{gwIp}|started|{parts[2]}|{parts[3]}|{dt.datetime.now().isoformat()}")
+        if state == "started":
+            redisClient.set(username, f"{gwIp}|stopped|{parts[2]}|{parts[3]}|{dt.datetime.now().isoformat()}")
         return True
     return False
 
@@ -67,9 +67,9 @@ def printGwStates():
         value = redisClient.get(key)
         parts = value.split("|")
         state = parts[1] if len(parts) > 1 else None
-        if state == "started":
+        if state in ("created", "stopped"):
             nbGWFree += 1
-        elif state == "working":
+        elif state == "started":
             nbGWWorking += 1
         elif state == "starting":
             nbGWStarting += 1

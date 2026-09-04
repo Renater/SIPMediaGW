@@ -68,15 +68,15 @@ const copyable = (v, cls = '') => v == null ? dash : `<span class="copy ${cls}" 
 /* The gateway field is the launcher address "host:port"; the port is fixed. */
 const hostOf = v => { const s = norm(v); return s == null ? null : s.replace(/:\d+$/, ''); };
 
-/* Derived state. "status" alone is ambiguous: "started" is a free slot
-   (container stopped, allocatable by /start) and "working" only means the
-   container runs. A SIP peer with no room yet is in the IVR; a room (with
+/* Derived state. "created" is a provisioned slot never used, "stopped" one
+   whose call has ended; both are allocatable by /start. "started" only means
+   the container runs: a SIP peer with no room yet is in the IVR, a room (with
    or without a peer, browsing-only gateways) means in conference. */
 function derive(g) {
   const peer = !!(norm(g.call_started) || norm(g.peer_uri));
   const room = !!norm(g.room);
-  if (g.status === 'started') return 'free';
-  if (g.status === 'working') return room ? 'call' : (peer ? 'ivr' : 'idle');
+  if (g.status === 'created' || g.status === 'stopped') return 'free';
+  if (g.status === 'started') return room ? 'call' : (peer ? 'ivr' : 'idle');
   return 'other';
 }
 

@@ -35,7 +35,9 @@ class ScalerMedia(Scaler):
           parts = value.split("|")
           gwIp = parts[0].split(':', 1)[0]
           state = parts[1] if len(parts) > 1 else None
-          if state in ["started", "stopped"]:
+          # created: never used; stopped: call over. Both are idle, so both
+          # can be reclaimed.
+          if state in ["created", "stopped"]:
                 # No rooms assigned, can downscale
                 ipList.append(gwIp)
                 # Update gateway state to stopping
@@ -86,6 +88,6 @@ class ScalerMedia(Scaler):
         for key in self.redisClient.scan_iter(match="gateway:*"):
             value = self.redisClient.get(key)
             parts = value.split("|")
-            if len(parts) > 1 and parts[1] == "started":
+            if len(parts) > 1 and parts[1] in ("created", "stopped"):
                 readyToRun += 1
         return readyToRun

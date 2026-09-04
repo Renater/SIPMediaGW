@@ -74,7 +74,7 @@ Get per-gateway status/progress. Query by gw_id or room.
       "status": "success",
       "data": {
         "gw_id": "192.168.1.12",
-        "gw_state": "working",
+        "gw_state": "started",
         "room": "math101",
         "media_duration": "00:05:12",
         "transcript_progress": "45%"
@@ -91,7 +91,7 @@ Return status of all gateways. Requires admin Bearer token.
   {
     "gw01": {
       "gateway": "192.168.1.12",
-      "status": "working",
+      "status": "started",
       "room": "math101",
       "media_duration": "00:05:12",
       "transcript_progress": "45%"
@@ -110,7 +110,7 @@ Return status of all gateways. Requires admin Bearer token.
 Forward a command to a gateway.
 - Query: `?gw_id=gw01`
 - Body: forwarded as-is to gateway.
-- Note: commands are rejected (403) unless gateway state == "working".
+- Note: commands are rejected (403) unless gateway state == "started".
 - Response: proxied gateway response.
 
 ### POST /register
