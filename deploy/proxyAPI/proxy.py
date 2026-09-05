@@ -31,7 +31,13 @@ roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 # Redis Mapping:
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>|<call_started>"
-# state: started | working | stopped
+# state: created | started | stopped | deleted
+#   created  VM provisioned, container initialised once then stopped, unused
+#   started  container running, a call is in progress
+#   stopped  container stopped after a call — the VM is still reusable
+#   deleted  VM torn down
+# The two pairs answer different questions: created/deleted describe the VM,
+# started/stopped the container running on it.
 
 redis_gw_field_count = 11
 
@@ -207,7 +213,7 @@ def findAvailableGateway():
         parts = value.split("|")
         gwIp = parts[redis_gw_ip_index]
         state = getPart(parts, redis_gw_state_index)
-        if state == "started":
+        if state in ("created", "stopped"):
             return [key, gwIp]
     return None
 
@@ -230,9 +236,10 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
         parts[redis_gw_transcript_progress_index] = f"{transcript}"
     # Update Gateway State
     if (state == "up"):
-        parts[redis_gw_state_index] = "working"
-    elif (state == "down"):
         parts[redis_gw_state_index] = "started"
+    elif (state == "down"):
+        # The container has exited; the VM stays provisioned and reusable.
+        parts[redis_gw_state_index] = "stopped"
     parts[redis_gw_room_index] = f"{room}" if room else "None"
     parts[redis_gw_browsing_index] = f"{browsing}" if browsing else "None"
     parts[redis_gw_peer_uri_index] = f"{peerUri}" if peerUri else "None"
@@ -586,7 +593,7 @@ async def startGateway(request: Request):
             rawValue = redisClient.get(f"gateway:{gw_id}")
             parts = rawValue.split("|") if rawValue else [gwIp]
             parts += [""] * (redis_gw_field_count - len(parts))
-            parts[redis_gw_state_index] = "working"
+            parts[redis_gw_state_index] = "started"
             parts[redis_gw_room_index] = room if room else None
             parts[redis_gw_browsing_index] = browsing if browsing else None
             mapping = "|".join(parts)
@@ -643,7 +650,7 @@ async def stopGateway(request: Request):
             parts[redis_gw_peer_uri_index] = ''
             parts[redis_gw_peer_name_index] = ''
             parts[redis_gw_call_started_index] = ''
-            parts[redis_gw_state_index] = "stopped"
+            parts[redis_gw_state_index] = "deleted"
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)
             responseJson["status"] = "success"
@@ -752,11 +759,11 @@ async def genericGatewayProxy(request: Request, endpoint: str):
     parts = raw_value.split("|")
     gw_ip = parts[redis_gw_ip_index]
 
-    isWorking = (
+    isRunning = (
         len(parts) > redis_gw_state_index
-        and parts[redis_gw_state_index] == "working"
+        and parts[redis_gw_state_index] == "started"
     )
-    if not isWorking:
+    if not isRunning:
         print(f"Gateway '{gw_id}' is stopped, cannot send commands")
         raise HTTPException(status_code=403, detail=f"Gateway '{gw_id}' is stopped, cannot send commands")
 
@@ -856,7 +863,7 @@ async def registerGateway(request: Request):
             callStarted   = parts[redis_gw_call_started_index]
         else:
             # No mapping found => reset
-            gwState = "started"
+            gwState = "created"
             startTime = dt.datetime.now().isoformat()
             roomName = None
             mediaduration   = "0"
