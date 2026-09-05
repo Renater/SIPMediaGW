@@ -39,6 +39,11 @@ roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 # The two pairs answer different questions: created/deleted describe the VM,
 # started/stopped the container running on it.
 
+# Assets shipped next to this file. Resolved from __file__ so they are found
+# whatever the working directory: the container runs from /app, a checkout
+# does not.
+assetDir = os.path.dirname(os.path.abspath(__file__))
+
 redis_gw_field_count = 11
 
 redis_gw_ip_index = 0
@@ -72,7 +77,7 @@ async def pairing_page(request: Request):
     works and pairing.html.handleQueryParams() can show the message / prefill.
     """
     try:
-        with open("pairing.html", "r", encoding="utf-8") as f:
+        with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type="text/html")
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": "pairing.html not found"})
@@ -99,7 +104,7 @@ async def admin_page(request: Request):
     if not authorizeAdmin(request):
         return adminUnauthorized()
     try:
-        with open("admin.html", "r", encoding="utf-8") as f:
+        with open(os.path.join(assetDir, "admin.html"), "r", encoding="utf-8") as f:
             return Response(
                 content=f.read(),
                 media_type="text/html",
@@ -117,7 +122,7 @@ async def admin_static(request: Request, file_name: str):
     if not mediaType:
         return JSONResponse(status_code=404, content={"detail": "not found"})
     try:
-        with open(file_name, "r", encoding="utf-8") as f:
+        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type=mediaType)
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
@@ -487,7 +492,7 @@ async def interact(request: Request):
             else:
                 # Return pairing.html and inject a JS var so the page can display a translated error
                 try:
-                    with open("pairing.html", "r", encoding="utf-8") as f:
+                    with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
                         html_form = f.read()
                 except FileNotFoundError:
                     raise HTTPException(status_code=500, detail="pairing.html not found on server")
@@ -505,7 +510,7 @@ async def interact(request: Request):
                     html_with_msg = html_form.replace("</head>", injection_script + "</head>", 1)
                 return Response(content=html_with_msg, media_type="text/html")
         else:
-            with open("pairing.html", "r", encoding="utf-8") as f:
+            with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
                 html_form = f.read()
             return Response(content=html_form, media_type="text/html")
 
