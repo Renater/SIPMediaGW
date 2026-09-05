@@ -213,9 +213,6 @@ def findAvailableGateway():
         parts = value.split("|")
         gwIp = parts[redis_gw_ip_index]
         state = getPart(parts, redis_gw_state_index)
-        # A VM that has never been used and one whose call has just ended are
-        # both available. The former "started" covered the two, which this
-        # rename splits apart.
         if state in ("created", "stopped"):
             return [key, gwIp]
     return None
@@ -242,8 +239,6 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
         parts[redis_gw_state_index] = "started"
     elif (state == "down"):
         # The container has exited; the VM stays provisioned and reusable.
-        # This is what the previous code flattened into "started", leaving a
-        # dead gateway indistinguishable from a fresh one.
         parts[redis_gw_state_index] = "stopped"
     parts[redis_gw_room_index] = f"{room}" if room else "None"
     parts[redis_gw_browsing_index] = f"{browsing}" if browsing else "None"
