@@ -19,8 +19,8 @@ import requests
 ### Config ###
 
 postUrl = os.environ.get("LOG_PUSH_URL", "").strip()
-# Optional shared secret expected by the receiver. Unset keeps the previous
-# behaviour: the push carries no Authorization header.
+# Optional shared secret expected by the receiver.
+# If unset: the push carries no Authorization header.
 postToken = os.environ.get("LOG_PUSH_TOKEN", "").strip()
 
 ### Regex ###
