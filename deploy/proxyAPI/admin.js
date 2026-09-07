@@ -19,8 +19,8 @@ const norm = v => (v == null || v === '' || v === 'None') ? null : v;
 
 const I18N = {
   fr: {
-    subtitle: 'supervision temps réel des passerelles SIPMediaGW', refresh: 'Actualiser', auto: 'auto 10 s',
-    countdown: s => `(${s})`, updated: 'Mis à jour à', search: 'Rechercher par ID, terminal, réunion, code, passerelle…',
+    subtitle: 'supervision temps réel des passerelles SIPMediaGW', refresh: 'Actualiser',
+    countdown: s => `prochaine dans ${s} s`, search: 'Rechercher par ID, terminal, réunion, code, passerelle…',
     shown: (n, total) => `${n} / ${total} passerelle${total > 1 ? 's' : ''}`,
     tiles: { total: 'enregistrées', free: 'slots libres', idle: 'en attente d’appel', ivr: 'en IVR', call: 'en conférence' },
     cols: ['ID', 'Type', 'État', 'Nom affiché', 'URI SIP', 'Réunion', 'Plateforme', 'Durée', 'Code', 'Passerelle', ''],
@@ -31,8 +31,8 @@ const I18N = {
     err401: 'Session expirée — rechargez la page pour vous ré-identifier.', errLoad: 'Chargement impossible',
   },
   en: {
-    subtitle: 'live supervision of registered SIPMediaGW gateways', refresh: 'Refresh', auto: 'auto 10 s',
-    countdown: s => `(${s})`, updated: 'Updated at', search: 'Search by ID, endpoint, meeting, code, gateway…',
+    subtitle: 'live supervision of registered SIPMediaGW gateways', refresh: 'Refresh',
+    countdown: s => `next in ${s} s`, search: 'Search by ID, endpoint, meeting, code, gateway…',
     shown: (n, total) => `${n} of ${total} gateway${total > 1 ? 's' : ''}`,
     tiles: { total: 'registered', free: 'free slots', idle: 'waiting for a call', ivr: 'in IVR', call: 'in conference' },
     cols: ['ID', 'Type', 'State', 'Display name', 'SIP URI', 'Meeting', 'Platform', 'Call time', 'Code', 'Gateway', ''],
@@ -135,7 +135,6 @@ function applyLanguage() {
   $('subtitle').textContent = t.subtitle;
   $('refresh').textContent = t.refresh;
   $('lang').textContent = lang === 'fr' ? 'EN' : 'FR';
-  $('lAuto').textContent = t.auto;
   $('search').placeholder = t.search;
   for (const k of ['total', 'free', 'idle', 'ivr', 'call']) {
     $('l' + k[0].toUpperCase() + k.slice(1)).textContent = t.tiles[k];
@@ -162,8 +161,12 @@ function render() {
 
   $('rows').innerHTML = shown.map(id => {
     const g = data[id], kind = kinds[id];
-    const control = kind === 'free' ? '' :
-      `<a class="btn" href="${CONFIG.pilotUrl}${encodeURIComponent(id)}" target="_blank" rel="noopener">${esc(t.control)}</a>`;
+    // Only a gateway on a call has anything to pilot, whether it sits in the
+    // IVR or in a conference. Listing the states that do rather than those
+    // that do not keeps a new state from silently getting the button.
+    const control = (kind === 'call' || kind === 'ivr')
+      ? `<a class="btn" href="${CONFIG.pilotUrl}${encodeURIComponent(id)}" target="_blank" rel="noopener">${esc(t.control)}</a>`
+      : '';
     return `<tr>
       <td>${copyable(id, 'mono')}</td>
       <td>${typeBadge(g.type)}</td>
@@ -234,10 +237,8 @@ async function load() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     data = await res.json();
     render();
-    $('stamp').textContent = `${t.updated} ${new Date().toLocaleTimeString()}`;
   } catch (e) {
     $('rows').innerHTML = `<tr><td colspan="11" class="msg err">${esc(t.errLoad)} (${esc(e.message)})</td></tr>`;
-    $('stamp').textContent = '';
   } finally {
     $('refresh').disabled = false;
     nextRefreshAt = Date.now() + CONFIG.refreshMs;
@@ -246,26 +247,19 @@ async function load() {
 
 function tick() {
   if (data) render();                          // live call durations
-  if ($('auto').checked && nextRefreshAt) {
-    $('countdown').textContent = t.countdown(Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000)));
-  } else {
-    $('countdown').textContent = '';
-  }
+  $('countdown').textContent = nextRefreshAt
+    ? t.countdown(Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000)))
+    : '';
 }
 
 function schedule() {
   clearInterval(refreshTimer);
-  if ($('auto').checked) {
-    nextRefreshAt = Date.now() + CONFIG.refreshMs;
-    refreshTimer = setInterval(load, CONFIG.refreshMs);
-  } else {
-    nextRefreshAt = 0;
-  }
+  nextRefreshAt = Date.now() + CONFIG.refreshMs;
+  refreshTimer = setInterval(load, CONFIG.refreshMs);
   tick();
 }
 
 $('refresh').addEventListener('click', load);
-$('auto').addEventListener('change', schedule);
 $('search').addEventListener('input', render);
 $('lang').addEventListener('click', () => {
   lang = lang === 'fr' ? 'en' : 'fr';
