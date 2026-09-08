@@ -803,6 +803,11 @@ async def ivrConfigGateway(request: Request):
 async def statusGatewayProxy(request: Request):
     return await genericGatewayProxy(request, "status")
 
+@app.api_route("/interact/static/{file_name}", methods=["GET"])
+async def interactStaticGateway(request: Request, file_name: str):
+    """The companion page's stylesheet and script, relayed like its icons."""
+    return await genericGatewayProxy(request, f"interact/static/{file_name}")
+
 @app.api_route("/icon/{icon_name}", methods=["GET"])
 async def iconGateway(request: Request, icon_name: str):
     return await genericGatewayProxy(request, f"icon/{icon_name}")

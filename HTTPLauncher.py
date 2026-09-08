@@ -699,6 +699,28 @@ def serve_interact_html():
         raise HTTPException(status_code=404, detail="File not found.")
     return FileResponse(file_path, media_type="text/html")
 
+
+# The companion page's stylesheet and script, split out of the HTML. A
+# whitelist rather than a directory: the name reaches here from a URL, and
+# these are the only two files the page ever asks for.
+interactStaticFiles = {
+    "interact.css": "text/css",
+    "interact.js": "application/javascript",
+}
+
+
+@app.get("/gateway/interact/static/{file_name}")
+def serve_interact_static(file_name: str):
+    mediaType = interactStaticFiles.get(file_name)
+    if not mediaType:
+        raise HTTPException(status_code=404, detail="File not found.")
+    file_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "./browsing/assets/", file_name)
+    )
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found.")
+    return FileResponse(file_path, media_type=mediaType)
+
 # -----------------------
 # Entrypoint
 # -----------------------
