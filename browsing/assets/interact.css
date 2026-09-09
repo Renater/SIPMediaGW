@@ -248,14 +248,6 @@ input::placeholder {
   overflow-wrap: break-word;
   word-break: break-word;
 }
-/* A key whose remote state is known and "on": open panel, raised hand,
-   active microphone or camera. Keys with no known state look as before. */
-.menu-key.is-on {
-  background: #1f7a3a;
-  border-color: #1f7a3a;
-  color: #fff;
-}
-
 #log {
   font-size: 11px;
   background: #eee;
