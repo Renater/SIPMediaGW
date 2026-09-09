@@ -91,6 +91,24 @@ def adminUnauthorized():
 adminStaticFiles = {"admin.css": "text/css", "admin.js": "application/javascript",
                     "favicon.svg": "image/svg+xml"}
 
+# The pairing page's stylesheet and script. Served without a check, like the
+# page itself: the pairing code is what grants access, and it is entered on
+# that page.
+pairingStaticFiles = {"pairing.css": "text/css", "pairing.js": "application/javascript"}
+
+
+@app.get("/pairing/static/{file_name}")
+async def pairing_static(file_name: str):
+    """Serve the pairing page's CSS/JS (whitelist, no directory access)."""
+    mediaType = pairingStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    try:
+        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type=mediaType)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
 @app.get("/admin/")
 async def admin_page(request: Request):
     """
@@ -520,25 +538,13 @@ async def interact(request: Request):
                 redirectUrl = "{}?gwId={}".format(str(request.url).split('?')[0], resolvedGwId)
                 return RedirectResponse(url=redirectUrl, status_code=302)
             else:
-                # Return pairing.html and inject a JS var so the page can display a translated error
-                try:
-                    with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
-                        html_form = f.read()
-                except FileNotFoundError:
-                    raise HTTPException(status_code=500, detail="pairing.html not found on server")
-                # inject safe JS literals
-                error_msg = "Invalid pairing code"
-                injection_script = (
-                    f'<script>window.SERVER_ERROR = {json.dumps(error_msg)}; '
-                    f'window.SERVER_PAIRING_CODE = {json.dumps(pairingCode)};</script>'
-                )
-                # insert the script before the first existing <script> so the page's JS sees it
-                if "<script" in html_form:
-                    html_with_msg = html_form.replace("<script", injection_script + "<script", 1)
-                else:
-                    # fallback: insert before </head>
-                    html_with_msg = html_form.replace("</head>", injection_script + "</head>", 1)
-                return Response(content=html_with_msg, media_type="text/html")
+                # The pairing page used to be returned here with the error
+                # injected into its markup, which left the address bar on
+                # /interact while showing the pairing form — and a reload
+                # retried the code that had just been turned down. The visitor
+                # is sent to the pairing page instead, which now checks a code
+                # through /pairing/resolve before going anywhere.
+                return RedirectResponse(url="/pairing", status_code=302)
         else:
             with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
                 html_form = f.read()

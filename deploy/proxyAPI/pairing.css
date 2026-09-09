@@ -1,0 +1,273 @@
+/* DSFR tokens, light and dark. The palette is the only thing the dark theme
+   changes: every rule below reads these variables. */
+:root {
+  --bf: #000091;
+  --txt: #161616;
+  --muted: #666;
+  --bg: #fff;
+  --tile: #f6f6f6;
+  --border: #ddd;
+  --warning-bg: #fdeeee;
+  --warning-txt: #b34000;
+}
+[data-theme="dark"] {
+  --bf: #8585f6;
+  --txt: #fff;
+  --muted: #a8a8a8;
+  --bg: #161616;
+  --tile: #1e1e1e;
+  --border: #353535;
+  --warning-bg: #2e1a12;
+  --warning-txt: #fc5d00;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem 1rem 2.5rem;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: Marianne, Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid var(--border);
+}
+.brand__logo { height: 2rem; width: auto; }
+.brand__logo[src=""] { display: none; }
+.brand__name { font-size: .95rem; font-weight: 700; line-height: 1.15; }
+.brand__tagline {
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1.15;
+  color: var(--muted);
+}
+
+/* Language and theme */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+.segmented__el {
+  padding: .3rem .85rem;
+  font: inherit;
+  font-size: .85rem;
+  border: 0;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+}
+.segmented__el[aria-checked="true"] {
+  background: color-mix(in srgb, var(--bf) 13%, transparent);
+  color: var(--bf);
+  font-weight: 700;
+}
+.theme-toggle {
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tile);
+  color: var(--txt);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 1.4rem 0 0;
+}
+
+.subtitle {
+  font-size: .85rem;
+  color: var(--muted);
+  text-align: center;
+  margin: 1.6rem 0 .6rem;
+}
+
+/* Error */
+.banner {
+  margin-top: 1rem;
+  padding: .7rem .9rem;
+  border-radius: .5rem;
+  font-size: .8rem;
+  line-height: 1.5;
+}
+/* display beats the hidden attribute, so it has to be restored explicitly */
+[hidden] { display: none !important; }
+
+.banner--error {
+  background: var(--warning-bg);
+  color: var(--warning-txt);
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+}
+.banner__close {
+  margin-left: auto;
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.banner__close:hover { background: rgba(0, 0, 0, .07); }
+
+/* Code entry. The whole strip takes clicks, not just the boxes: the gaps
+   between them look like part of the field, so landing there should put the
+   caret in the first empty box rather than do nothing. */
+.code {
+  display: flex;
+  justify-content: center;
+  gap: .55rem;
+  padding: .25rem 0;
+  cursor: text;
+}
+.code input {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 0;
+  border-radius: .5rem;
+  background: var(--tile);
+  color: var(--txt);
+  box-shadow: inset 0 0 0 1.5px var(--border);
+}
+.code input:focus {
+  outline: 2px solid var(--bf);
+  outline-offset: 2px;
+}
+.code input.filled { box-shadow: inset 0 0 0 1.5px var(--bf); }
+
+.submit {
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border: 0;
+  border-radius: .375rem;
+  background: var(--bf);
+  color: #fff;
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.submit:disabled { opacity: .5; cursor: default; }
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Where to find the code */
+.callout {
+  margin-top: 1.4rem;
+  padding: .9rem;
+  border-radius: .5rem;
+  background: var(--tile);
+}
+.callout__title { font-size: .85rem; font-weight: 700; margin: 0 0 .6rem; }
+.callout__text { font-size: .75rem; line-height: 1.45; color: var(--muted); margin: .6rem 0 0; }
+.callout__note { font-size: .7rem; line-height: 1.4; color: var(--muted); margin: .35rem 0 0; }
+
+/* Illustration: geometric on purpose, so it never reads as a real code */
+.sample {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin: 0;
+  padding: .6rem .7rem;
+  border-radius: .5rem;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+/* The illustration is not content to copy: selecting the example code would
+   only lead to typing it in. Everything else on the page stays selectable —
+   an error message is worth being able to copy. */
+.sample { user-select: none; }
+
+.sample__badge {
+  position: absolute;
+  top: -.55rem;
+  left: .6rem;
+  padding: 0 .4rem;
+  border-radius: .25rem;
+  background: var(--muted);
+  color: var(--bg);
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.sample__qr { width: 3.1rem; height: 3.1rem; flex: none; }
+.sample__qr .qr-eye { fill: var(--muted); }
+.sample__qr .qr-eye-in { fill: var(--bg); }
+.sample__qr .qr-dot { fill: var(--muted); }
+.sample__url { font-size: .62rem; color: var(--muted); }
+.sample__text { display: flex; flex-direction: column; gap: .1rem; }
+.sample__from {
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sample__code {
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  color: var(--muted);
+}
+
+.doc {
+  margin-top: 1.4rem;
+  text-align: center;
+  font-size: .75rem;
+}
+.doc a { color: var(--bf); font-weight: 600; }
