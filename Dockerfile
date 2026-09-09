@@ -32,17 +32,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 #v=$(curl 'https://packages.debian.org/bookworm/amd64/chromium/download' | grep -o "chromium_.*.deb" | head -1 | cut -d "_" -f 2)
 #https://snapshot.debian.org/archive/debian/20240930T202925Z/pool/main/c/chromium/
-RUN v='150.0.7871.124-1~deb12u1' \
+# Debian keeps only the current Chromium in the security pool and rotates it
+# about every week, so a pinned version stops resolving without warning. The
+# build tries the pin, falls back to the newest available version, and records
+# what it installed: two images from the same commit may then differ, and
+# /etc/chromium.version says how. The pool also carries Debian 13 packages,
+# hence the ~deb12u filter: the base image here is debian:12-slim.
+ARG CHROMIUM_VERSION=150.0.7871.124-1~deb12u1
+RUN set -eu \
    && url='http://security.debian.org/debian-security/pool/updates/main/c/chromium/' \
-   && wget $url'chromium_'$v'_amd64.deb' \
-   && wget $url'chromium-common_'$v'_amd64.deb' \
-   && wget $url'chromium-sandbox_'$v'_amd64.deb' \
-   && wget $url'chromium-driver_'$v'_amd64.deb' \
+   && v="$CHROMIUM_VERSION" \
+   && if ! wget -q --spider $url'chromium_'$v'_amd64.deb'; then \
+        echo '=============================================================='; \
+        echo "WARNING: Chromium $v is gone from the Debian security pool."; \
+        v=$(wget -qO- $url \
+            | grep -o 'chromium_[0-9][^"]*~deb12u[0-9]*_amd64\.deb' \
+            | sed 's/chromium_//;s/_amd64\.deb//' | sort -V | tail -1); \
+        [ -n "$v" ] || { echo 'No Debian 12 build found in the pool.'; exit 1; }; \
+        echo "Falling back to $v. This build is NOT reproducible;"; \
+        echo 'see /etc/chromium.version in the resulting image.'; \
+        echo '=============================================================='; \
+      fi \
+   && for pkg in chromium chromium-common chromium-sandbox chromium-driver; do \
+        wget $url$pkg'_'$v'_amd64.deb'; \
+      done \
    && apt install -y './chromium-sandbox_'$v'_amd64.deb' \
    && apt install -y './chromium-common_'$v'_amd64.deb' \
    && apt install -y './chromium_'$v'_amd64.deb' \
    && apt install -y './chromium-driver_'$v'_amd64.deb' \
-   && rm *.deb
+   && rm *.deb \
+   && echo "$v" > /etc/chromium.version \
+   && echo "Chromium installed: $v"
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
