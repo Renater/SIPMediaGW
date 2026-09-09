@@ -473,6 +473,39 @@ def get_asset(file_name: str):
         filename=file_name,
     )
 
+@app.post("/pairing/resolve")
+async def pairingResolve(request: Request):
+    """Turn a pairing code into a gw_id, without navigating anywhere.
+
+    The pairing page submits its form to /interact and lets the answer come
+    back as a page: a refused code then lands under /interact?pairingCode=...
+    while showing the pairing form, and carries its error in a <script> the
+    proxy injects into the markup. Asking here first lets the page stay where
+    it is and say so itself.
+
+    /interact keeps accepting pairingCode as before.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    # /interact matches the code as typed; normalising here means a code keyed
+    # in lower case resolves like any other.
+    code = str(body.get("code") or "").strip().upper()
+
+    gwId = redisClient.get(f"pairing:{code}") if code else None
+    if not gwId:
+        # A malformed code and an unknown one get the same answer: the endpoint
+        # says whether a code is live, and nothing else.
+        return JSONResponse(
+            status_code=404,
+            content={"status": "error", "error": {"code": 404, "detail": "Unknown pairing code"}, "data": None},
+        )
+
+    return {"status": "success", "error": None, "data": {"gw_id": gwId}}
+
+
 @app.get("/interact")
 async def interact(request: Request):
 
