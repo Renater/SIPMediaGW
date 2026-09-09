@@ -405,45 +405,6 @@ async function checkGwStatus() {
   setTimeout(checkGwStatus, POLL_MS);
 }
 
-// Maps a menu key to the uiState field that tells whether it is "on". Only
-// connectors exposing uiState (Visio today) are covered: elsewhere the keys
-// keep their previous stateless look, which is the honest fallback.
-const KEY_STATE = {
-  '1': (ui) => ui.media && ui.media.microphone,
-  '2': (ui) => ui.media && ui.media.camera,
-  '3': (ui) => ui.panels && ui.panels.chat,
-  '4': (ui) => ui.panels && ui.panels.handRaised,
-  '5': (ui) => ui.panels && ui.panels.participants,
-  '0': (ui) => ui.panels && ui.panels.info,
-};
-
-async function fetchUiState() {
-  if (!gwId) return null;
-  try {
-    const payload = { gw_id: gwId, payload: { command: 'uiState', param1: '' } };
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.data?.uiState || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// Reflects the remote state on the menu keys. Called once the menu is drawn
-// and after every key press, since most keys are toggles on the far side:
-// without a read-back, a key would keep showing what it assumed rather than
-// what the conference actually did.
-async function syncMenuKeys() {
-  const ui = await fetchUiState();
-  if (!ui) return;
-  document.querySelectorAll('.menu-key[data-dtmf]').forEach((btn) => {
-    const probe = KEY_STATE[btn.dataset.dtmf];
-    if (!probe) return;
-    btn.classList.toggle('is-on', probe(ui) === true);
-  });
-}
-
 function renderMenuOptions() {
   const menuDiv = document.getElementById('menu-options');
   menuDiv.innerHTML = '';
@@ -461,9 +422,8 @@ function renderMenuOptions() {
   for (const opt of menuOptions) {
     const btn = document.createElement('button');
     btn.className = 'key menu-key';
-    btn.dataset.dtmf = String(opt.dtmf);
     btn.innerHTML = `${getIcon(opt.icon)} ${opt[currentLang] || opt['en'] || ''}`;
-    btn.onclick = async () => { await sendKey(opt.dtmf); await syncMenuKeys(); };
+    btn.onclick = () => sendKey(opt.dtmf);
     menuDiv.appendChild(btn);
 
     // if this option represents chat (icon name contains 'chat'), append visible chat row right away
@@ -482,7 +442,7 @@ function renderMenuOptions() {
         if (e.key === 'Enter') {
           e.preventDefault();
           const v = chatInput.value.trim();
-          if (v.length) { await sendChat(v); chatInput.value = ''; await syncMenuKeys(); }
+          if (v.length) { await sendChat(v); chatInput.value = ''; }
         }
       });
 
@@ -491,7 +451,7 @@ function renderMenuOptions() {
       sendBtn.textContent = currentLang === 'fr' ? 'Envoyer' : 'Send';
       sendBtn.onclick = async () => {
         const v = chatInput.value.trim();
-        if (v.length) { await sendChat(v); chatInput.value = ''; await syncMenuKeys(); }
+        if (v.length) { await sendChat(v); chatInput.value = ''; }
       };
 
       chatRow.appendChild(chatInput);
@@ -506,9 +466,6 @@ function renderMenuOptions() {
 
   // ensure slide controls are visible now that menu options are rendered
   updateSlideControlsVisibility();
-
-  // first read of the remote state, once the keys exist
-  syncMenuKeys();
 }
 
 function getIcon(icon) {
