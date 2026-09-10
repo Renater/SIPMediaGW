@@ -3,7 +3,6 @@
 import sys
 import os
 import traceback
-import queue
 import base64
 import json
 import time
@@ -83,6 +82,8 @@ class Browsing:
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),
                                  '../browsing/assets/uihelper.js'))
         self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),
+                                 '../browsing/assets/slidestreamer.js'))
+        self.loadJS(os.path.join(os.path.dirname(os.path.normpath(__file__)),
                                  '../browsing/assets/{}.js'.format(self.modName)))
         self.driver.execute_script(self.initScript)
         self.driver.execute_script("window.meeting.join();")
@@ -117,6 +118,15 @@ class Browsing:
     def browse(self):
         pass
 
+    def dualScreenLayout(self):
+        self.driver.execute_script("if(meeting.dualScreenLayout){meeting.dualScreenLayout();}")
+
+    def manageLayout(self):
+        if os.getenv("DUAL_SCREEN_LAYOUT") == "true":
+            self.dualScreenLayout()
+        else: # single screen layout by default (nothing to do)
+            return
+
     def interact(self):
         try:
             inKey = self.userInputs.get(True, 0.02)
@@ -142,6 +152,8 @@ class Browsing:
                 self.interact()
             if os.getenv("ENDING_TIMEOUT"):
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
+            self.manageLayout()
+
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
                             self.config['lang'])
 

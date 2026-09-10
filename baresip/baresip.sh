@@ -104,3 +104,7 @@ DISPLAY=$DISPLAY_APP LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESI
 if [ "$CHECK_REGISTER" == "yes" ]; then
     checkRegister
 fi
+
+### Slide bridge ###
+exec python3 src/slideBridge.py 1> >( logParse -p "Slide Bridge") \
+                                2> >( logParse -p "Slide Bridge") &

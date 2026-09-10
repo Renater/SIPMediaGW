@@ -8,6 +8,7 @@ class Visio extends UIHelper{
         this.token = token;
         this.joined = false;
         this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
+        this.slideSelector = "video.lk-participant-media-video[data-lk-source='screen_share']";
     }
 
     async join() {
@@ -41,6 +42,17 @@ class Visio extends UIHelper{
             console.error('[✗] Prejoin process failed:', error);
         }
     }
+
+    async dualScreenLayout() {
+        console.log('[INFO] Setting up dual screen layout...');
+        try {
+            this.slideStreamer = new SlideStreamer({"selector":this.slideSelector})
+            this.slideStreamer.start();
+        } catch (error) {
+            console.error('[✗] Dual screen layout setup failed:', error);
+        }
+    }
+
     async slideShot() {
         try {
             const selector = "video.lk-participant-media-video[data-lk-source='screen_share']";
@@ -91,6 +103,21 @@ class Visio extends UIHelper{
         } catch (e) {
             console.error("slideShot failed:", e);
             return null;
+        }
+    }
+    unpinSlide(){
+        const video = document.querySelector(this.slideSelector);
+        if (video) {
+            setTimeout(() => {
+                const buttons = [...document.querySelectorAll("button")]
+                    .filter(b => b.offsetParent !== null);
+
+                const pinButton = buttons.find(b =>
+                    b.querySelector("svg path[d^='M20.9701 17.1716']")
+                );
+                console.log("pinButton =", pinButton);
+                pinButton?.click();
+            }, 100);
         }
     }
     mediaState() {

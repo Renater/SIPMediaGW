@@ -13,6 +13,7 @@ services:
           - "${ROOM}"
     ports:
       - 951${ID}:9515
+      - 808${ID}:8080
     tmpfs:
       - /tmp
     volumes:
