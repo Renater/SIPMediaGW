@@ -4,19 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SIPMediaGW Remote Control</title>
-<script>
-// The stylesheet sits next to this page but is served through the proxy, which
-// needs to know which gateway to relay to. The gw_id is only known at runtime,
-// so the link is built here rather than declared statically. In the head, so
-// the page is never painted unstyled.
-(function () {
-  var gwId = new URLSearchParams(window.location.search).get('gwId') || '';
-  var css = document.createElement('link');
-  css.rel = 'stylesheet';
-  css.href = 'interact/static/interact.css?gw_id=' + encodeURIComponent(gwId);
-  document.head.appendChild(css);
-})();
-</script>
+<link rel="stylesheet" href="/interact/static/interact.css">
 </head>
 <body>
 <div class="kb-wrap">
@@ -87,17 +75,6 @@
     <img id="slide-img" src="" alt="Slide capture">
   </div>
 
-<script>
-// Same relay for the script, but injected at the end of the body: an element
-// added this way runs as soon as it loads, so it has to come after the markup
-// it reaches for. defer would not help — it has no effect on scripts inserted
-// from JavaScript.
-(function () {
-  var gwId = new URLSearchParams(window.location.search).get('gwId') || '';
-  var js = document.createElement('script');
-  js.src = 'interact/static/interact.js?gw_id=' + encodeURIComponent(gwId);
-  document.body.appendChild(js);
-})();
-</script>
+<script src="/interact/static/interact.js" defer></script>
 </body>
 </html>
