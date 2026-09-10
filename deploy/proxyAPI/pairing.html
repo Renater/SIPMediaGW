@@ -1,226 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pairing</title>
-
-<style>
-  * { box-sizing: border-box; }
-
-  body {
-    font-family: monospace;
-    background: #f9f9f9;
-    margin: 0;
-    padding: 2rem;
-    display: flex;
-    justify-content: center;
-  }
-
-  .wrap {
-    width: 100%;
-    max-width: 520px;
-  }
-
-  /* LANG SWITCH */
-  #lang-switch {
-    margin-bottom: 1.5rem;
-  }
-
-  #lang-switch button {
-    margin-right: 8px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid #bbb;
-    background: #fff;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  #lang-switch button[disabled] {
-    background: #e0e0e0;
-    color: #888;
-  }
-
-  /* TITLE */
-  h3 {
-    font-size: 1.6em;
-    margin-bottom: 1.2rem;
-  }
-
-  /* FORM */
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  input {
-    font-size: 2em;
-    padding: 14px 16px;
-    border-radius: 10px;
-    border: 1px solid #bbb;
-    background: #fff;
-    text-align: center;
-    letter-spacing: 0.25em;
-    font-family: monospace;
-    text-transform: uppercase; /* force visual uppercase */
-  }
-
-  button {
-    font-size: 1.3em;
-    padding: 14px;
-    border-radius: 10px;
-    border: 1px solid #bbb;
-    background: white;
-    cursor: pointer;
-    font-family: monospace;
-  }
-
-  button:active {
-    background: #e0e0e0;
-    transform: scale(0.98);
-  }
-
-  #hint {
-    margin-top: 12px;
-    font-size: 0.9em;
-    color: #888;
-    text-align: center;
-  }
-
-  /* error state for hint */
-  #hint.error {
-    color: #b00;
-    font-weight: 600;
-  }
-
-  @media (max-width: 420px) {
-    input { font-size: 1.6em; }
-    h3 { font-size: 1.3em; }
-  }
-</style>
+<link rel="stylesheet" href="/pairing/static/pairing.css">
 </head>
 
 <body>
 <div class="wrap">
-  <!-- LANG -->
-  <div id="lang-switch"></div>
 
-  <!-- TITLE -->
-  <h3 id="title">Enter pairing code</h3>
+  <header class="brand">
+    <img id="brand-logo" class="brand__logo" src="" alt="">
+    <div class="brand__text">
+      <div class="brand__name" id="brand-name"></div>
+      <div class="brand__tagline" id="brand-tagline"></div>
+    </div>
+  </header>
 
-  <!-- FORM -->
-  <form method="get" action="/interact" id="form">
-    <input id="pairingCode" name="pairingCode" required />
-    <button type="submit" id="btn">Submit</button>
-  </form>
+  <div class="toolbar">
+    <div class="segmented" role="radiogroup" aria-label="Langue">
+      <button type="button" class="segmented__el" id="lang-fr" role="radio">FR</button>
+      <button type="button" class="segmented__el" id="lang-en" role="radio">EN</button>
+    </div>
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false"></button>
+  </div>
 
-  <div id="msg" style="margin-top:12px;color:#b00;min-height:1.2em;"></div>
+  <h1 id="title"></h1>
 
-  <div id="hint">Enter the code shown on the device</div>
+  <div id="error-banner" class="banner banner--error" role="alert" hidden>
+    <span id="error-text"></span>
+    <button type="button" class="banner__close" id="error-close" aria-label="Fermer">&times;</button>
+  </div>
+
+  <p class="subtitle" id="subtitle"></p>
+
+  <!-- One box per character. The code is checked before going anywhere, so
+       there is no form to submit: an unknown code is answered here. -->
+  <div class="code" id="code-boxes" role="group"></div>
+
+  <button type="button" class="submit" id="btn" disabled>
+    <span class="spinner" id="spinner" hidden aria-hidden="true"></span>
+    <span id="btn-label"></span>
+  </button>
+
+  <section class="callout">
+    <h2 class="callout__title" id="hint-title"></h2>
+
+    <!-- An illustration of the room screen, not a code to type. Marked as such
+         and deliberately not code-shaped, so it cannot be mistaken for one. -->
+    <figure class="sample" aria-hidden="true">
+      <span class="sample__badge" id="sample-badge"></span>
+      <!-- Drawn, not encoded: it has to read as a QR code without being one,
+           so that no one tries to scan the illustration. -->
+      <!-- Drawn, not encoded: it has to read as a QR code without being one,
+           so that no one tries to scan the illustration. -->
+      <svg class="sample__qr" viewBox="0 0 25 25" aria-hidden="true">
+        <path class="qr-eye" d="M0 0h7v7H0zM1 1v5h5V1zM18 0h7v7h-7zM19 1v5h5V1zM0 18h7v7H0zM1 19v5h5v-5z"/>
+        <path class="qr-eye-in" d="M2 2h3v3H2zM20 2h3v3h-3zM2 20h3v3H2z"/>
+        <path class="qr-dot" d="M8 0h1v1h-1zM9 0h1v1h-1zM11 0h1v1h-1zM13 0h1v1h-1zM14 0h1v1h-1zM16 0h1v1h-1zM17 0h1v1h-1zM8 1h1v1h-1zM9 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM17 1h1v1h-1zM9 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM9 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM17 4h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM9 6h1v1h-1zM13 6h1v1h-1zM8 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM0 8h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM0 9h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM3 9h1v1h-1zM10 9h1v1h-1zM15 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM0 11h1v1h-1zM2 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM21 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM0 12h1v1h-1zM1 12h1v1h-1zM2 12h1v1h-1zM5 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM13 12h1v1h-1zM20 12h1v1h-1zM1 13h1v1h-1zM3 13h1v1h-1zM6 13h1v1h-1zM7 13h1v1h-1zM10 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM15 13h1v1h-1zM19 13h1v1h-1zM21 13h1v1h-1zM22 13h1v1h-1zM2 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM11 14h1v1h-1zM12 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM0 15h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM11 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM20 15h1v1h-1zM0 16h1v1h-1zM7 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM13 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM20 16h1v1h-1zM23 16h1v1h-1zM1 17h1v1h-1zM3 17h1v1h-1zM7 17h1v1h-1zM8 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM12 17h1v1h-1zM14 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM18 17h1v1h-1zM21 17h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM17 18h1v1h-1zM18 18h1v1h-1zM22 18h1v1h-1zM23 18h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM17 19h1v1h-1zM18 19h1v1h-1zM21 19h1v1h-1zM22 19h1v1h-1zM24 19h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM10 20h1v1h-1zM11 20h1v1h-1zM12 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM10 21h1v1h-1zM12 21h1v1h-1zM15 21h1v1h-1zM19 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM8 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM13 22h1v1h-1zM14 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM22 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM11 23h1v1h-1zM13 23h1v1h-1zM14 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM19 23h1v1h-1zM21 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM24 23h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM11 24h1v1h-1zM18 24h1v1h-1zM19 24h1v1h-1zM21 24h1v1h-1zM24 24h1v1h-1z"/>
+      </svg>
+      <div class="sample__text">
+        <span class="sample__from" id="sample-from"></span>
+        <span class="sample__code">ABCD1</span>
+        <span class="sample__url" id="sample-url"></span>
+      </div>
+    </figure>
+
+    <p class="callout__text" id="hint-text"></p>
+    <p class="callout__note" id="hint-warning"></p>
+  </section>
+
+  <p class="doc">
+    <a id="doc-link" href="" target="_blank" rel="noopener"></a>
+  </p>
+
 </div>
-
-<script>
-let lang = localStorage.getItem("lang") || "fr";
-
-const texts = {
-  fr: {
-    title: "Entrer le code de jumelage",
-    placeholder: "Code de jumelage",
-    button: "Valider",
-    hint: "Entrez le code affiché sur l'appareil",
-    invalid_pairing: "Code d'appairage invalide."
-  },
-  en: {
-    title: "Enter pairing code",
-    placeholder: "Pairing code",
-    button: "Submit",
-    hint: "Enter the code shown on the device",
-    invalid_pairing: "Invalid pairing code"
-  }
-};
-
-// read server-injected vars early (may be undefined)
-const serverError = window.SERVER_ERROR || null;
-const serverPairingCode = window.SERVER_PAIRING_CODE || null;
-
-// store URL error if present
-let urlError = false;
-let urlErrorText = null;
-
-function render() {
-  const sw = document.getElementById("lang-switch");
-
-  sw.innerHTML = `
-    <button onclick="setLang('fr')" ${lang === 'fr' ? 'disabled' : ''}>🇫🇷 Français</button>
-    <button onclick="setLang('en')" ${lang === 'en' ? 'disabled' : ''}>🇬🇧 English</button>
-  `;
-
-  document.getElementById("title").textContent = texts[lang].title;
-  document.getElementById("pairingCode").placeholder = texts[lang].placeholder;
-  document.getElementById("btn").textContent = texts[lang].button;
-
-  const hintEl = document.getElementById("hint");
-  if (serverError) {
-    hintEl.textContent = texts[lang].invalid_pairing;
-    hintEl.classList.add('error');
-  } else if (urlError) {
-    hintEl.textContent = urlErrorText || texts[lang].invalid_pairing;
-    hintEl.classList.add('error');
-  } else {
-    hintEl.textContent = texts[lang].hint;
-    hintEl.classList.remove('error');
-  }
-}
-
-function setLang(l) {
-  lang = l;
-  localStorage.setItem("lang", l);
-  render();
-}
-
-/* UX improvements */
-const input = document.getElementById("pairingCode");
-const form = document.getElementById("form");
-const msg = document.getElementById("msg");
-
-input.focus();
-
-input.addEventListener("input", () => {
-  input.placeholder = "";
-  // enforce uppercase in the value (real, not only visual)
-  const pos = input.selectionStart;
-  input.value = input.value.toUpperCase();
-  try { input.setSelectionRange(pos, pos); } catch(e) {}
-});
-
-form.addEventListener("submit", () => {
-  input.value = input.value.trim();
-});
-
-// show server-provided error and/or prefill pairingCode from query params
-(function handleQueryParams(){
-  // prefill from server injection (preferred) or from query params
-  if (serverPairingCode) {
-    input.value = String(serverPairingCode).toUpperCase();
-    input.focus();
-    return;
-  }
-  const p = new URLSearchParams(window.location.search);
-  if (p.has('pairingCode')) {
-    input.value = p.get('pairingCode').toUpperCase();
-  }
-  // if error param present, store for render() and mark red
-  if (p.has('error')) {
-    urlError = true;
-    try { urlErrorText = decodeURIComponent(p.get('error')); } catch(e) { urlErrorText = p.get('error'); }
-    input.focus();
-  }
- })();
-
-render();
-</script>
-
+<script src="/pairing/static/pairing.js"></script>
 </body>
 </html>
