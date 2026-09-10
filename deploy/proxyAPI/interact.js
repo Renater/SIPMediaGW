@@ -15,15 +15,71 @@ const POLL_MS = 2000;
 let lastScreen = null;
 let currentLang = 'en';
 
+// ---------------------------------------------------------------------------
+// Per-deployment settings, gathered here rather than spread through the markup.
+// The pairing page carries the same block.
+// ---------------------------------------------------------------------------
+const BRAND = {
+  name: 'SIPMediaGW',
+  tagline: '',
+  logo: '',                       // empty hides it
+};
+
+const TEXTS = {
+  fr: {
+    title: 'Contrôler votre réunion',
+    pickPlatform: 'Choisissez la plateforme de votre réunion',
+    roomName: 'Nom de la salle :',
+    roomUri: 'Adresse vidéo :',
+    connecting: 'connexion en cours…',
+    waiting: 'En attente de la connexion d\u2019un terminal de visioconf\u00e9rence.',
+    meetingLabel: 'Veuillez saisir l\u2019identifiant de la r\u00e9union',
+    meetingFallback: 'Entrez le nom de la réunion',
+    join: 'Rejoindre',
+    hangUp: 'Raccrocher',
+    confirmTitle: 'Confirmation',
+    confirmBody: 'Êtes-vous sûr de vouloir terminer l\u2019appel ?',
+    confirmNo: 'Annuler',
+    confirmYes: 'Raccrocher',
+    close: 'Fermer',
+    hangUpTitle: 'Mettre fin \u00e0 l\u2019appel',
+    themeToLight: 'Passer en thème clair',
+    themeToDark: 'Passer en thème sombre',
+  },
+  en: {
+    title: 'Control your meeting',
+    pickPlatform: 'Choose your meeting platform',
+    roomName: 'Room name:',
+    roomUri: 'Video address:',
+    connecting: 'connecting…',
+    waiting: 'Waiting for a room endpoint to call in.',
+    meetingLabel: 'Please enter the meeting id',
+    meetingFallback: 'Enter the meeting name',
+    join: 'Join',
+    hangUp: 'Hang up',
+    confirmTitle: 'Confirmation',
+    confirmBody: 'Are you sure you want to end the call?',
+    confirmNo: 'Cancel',
+    confirmYes: 'Hang up',
+    close: 'Close',
+    hangUpTitle: 'End the call',
+    themeToLight: 'Switch to light theme',
+    themeToDark: 'Switch to dark theme',
+  },
+};
+
+let dark = localStorage.getItem('theme')
+  ? localStorage.getItem('theme') === 'dark'
+  : window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const $ = (id) => document.getElementById(id);
+
 // defined early so the startup callback below can call it
 function updateSlideControlsVisibility() {
   const ctrl = document.getElementById('slide-controls');
   if (!ctrl) return;
-  const inputRow = document.getElementById('input-row');
-  const isInputVisible = inputRow && getComputedStyle(inputRow).display !== 'none';
-  // show only when menuDisplayed (in the meeting) and not in "input name" phase
-  ctrl.style.display = (menuDisplayed && !isInputVisible) ? 'flex' :
-                       'none';
+  // Only in the meeting: the two connection screens have nothing to capture.
+  ctrl.style.display = menuDisplayed ? 'flex' : 'none';
 }
 
 function getRoomNamePlaceholder() {
@@ -31,7 +87,7 @@ function getRoomNamePlaceholder() {
   if (!captureEl) return '';
   const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
   const lang = currentLang === 'fr' ? 'fr' : 'en';
-  const fallback = lang === 'fr' ? 'Entrez le nom de la réunion' : 'Enter the meeting name';
+  const fallback = TEXTS[lang].meetingFallback;
   return selectedInfo?.placeholder?.[lang] || selectedInfo?.placeholder?.en || fallback;
 }
 
@@ -45,10 +101,8 @@ function updateRoomNameInputUi() {
   const placeholder = getRoomNamePlaceholder();
   const hint = selectedInfo?.hint?.[lang] || selectedInfo?.hint?.en || '';
 
-  const labelEl = document.getElementById('input-label');
-  if (labelEl) {
-    labelEl.textContent = currentLang === 'fr' ? 'Nom de la réunion' : 'Meeting Name';
-  }
+  const labelEl = document.getElementById('meeting-label');
+  if (labelEl) labelEl.textContent = TEXTS[currentLang].meetingLabel;
 
   captureEl.placeholder = captureEl.value ? '' : placeholder;
   if (hintEl) {
@@ -57,57 +111,92 @@ function updateRoomNameInputUi() {
   }
 }
 
+// Redraws everything the language or the theme changes. The two connection
+// screens are plain text; the in-meeting keys are relabelled where they exist.
 function renderLangSwitch() {
-  const langDiv = document.getElementById('lang-switch');
-  langDiv.innerHTML = `
-    <button onclick="setMenuLang('fr')" ${currentLang === 'fr' ? 'disabled' : ''}>🇫🇷 Français</button>
-    <button onclick="setMenuLang('en')" ${currentLang === 'en' ? 'disabled' : ''}>🇬🇧 English</button>
-  `;
-  // use Meeting Name / Nom de la réunion
-  document.getElementById('input-label').textContent = currentLang === 'fr' ? 'Nom de la réunion' : 'Meeting Name';
-  document.getElementById('btn-enter').textContent = currentLang === 'fr' ? 'Entrée' : 'Enter';
-  const enterBtn = document.getElementById('btn-enter');
-  if (enterBtn) enterBtn.title = currentLang === 'fr' ? 'Envoyer le nom de la réunion' : 'Send meeting name';
-  const delBtn = document.getElementById('btn-del');
-  if (delBtn) delBtn.title = currentLang === 'fr' ? 'Envoyer la touche étoile' : 'Send star key';
-  const endBtn = document.getElementById('btn-endcall');
-  if (endBtn) endBtn.textContent = currentLang === 'fr' ? 'Fin d’appel' : 'End call';
-  if (endBtn) endBtn.title = currentLang === 'fr' ? 'Mettre fin à l’appel' : 'End the call';
-  const ss = document.getElementById('btn-slideShot');
-  if (ss) ss.textContent = currentLang === 'fr' ? 'Capture' : 'Capture';
-  const dl = document.getElementById('slide-download');
-  if (dl) dl.textContent = currentLang === 'fr' ? 'Télécharger' : 'Download';
-  const cl = document.getElementById('slide-close');
-  if (cl) cl.textContent = currentLang === 'fr' ? 'Fermer' : 'Close';
-  const fs = document.getElementById('slide-fullscreen');
-  if (fs) fs.textContent = currentLang === 'fr' ? 'Agrandir' : 'Full screen';
-  const dis = document.getElementById('slide-discard');
-  if (dis) dis.textContent = currentLang === 'fr' ? 'Supprimer' : 'Discard';
-  // translate display-name label as well
-  const dlab = document.getElementById('display-label');
-  if (dlab) dlab.textContent = currentLang === 'fr' ? 'Nom affiché' : 'Display Name';
-  updateRoomNameInputUi();
-}
-function setMenuLang(lang) {
-  currentLang = lang;
-  renderLangSwitch();
-  if (menuDisplayed) {
-    renderMenuOptions();
-  } else if (browsingName) {
-    // If a domain is already selected, do not return to the domain list.
-    // If options are already present, display them in the correct language;
-    // otherwise, display the input field.
-    if (menuOptions && menuOptions.length) {
-      renderMenuOptions();
-      menuDisplayed = true;
-      const inputRow = document.getElementById('input-row');
-      if (inputRow) inputRow.style.display = 'flex';
-    } else {
-      showInputAndPrepareMenu(browsingName);
-    }
-  } else {
-    renderDomainButtons();
+  const t = TEXTS[currentLang];
+
+  document.documentElement.lang = currentLang;
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+
+  $('lang-fr').setAttribute('aria-checked', String(currentLang === 'fr'));
+  $('lang-en').setAttribute('aria-checked', String(currentLang === 'en'));
+
+  const toggle = $('theme-toggle');
+  toggle.textContent = dark ? '\u2600' : '\u263e';
+  toggle.setAttribute('aria-pressed', String(dark));
+  toggle.setAttribute('aria-label', dark ? t.themeToLight : t.themeToDark);
+
+  $('brand-name').textContent = BRAND.name;
+  $('brand-tagline').textContent = BRAND.tagline;
+  if (BRAND.logo) { $('brand-logo').src = BRAND.logo; $('brand-logo').alt = BRAND.name; }
+
+  $('title-text').textContent = t.title;
+  $('platforms-subtitle').textContent = t.pickPlatform;
+  $('waiting').textContent = t.waiting;
+  $('room-name-label').textContent = t.roomName;
+  $('room-uri-label').textContent = t.roomUri;
+  $('btn-enter-label').textContent = t.join;
+
+  const endBtn = $('btn-endcall');
+  if (endBtn) {
+    endBtn.textContent = t.hangUp;
+    endBtn.title = t.hangUpTitle;
   }
+  $('confirm-title').textContent = t.confirmTitle;
+  $('confirm-body').textContent = t.confirmBody;
+  $('confirm-no').textContent = t.confirmNo;
+  $('confirm-yes').textContent = t.confirmYes;
+  $('confirm-close').setAttribute('aria-label', t.close);
+
+  const ss = $('btn-slideShot');
+  if (ss) ss.textContent = 'Capture';
+
+  updateRoomNameInputUi();
+  showRoom();
+}
+
+// Which of the two connection screens is up, or neither once in the meeting.
+function showScreen(name) {
+  $('screen-platforms').hidden = (name !== 'platforms');
+  $('screen-meeting').hidden = (name !== 'meeting');
+  $('btn-endcall').hidden = false;
+  $('title').hidden = (name === null);
+  $('room').hidden = (name === null);
+
+  // Command feedback and the request log belong to the meeting: on the way in
+  // they would only show the keys the page sends on the visitor's behalf.
+  const inMeeting = (name === null);
+  $('status').hidden = !inMeeting;
+  $('log').hidden = !inMeeting;
+  // Hanging up stays available throughout: reaching the wrong room is exactly
+  // the sort of mistake to correct before joining anything.
+}
+
+// The room this page drives. Both values come from the same status poll that
+// drives the screens, and read as pending until the call is up.
+let roomName = '';
+let roomUri = '';
+
+// Set once a hang-up has been asked for. The status poll clears room and
+// browsing before gw_state turns to stopped, so without this the page would
+// drop back to the platform list for a poll or two on its way out.
+let leaving = false;
+
+function showRoom() {
+  const t = TEXTS[currentLang];
+  const known = !!(roomName || roomUri);
+  $('room').classList.toggle('room--pending', !known);
+  $('room-name').textContent = roomName || t.connecting;
+  $('room-uri').textContent = roomUri || t.connecting;
+
+  // Until an endpoint has called in there is nothing on the other end: a
+  // platform key would go nowhere, and there is no call to hang up. The
+  // screen stays readable, it just does not act yet.
+  $('platforms').classList.toggle('is-waiting', !known);
+  $('platforms').querySelectorAll('button').forEach((b) => { b.disabled = !known; });
+  $('btn-endcall').disabled = !known;
+  $('waiting').hidden = known;
 }
 
 const capture = document.getElementById('key-capture');
@@ -118,31 +207,6 @@ function captureReset() {
   updateRoomNameInputUi();
 }
 
-// Display name input references and helpers
-const displayInput = document.getElementById('display-name');
-const displayLabel = document.getElementById('display-label');
-if (displayInput) {
-  displayInput.placeholder = currentLang === 'fr' ? 'Nom affiché' : 'Display name';
-  displayInput.disabled = true; // disabled until fetched
-}
-
-async function sendDisplayName(name) {
-  if (!gwId) return;
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
-  const payload = { gw_id: gwId, payload: { command: "displayName", param1: name } };
-  if (status) status.textContent = currentLang === 'fr' ? 'Envoi: nom affiché…' : 'Sending: display name…';
-  if (log) log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
-  try {
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    if (status) status.textContent = `✓ ${res.status} — display name`;
-    if (log) log.textContent += `\n← ${res.status} ${text.slice(0,120)}`;
-  } catch (e) {
-    if (status) status.textContent = `✗ Display name error`;
-    if (log) log.textContent += `\n← ${e.message}`;
-  }
-}
 
 capture.addEventListener('input', function() {
   this.placeholder = this.value ? '' : getRoomNamePlaceholder();
@@ -150,7 +214,6 @@ capture.addEventListener('input', function() {
 capture.addEventListener('keydown', async function(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
-    await sendDisplayName(displayInput.value.trim());
     if (this.value.length > 0) {
       //await sendString(this.value + '#');
       await sendRoomName(this.value);
@@ -238,25 +301,6 @@ async function sendChat(message) {
   });
 }
 
-async function fetchDisplayName() {
-  if (!gwId) return;
-  displayInput.disabled = true;
-  try {
-    const res = await fetch(apiUrl('/command'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gw_id: gwId, payload: { command: 'displayName' } })
-    });
-    if (!res.ok) return;
-    const json = await res.json();
-    const name = json?.data?.displayName || json?.data?.displayname || '';
-    displayInput.value = name || '';
-  } catch (e) {
-    console.error('fetchDisplayName error', e);
-  } finally {
-    displayInput.disabled = false;
-  }
-}
 
 async function fetchIvrConfigAndRestoreState() {
   if (!gwId) return;
@@ -286,78 +330,98 @@ async function fetchIvrConfigAndRestoreState() {
 }
 
 function renderDomainButtons() {
-  const menuDiv = document.getElementById('menu-options');
-  menuDiv.innerHTML = '';
+  const list = $('platforms');
   const domains = Object.entries(webrtcDomains);
   if (!domains.length) return;
 
-  // ensure we're not considered "in the menu" (no slide controls)
   menuDisplayed = false;
   updateSlideControlsVisibility();
+  showScreen('platforms');
 
-  document.getElementById('input-row').style.display = 'none';
-
-  const chooseLabel = currentLang === 'fr' ? 'Choisissez un service :' : 'Choose a service:';
-  menuDiv.innerHTML = `<div style="margin-bottom:0.5em;width:100%;">${chooseLabel}</div>`;
-
+  list.innerHTML = '';
   domains.forEach(([key, val], idx) => {
-    const digit = (idx + 1).toString();
-    const btn = document.createElement('button');
-    btn.className = 'key menu-key domain-btn';
-    btn.title = `Press ${digit}`;
-    // prefer explicit domain if provided, otherwise try to extract from name in parentheses
+    // Still the key the gateway expects, even though the card no longer shows
+    // it: a finger on the card replaces a digit on the keypad.
+    const digit = String(idx + 1);
+
+    // The name may carry its host in parentheses when no domain field is set.
     const rawName = val.name || key;
-    const nameOnly = rawName.replace(/\s*\(.*\)$/, '').trim();
-    let host = val.domain || '';
-    if (!host) {
-      const m = rawName.match(/\(([^)]+)\)\s*$/);
-      host = m ? m[1] : '';
+    const name = rawName.replace(/\s*\(.*\)$/, '').trim();
+    const host = val.domain || (rawName.match(/\(([^)]+)\)\s*$/) || [])[1] || '';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'platform';
+    btn.setAttribute('aria-label', name);
+
+    const icon = document.createElement('img');
+    icon.className = 'platform__icon';
+    icon.alt = '';
+    icon.src = `${apiUrl('/logo')}/${encodeURIComponent(key)}?gw_id=${encodeURIComponent(gwId)}`;
+    // A connector with no logo shipped simply shows none: the previous fallback
+    // pointed at a relative path that stopped resolving once the page moved to
+    // the proxy, so it only ever produced a second 404.
+    icon.addEventListener('error', () => { icon.remove(); });
+
+    const text = document.createElement('span');
+    text.className = 'platform__text';
+    const nameEl = document.createElement('span');
+    nameEl.className = 'platform__name';
+    nameEl.textContent = name;
+    text.appendChild(nameEl);
+    if (host) {
+      const hostEl = document.createElement('span');
+      hostEl.className = 'platform__host';
+      hostEl.textContent = host;
+      text.appendChild(hostEl);
     }
-    const hostHtml = host ? `<span class="domain-host">(${host})</span>` : '';
-    btn.innerHTML = `
-      <img src="${apiUrl('/logo')}/${encodeURIComponent(key)}?gw_id=${encodeURIComponent(gwId)}"
-           alt="" onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='true';this.src='./images/domain-icons/${encodeURIComponent(key)}.png'}">
-      <div class="domain-text"><span class="domain-name">${nameOnly}</span>${hostHtml}</div>
-    `;
-    btn.onclick = async () => { await sendKey(digit); await sendKey('#'); showInputAndPrepareMenu(key); };
-    menuDiv.appendChild(btn);
+
+    btn.append(icon, text);
+    btn.onclick = async () => {
+      await sendKey(digit);
+      await sendKey('#');
+      showInputAndPrepareMenu(key);
+    };
+    list.appendChild(btn);
   });
 
-  document.getElementById('key-capture').disabled = !browsingName;
+  showRoom();     // a card built now takes the current waiting state
 }
 
 function showInputAndPrepareMenu(selectedDomainKey) {
   browsingName = selectedDomainKey;
   menuOptions = [];
-  // entering input phase — not the menu yet
   menuDisplayed = false;
   renderMenuOptions();
-  // show the input row when preparing the menu / input
-  const inputRow = document.getElementById('input-row');
-  if (inputRow) inputRow.style.display = 'flex';
+  showScreen('meeting');
 
-  document.getElementById('key-capture').disabled = false;
+  // The platform is recalled at the top: there is no way back to the list, the
+  // gateway cannot return to its menu once a platform has been chosen.
+  const val = webrtcDomains[selectedDomainKey] || {};
+  const name = (val.name || selectedDomainKey).replace(/\s*\(.*\)$/, '').trim();
+  $('chosen-name').textContent = name;
+  const icon = $('chosen-icon');
+  icon.src = `${apiUrl('/logo')}/${encodeURIComponent(selectedDomainKey)}?gw_id=${encodeURIComponent(gwId)}`;
+  icon.alt = '';
+  icon.hidden = false;
+  icon.onerror = () => { icon.hidden = true; };
+
+  const capture = $('key-capture');
+  capture.disabled = false;
   updateRoomNameInputUi();
-  // Focus logic: prefer focusing the display-name field if it's empty,
-  // otherwise focus the key-capture input so user can type meeting code quickly.
-  // Do NOT steal focus if the user is already interacting with one of the inputs.
-  const captureEl = document.getElementById('key-capture');
-  const displayEl = document.getElementById('display-name');
-  try {
-    const active = document.activeElement;
-    const inputsContainer = document.getElementById('inputs');
-    const userIsInteracting = active &&
-                              inputsContainer &&
-                              inputsContainer.contains(active) &&
-                              (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
-    if (!userIsInteracting) {
-      if (displayEl && !displayEl.value.trim()) { displayEl.focus(); }
-      else if (captureEl) { captureEl.focus(); }
-    }
-  } catch (e) { /* ignore focus errors */ }
+  refreshJoin();
 
-  // update slide controls visibility (hide during input)
+  if (!document.activeElement || document.activeElement === document.body) {
+    capture.focus();
+  }
+
   updateSlideControlsVisibility();
+}
+
+// Nothing to send until something is typed.
+function refreshJoin() {
+  const capture = $('key-capture');
+  $('btn-enter').disabled = !capture || !capture.value.trim();
 }
 
 async function checkGwStatus() {
@@ -368,12 +432,29 @@ async function checkGwStatus() {
     // polling, more slowly, so a passing outage is recovered from.
     if (!statusRes.ok) { document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — retrying…`; return setTimeout(checkGwStatus, POLL_MS * 5); }
     const statusData = await statusRes.json();
-    if (statusData.data?.gw_state === "down") {
-      document.getElementById('status').textContent = `Gateway down ("exited") — Returning to interact…`;
-      // small delay so user sees message, then return to interact root (no gwId)
+    // stopped: the container exited, the call is over. deleted: the VM is gone.
+    // Either way there is nothing left to drive from here. The page used to
+    // watch for "down", a value the proxy stopped writing when the states were
+    // renamed.
+    const state = statusData.data?.gw_state;
+    if (state === "stopped" || state === "deleted") {
+      $('status').hidden = false;
+      $('status').textContent = currentLang === 'fr'
+        ? 'L\u2019appel est termin\u00e9.'
+        : 'The call has ended.';
+      // a beat so the message is seen, then back to the pairing page
       setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 800);
       return;
     }
+    // The room this page drives, shown in the header.
+    const peerName = statusData.data.peer_name || '';
+    const peerUri = statusData.data.peer_uri || '';
+    if (peerName !== roomName || peerUri !== roomUri) {
+      roomName = peerName;
+      roomUri = peerUri;
+      showRoom();
+    }
+
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
 
@@ -381,11 +462,12 @@ async function checkGwStatus() {
     // can be entered on the endpoint keypad just as well as here, so the
     // screen follows the reported state instead of what this page last did.
     const screen = `${bn || ''}|${rn || ''}`;
-    if (screen !== lastScreen) {
+    if (!leaving && screen !== lastScreen) {
       lastScreen = screen;
       if (rn && bn) {
         menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
         menuDisplayed = true;
+        showScreen(null);
         renderMenuOptions();
       } else if (bn) {
         showInputAndPrepareMenu(bn);
@@ -412,8 +494,8 @@ function renderMenuOptions() {
 
   let chatInjected = false;
 
-  const inputRow = document.getElementById('input-row');
-  if (inputRow) inputRow.style.display = 'none';
+  // in the meeting: neither connection screen belongs on screen any more
+  showScreen(null);
 
   // mark that we're showing the IVR/menu options inside the meeting
   menuDisplayed = true;
@@ -486,39 +568,70 @@ function onReady(fn) {
   }
 }
 
+// Language and theme, wired like the pairing page's.
+function setLang(value) {
+  currentLang = value;
+  localStorage.setItem('lang', value);
+  renderLangSwitch();
+}
+
+$('lang-fr').addEventListener('click', () => setLang('fr'));
+$('lang-en').addEventListener('click', () => setLang('en'));
+$('theme-toggle').addEventListener('click', () => {
+  dark = !dark;
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  renderLangSwitch();
+});
+
 onReady(() => {
+  const saved = localStorage.getItem('lang');
+  if (saved && TEXTS[saved]) currentLang = saved;
+  renderLangSwitch();
   fetchIvrConfigAndRestoreState();
-  fetchDisplayName();
   // call after initial render to hide slide-controls when appropriate
   updateSlideControlsVisibility();
   // Polling used to start only once the user had pressed something, so a page
   // opened on an idle gateway never noticed the room joining a conference.
   if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, POLL_MS); }
 });
-document.getElementById('btn-enter').onclick = async () => {
-  await sendDisplayName(displayInput.value.trim());
+$('key-capture').addEventListener('input', refreshJoin);
+
+$('btn-enter').onclick = async () => {
   if (capture.value.length > 0) {
+    $('spinner').hidden = false;
+    $('btn-enter').disabled = true;
     //await sendString(capture.value + '#');
     await sendRoomName(capture.value);
     await captureReset();
     await setTimeout(() => sendKey('#'), 450);
   }
 };
-document.getElementById('btn-del').onclick = () => {
-  sendKey('*');
-};
-document.getElementById('btn-endcall').onclick = async () => {
-  // a small confirmation to avoid accidental hangups
-  const confirmMsg = currentLang === 'fr' ? "Terminer l'appel ?" : "End the call?";
-  if (confirm(confirmMsg)) {
-    // visually disable while sending
-    const b = document.getElementById('btn-endcall');
-    if (b) { b.disabled = true; }
-    await sendEndCall();
-    // keep disabled briefly while redirecting
-    // small delay so user sees result, then back to the pairing page
-    setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 250);
-  }
+// Leaving is asked for twice: the browser's own confirm() sat at the top of the
+// window, out of the page and out of its styling.
+function askToHangUp() {
+  $('confirm').hidden = false;
+  $('confirm-no').focus();
+}
+
+function closeConfirm() {
+  $('confirm').hidden = true;
+  $('btn-endcall').focus();
+}
+
+$('btn-endcall').onclick = askToHangUp;
+$('confirm-no').onclick = closeConfirm;
+$('confirm-close').onclick = closeConfirm;
+$('confirm-backdrop').onclick = closeConfirm;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('confirm').hidden) closeConfirm();
+});
+
+$('confirm-yes').onclick = async () => {
+  $('confirm-yes').disabled = true;
+  $('btn-endcall').disabled = true;
+  leaving = true;
+  await sendEndCall();
+  setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 250);
 };
 // slideShot button bindings
 document.getElementById('btn-slideShot').onclick = async () => { await sendSlideShot(); };

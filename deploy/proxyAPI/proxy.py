@@ -94,7 +94,9 @@ adminStaticFiles = {"admin.css": "text/css", "admin.js": "application/javascript
 # The pairing page's stylesheet and script. Served without a check, like the
 # page itself: the pairing code is what grants access, and it is entered on
 # that page.
-pairingStaticFiles = {"pairing.css": "text/css", "pairing.js": "application/javascript"}
+pairingStaticFiles = {"shared.css": "text/css",
+                      "pairing.css": "text/css",
+                      "pairing.js": "application/javascript"}
 
 
 @app.get("/pairing/static/{file_name}")
@@ -112,7 +114,10 @@ async def pairing_static(file_name: str):
 # The companion page's stylesheet and script. Served without a check, like the
 # page itself: a gw_id is what it takes to reach a gateway, and the page asks
 # for one in its query string.
-interactStaticFiles = {"interact.css": "text/css", "interact.js": "application/javascript"}
+interactStaticFiles = {"shared.css": "text/css",
+                       "interact-connexion.css": "text/css",
+                       "interact-controls.css": "text/css",
+                       "interact.js": "application/javascript"}
 
 
 @app.get("/interact/static/{file_name}")

@@ -1,0 +1,153 @@
+/* The in-meeting screen: the command keys, the chat row, the slide capture and
+   the end-call footer. Moved out of interact.css unchanged — the connection
+   screens are being reworked, this one is not, and keeping them apart means the
+   rework cannot disturb it. */
+
+/* Footer end-call */
+/* Slide preview modal (centered) + backdrop */
+#slide-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 1000;
+  display: none;
+}
+#slide-preview {
+  position: fixed;
+  /* fallback and use the small-viewport height to account for the address bar */
+  top: 50vh;
+  top: 50svh;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  max-width: 90%;
+  width: 420px;
+  background: #fff;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  padding: 12px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px)); /* respect the notch / safe area */
+  display: none;
+  gap: 8px;
+  flex-direction: column;
+}
+/* actions first, image below; actions wrap on small screens */
+#slide-preview .preview-actions { display:flex; gap:8px; margin-bottom:8px; justify-content:flex-end; flex-wrap:wrap; }
+#slide-preview img { width: 100%; height: auto; display:block; border-radius:6px; order: 1; max-height: calc(80vh - 84px); object-fit: contain; }
+#slide-preview .small { font-size:12px; padding:6px 8px; height:32px; line-height:18px; }
+#menu-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1em;
+}
+.menu-key {
+  background: #f0f8ff;
+  border: 1px solid #aee;
+  color: #222;
+  font-size: 14px;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+#log {
+  font-size: 11px;
+  background: #eee;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 100px;
+  overflow-y: auto;
+  word-break: break-all;
+}
+/* Chat UI */
+.chat-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+  align-items: center;
+}
+.chat-input {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  font-size: 14px;
+}
+.chat-send-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  background: white;
+  cursor: pointer;
+}
+.chat-send-btn:active { transform: scale(0.98); }
+/* Slide controls & gallery under the menu (thumbnails accumulate) */
+#slide-controls {
+  margin-top: 8px;
+  width: 100%;
+  display: none; /* hidden by default; shown only when in-meeting (menuDisplayed) */
+  flex-direction: column;
+  gap: 8px;
+}
+#slide-controls .controls-row { display:flex; gap:8px; align-items:center; }
+#slide-gallery {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.slide-thumb {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.slide-thumb-meta { font-size: 11px; color: #666; margin-top: 4px; }
+/* accent capture button */
+#btn-slideShot {
+  background: linear-gradient(180deg,#3b82f6,#2563eb);
+  color: #fff;
+  border-color: #1e40af;
+}
+#btn-slideShot:hover { filter: brightness(0.96); }
+/* Chat input focus ring */
+.chat-input:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+/* Command feedback. Both belong to the meeting screen; showScreen hides them
+   while a connection screen is up. */
+#status {
+  margin-top: .8rem;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+/* The generic key style the in-meeting buttons build on: the slide capture
+   button and the preview actions. Was indented in the old interact.css, which
+   is how it nearly went missing in the split. */
+.key {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: monospace;
+  white-space: nowrap;
+}
+.key:active { background: #e0e0e0; transform: scale(0.94); }
