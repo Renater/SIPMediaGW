@@ -1,0 +1,157 @@
+/* The two screens before the meeting: picking a platform, then entering the
+   meeting id. The palette, the header and the language and theme controls live
+   in shared.css, loaded before this. */
+
+/* Leaving the call: a secondary button at the foot of the page, square-edged
+   like the primary one. Not the action the visitor came for, but available. */
+.hangup {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: 1.6rem;
+  border: 0;
+  border-radius: .375rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--bf);
+  color: var(--bf);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.hangup:hover { background: color-mix(in srgb, var(--bf) 8%, transparent); }
+.hangup:disabled { opacity: .45; cursor: default; }
+.hangup:disabled:hover { background: transparent; }
+
+/* Which room this page drives. Shown from the first status poll; until then the
+   line reads as connecting rather than as an empty header. */
+.room {
+  margin-top: .8rem;
+  padding: .7rem .9rem;
+  border-radius: .5rem;
+  background: var(--tile);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.room__label { color: var(--muted); }
+.room__value { color: var(--txt); font-weight: 600; }
+.room--pending .room__value { color: var(--muted); font-weight: 400; font-style: italic; }
+
+/* Platform list */
+/* Three across, as the room screen lays them out: nine platforms in a single
+   column would run past the fold. */
+.platforms {
+  display: grid;
+  /* minmax(0, …) rather than 1fr: a 1fr column will not shrink below its
+     content, so one long host name pushed the grid off screen. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin-top: .6rem;
+}
+.platform {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: .4rem;
+  width: 100%;
+  padding: .8rem .5rem;
+  border: 0;
+  border-radius: .55rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--txt);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.platform:hover { box-shadow: inset 0 0 0 1.5px var(--bf); }
+.platform:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
+
+/* The number the room screen shows next to the same platform, so the two read
+   as the same list. */
+.platform__icon { width: 2.2rem; height: 2.2rem; flex: none; object-fit: contain; }
+.platform__text { min-width: 0; width: 100%; text-align: center; }
+/* Two lines at most, then an ellipsis: breaking a name mid-word to fit reads
+   worse than cutting it. The column can shrink now, so the ellipsis works. */
+.platform__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: .8rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+/* A host has nothing to break on, so it is cut rather than wrapped. */
+.platform__host {
+  display: block;
+  font-size: .65rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+/* Meeting id */
+/* Sits on the title line, after a separator */
+/* The platform being joined, centred under the title: it says what the screen
+   is about, so it carries the weight the title no longer needs to. */
+.chosen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  margin: .9rem 0 0;
+}
+.chosen__icon { width: 2rem; height: 2rem; flex: none; object-fit: contain; }
+.chosen__name { font-size: 1.15rem; font-weight: 700; color: var(--txt); }
+
+.field { margin-top: .7rem; }
+.field__label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 700;
+  margin-bottom: .45rem;
+}
+/* Below the box, where it reads as a note on what was just typed rather than
+   as a second instruction before typing anything. */
+.field__hint {
+  font-size: .75rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: .4rem 0 0;
+  min-height: 1.4em;
+}
+.field input {
+  width: 100%;
+  min-height: 3rem;
+  padding: .6rem .8rem;
+  border: 0;
+  border-radius: .5rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1.5px var(--border);
+  color: var(--txt);
+  font: inherit;
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+}
+.field input:focus { outline: 2px solid var(--bf); outline-offset: 2px; }
+.field input::placeholder { color: var(--muted); letter-spacing: normal; }
+
+
+/* Nothing to drive until an endpoint has called in */
+.waiting {
+  margin: .6rem 0 0;
+  padding: .7rem .9rem;
+  border-radius: .5rem;
+  background: var(--warning-bg);
+  color: var(--warning-txt);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.platforms.is-waiting { opacity: .45; }
+.platform:disabled { cursor: default; }
+.platform:disabled:hover { box-shadow: inset 0 0 0 1px var(--border); }

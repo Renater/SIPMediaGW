@@ -1,0 +1,269 @@
+/* Shared by the pairing page and the companion page: the palette, the frame
+   they both draw — brand, language switch, theme toggle — and the pieces of
+   text and feedback that look the same on either.
+
+   Everything below reads the variables at the top, so the dark theme is the
+   palette and nothing else. */
+
+/* DSFR tokens, light and dark. The palette is the only thing the dark theme
+   changes: every rule below reads these variables. */
+:root {
+  --bf: #000091;
+  --txt: #161616;
+  --muted: #666;
+  --bg: #fff;
+  --tile: #f6f6f6;
+  --border: #ddd;
+  --warning-bg: #fdeeee;
+  --warning-txt: #b34000;
+}
+[data-theme="dark"] {
+  --bf: #8585f6;
+  --txt: #fff;
+  --muted: #a8a8a8;
+  --bg: #161616;
+  --tile: #1e1e1e;
+  --border: #353535;
+  --warning-bg: #2e1a12;
+  --warning-txt: #fc5d00;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem 1rem 2.5rem;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: Marianne, Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid var(--border);
+}
+.brand__logo { height: 2rem; width: auto; }
+.brand__logo[src=""] { display: none; }
+.brand__name { font-size: .95rem; font-weight: 700; line-height: 1.15; }
+.brand__tagline {
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1.15;
+  color: var(--muted);
+}
+
+/* Language and theme */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+.segmented__el {
+  padding: .3rem .85rem;
+  font: inherit;
+  font-size: .85rem;
+  border: 0;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+}
+.segmented__el[aria-checked="true"] {
+  background: color-mix(in srgb, var(--bf) 13%, transparent);
+  color: var(--bf);
+  font-weight: 700;
+}
+.theme-toggle {
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tile);
+  color: var(--txt);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 1rem 0 0;
+}
+
+.subtitle {
+  font-size: .85rem;
+  color: var(--muted);
+  text-align: center;
+  margin: .8rem 0 .4rem;
+}
+
+/* Error */
+.banner {
+  margin-top: 1rem;
+  padding: .7rem .9rem;
+  border-radius: .5rem;
+  font-size: .8rem;
+  line-height: 1.5;
+}
+/* display beats the hidden attribute, so it has to be restored explicitly */
+[hidden] { display: none !important; }
+
+.banner--error {
+  background: var(--warning-bg);
+  color: var(--warning-txt);
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+}
+.banner__close {
+  margin-left: auto;
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.banner__close:hover { background: rgba(0, 0, 0, .07); }
+
+/* The button that commits the screen, and the spinner it shows while waiting.
+   Both pages have one, so both read it from here. */
+.submit {
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border: 0;
+  border-radius: .375rem;
+  background: var(--bf);
+  color: #fff;
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.submit:disabled { opacity: .45; cursor: default; }
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Confirmation dialog. In the page and centred, rather than the browser's own
+   confirm() sitting at the top of the window in its own styling. */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 22, .5);
+}
+.modal__box {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  border-radius: .25rem;
+  background: var(--bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 18, .25);
+  overflow: hidden;
+}
+.modal__head {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .7rem 1rem;
+  background: var(--bf);
+  color: #fff;
+}
+.modal__title { font-size: .95rem; font-weight: 700; }
+.modal__close {
+  margin-left: auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal__close:hover { background: rgba(255, 255, 255, .15); }
+.modal__body {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1.2rem 1rem;
+  font-size: .9rem;
+}
+.modal__body p { margin: 0; }
+.modal__icon { width: 1.6rem; height: 1.6rem; flex: none; fill: var(--muted); }
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  padding: 0 1rem 1rem;
+}
+.modal__btn {
+  min-height: 2.5rem;
+  padding: 0 1.2rem;
+  border: 0;
+  border-radius: .375rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--bf);
+  color: var(--bf);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.modal__btn:hover { background: color-mix(in srgb, var(--bf) 8%, transparent); }
+.modal__btn--danger {
+  background: var(--bf);
+  box-shadow: none;
+  color: #fff;
+  font-weight: 700;
+}
+.modal__btn--danger:hover { background: var(--bf-hover, var(--bf)); filter: brightness(1.1); }
+.modal__btn:disabled { opacity: .5; cursor: default; }
