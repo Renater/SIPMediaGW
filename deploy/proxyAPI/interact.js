@@ -371,7 +371,7 @@ async function checkGwStatus() {
     if (statusData.data?.gw_state === "down") {
       document.getElementById('status').textContent = `Gateway down ("exited") — Returning to interact…`;
       // small delay so user sees message, then return to interact root (no gwId)
-      setTimeout(() => { window.location.href = apiUrl('/gateway/interact'); }, 800);
+      setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 800);
       return;
     }
     let bn = statusData.data.browsing;
@@ -516,13 +516,8 @@ document.getElementById('btn-endcall').onclick = async () => {
     if (b) { b.disabled = true; }
     await sendEndCall();
     // keep disabled briefly while redirecting
-    // compute redirect target: keep everything up to and including "/interact"
-    const href = window.location.href;
-    const token = '/interact';
-    const idx = href.indexOf(token);
-    const redirectTo = (idx !== -1) ? href.slice(0, idx + token.length) : apiUrl('/gateway/interact');
-    // small delay so user sees result, then redirect
-    setTimeout(() => { window.location.href = redirectTo; }, 250);
+    // small delay so user sees result, then back to the pairing page
+    setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 250);
   }
 };
 // slideShot button bindings

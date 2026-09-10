@@ -109,6 +109,24 @@ async def pairing_static(file_name: str):
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
 
+# The companion page's stylesheet and script. Served without a check, like the
+# page itself: a gw_id is what it takes to reach a gateway, and the page asks
+# for one in its query string.
+interactStaticFiles = {"interact.css": "text/css", "interact.js": "application/javascript"}
+
+
+@app.get("/interact/static/{file_name}")
+async def interact_static(file_name: str):
+    """Serve the companion page's CSS/JS (whitelist, no directory access)."""
+    mediaType = interactStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    try:
+        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type=mediaType)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
 @app.get("/admin/")
 async def admin_page(request: Request):
     """
@@ -550,22 +568,19 @@ async def interact(request: Request):
                 html_form = f.read()
             return Response(content=html_form, media_type="text/html")
 
-    rawData = redisClient.get(f"gateway:{gwId}")
-    if not rawData:
+    # The gateway is still checked before the page is handed over: an unknown
+    # gw_id has nothing to drive.
+    if not redisClient.get(f"gateway:{gwId}"):
         raise HTTPException(status_code=404, detail=f"Gateway '{gwId}' not found")
 
-    parts = rawData.split("|")
-    gwIp = parts[redis_gw_ip_index]
-
-    gwUrl = f"http://{gwIp}/gateway/interact"
-    headers = {"Authorization": request.headers.get("Authorization", "")}
-    params = dict(request.query_params)
-
-    gwResponse = await proxyToGateway(gwUrl, request, params, None, headers)
-
-    content = gwResponse.content
-    mediaType = gwResponse.headers.get("content-type", "text/html")
-    return Response(content=content, status_code=gwResponse.status_code, media_type=mediaType)
+    # The page itself is the same for every gateway — same image, same file —
+    # so it is served from here rather than fetched from the one it drives.
+    # Its commands are relayed as before.
+    try:
+        with open(os.path.join(assetDir, "interact.html"), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/html")
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="interact.html not found on server")
 
 async def proxyToGateway(gwUrl: str, request: Request, params: dict, body: dict,headers: dict):
     """Forward request to gateway and return response"""
@@ -841,11 +856,6 @@ async def ivrConfigGateway(request: Request):
 @app.api_route("/status", methods=["GET"])
 async def statusGatewayProxy(request: Request):
     return await genericGatewayProxy(request, "status")
-
-@app.api_route("/interact/static/{file_name}", methods=["GET"])
-async def interactStaticGateway(request: Request, file_name: str):
-    """The companion page's stylesheet and script, relayed like its icons."""
-    return await genericGatewayProxy(request, f"interact/static/{file_name}")
 
 @app.api_route("/icon/{icon_name}", methods=["GET"])
 async def iconGateway(request: Request, icon_name: str):
