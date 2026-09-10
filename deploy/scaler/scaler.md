@@ -35,7 +35,7 @@ Example configuration (JSON)
   "auto_scale_threshold": {
     "default": {
       "00:00:00": {"unlockedMin": 2, "loadMax": 0.7},
-      "08:00:00": {"unlockedMin": 10, "loadMax": 0.75}
+      "08:00:00": {"unlockedMin": 10, "minGw": 4, "loadMax": 0.75}
     },
     "saturday": {
       "00:00:00": {"unlockedMin": 1, "maxGw": 1, "loadMax": 1.0}
@@ -58,6 +58,9 @@ Public methods
   - Destroy instances marked to_stop=1 and remove instances without a public IP after a timeout.
 - scale(scaleTime=None, incallsNum=None)
   - Compute current and target capacity using database queries and thresholds, then call upScale/downScale.
+  - Each time slot accepts two optional minimums, both honoured in the same target:
+    `unlockedMin` (minimum number of ready/idle GWs) and `minGw` (floor on the total
+    number of GWs). Omitting them means 0, which keeps the historical behaviour.
 
 Important notes and known issues
 - configure currently opens files without using a context manager — consider with open(...) for safety.

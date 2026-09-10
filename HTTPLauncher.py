@@ -501,6 +501,30 @@ class DockerGateway:
                 "window.meeting.mediaState() : null;"
             )
             return {"ack": True, "mediaState": mediaState}
+        elif payload['command'] == 'uiState':
+            uiState = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.uiState) ? "
+                "window.meeting.uiState() : null;"
+            )
+            return {"ack": True, "uiState": uiState}
+        elif payload['command'] == 'panelState':
+            panelState = self.executeInExistingChromeSession(
+                gwId,
+                "return (window.meeting && window.meeting.panelState) ? "
+                "window.meeting.panelState() : null;"
+            )
+            return {"ack": True, "panelState": panelState}
+        elif payload['command'] == 'camera':
+            cameraState = payload.get('param1')
+            if cameraState not in ('on', 'off'):
+                raise ValueError("camera param1 must be 'on' or 'off'")
+            self.executeInExistingChromeSession(
+                gwId,
+                "return window.meeting.camera(arguments[0]);",
+                cameraState
+            )
+            return {"ack": True, "camera": cameraState}
         elif payload['command'] == 'microphone':
             microphoneState = payload.get('param1')
             if microphoneState not in ('on', 'off'):
@@ -667,13 +691,6 @@ def get_icon(icon_name: str, gw_id: str):
 @app.get("/gateway/logo/{logo_name}")
 def get_logo(logo_name: str, gw_id: str):
     return fetchGatewayImage(gw_id, "domain-icons", logo_name)
-
-@app.get("/gateway/interact")
-def serve_interact_html():
-    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "./browsing/assets/interact.html"))
-    if not os.path.isfile(file_path):
-        raise HTTPException(status_code=404, detail="File not found.")
-    return FileResponse(file_path, media_type="text/html")
 
 # -----------------------
 # Entrypoint

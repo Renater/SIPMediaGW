@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Keyboard key from the SIPMediaGW IVR wordmark, squared for a favicon -->
+  <rect x="6" y="6" width="52" height="52" rx="8" fill="#fff" stroke="#1E62D0" stroke-width="6"/>
+  <text x="32" y="34" font-family="Ubuntu Mono, DejaVu Sans Mono, monospace" font-size="38" font-weight="700"
+        fill="#1E62D0" text-anchor="middle" dominant-baseline="central">S</text>
+</svg>

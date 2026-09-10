@@ -74,7 +74,7 @@ Get per-gateway status/progress. Query by gw_id or room.
       "status": "success",
       "data": {
         "gw_id": "192.168.1.12",
-        "gw_state": "working",
+        "gw_state": "started",
         "room": "math101",
         "media_duration": "00:05:12",
         "transcript_progress": "45%"
@@ -91,7 +91,7 @@ Return status of all gateways. Requires admin Bearer token.
   {
     "gw01": {
       "gateway": "192.168.1.12",
-      "status": "working",
+      "status": "started",
       "room": "math101",
       "media_duration": "00:05:12",
       "transcript_progress": "45%"
@@ -110,7 +110,7 @@ Return status of all gateways. Requires admin Bearer token.
 Forward a command to a gateway.
 - Query: `?gw_id=gw01`
 - Body: forwarded as-is to gateway.
-- Note: commands are rejected (403) unless gateway state == "working".
+- Note: commands are rejected (403) unless gateway state == "started".
 - Response: proxied gateway response.
 
 ### POST /register
@@ -151,6 +151,18 @@ A background task polls each gateway at `/gateway/status` and:
 
 ---
 
+## Admin console
+
+`GET /admin/` serves a read-only console (`admin.html`, with `admin.css` and
+`admin.js` under `/admin/static/`, connector icons from `icons/` under `/admin/icons/`)
+listing the registered gateways with a
+derived state — *free slot* (`started`: container stopped, allocatable by
+`/start`), *waiting for a call* (`working`, no call fields) or *in conference*
+(call fields set) — plus room, platform, peer, call duration and pairing code,
+refreshed every 10 s. Open it in a browser: the 401 challenge triggers the
+native prompt (any user name, `PROXY_ADMIN_TOKEN` as password). The page is
+served with a strict `Content-Security-Policy` (no inline code).
+
 ## Authorization examples
 
 Normal requests:
@@ -158,7 +170,10 @@ Normal requests:
 curl -H "Authorization: Bearer 1234" -X POST -d '{"room":"math101"}' http://localhost:9000/start
 ```
 
-Admin requests:
+Admin requests (`PROXY_ADMIN_TOKEN` must be set, there is no default):
 ```bash
-curl -H "Authorization: Bearer admin-secret-key" http://localhost:9000/admin/statuses
+curl -H "Authorization: Bearer $PROXY_ADMIN_TOKEN" http://localhost:9000/admin/statuses
+# HTTP Basic is accepted too (any user name, the admin token as password),
+# which lets a browser open admin pages through its native prompt:
+curl -u admin:$PROXY_ADMIN_TOKEN http://localhost:9000/admin/statuses
 ```

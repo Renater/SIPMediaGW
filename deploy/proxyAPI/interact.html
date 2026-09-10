@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIPMediaGW Remote Control</title>
+<link rel="stylesheet" href="/interact/static/interact.css">
+</head>
+<body>
+<div class="kb-wrap">
+  <div id="lang-switch"></div>
+  <div id="input-row">
+    <div id="inputs">
+      <!-- Display name first -->
+      <div class="input-line display-line">
+        <div class="input-field-row">
+          <label for="display-name" id="display-label">Display name</label>
+          <div class="field-stack">
+            <input id="display-name" autocomplete="off" placeholder="Your display name" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Meeting name below display name, with hint below the label and above the input -->
+      <div class="input-line">
+        <div class="input-field-row">
+          <label for="key-capture" id="input-label">Meeting Name</label>
+          <div id="room-name-hint" class="room-name-hint" aria-live="polite"></div>
+          <div class="field-stack">
+            <input id="key-capture"
+                   autocomplete="off"
+                   autocapitalize="none"
+                   autocorrect="off"
+                   spellcheck="false"
+                   inputmode="text" />
+            <div id="action-btns" aria-hidden="false">
+              <button id="btn-enter" type="button" class="key" tabindex="-1" title="Send meeting name">Enter</button>
+              <button id="btn-del" type="button" class="key" tabindex="-1" title="Send star key">←</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="status">Ready</div>
+  <div id="menu-options"></div>
+
+  <!-- Slide controls and gallery (placed under the menu so always visible with options) -->
+  <div id="slide-controls" aria-hidden="false">
+    <div class="controls-row">
+      <button id="btn-slideShot" type="button" class="key" tabindex="-1"
+              title="Capture slide" aria-label="Capture slide">Capture</button>
+      <div id="slide-hint" style="font-size:12px;color:#666;">Thumbnails appear here</div>
+    </div>
+    <div id="slide-gallery" aria-live="polite"></div>
+  </div>
+
+  <div id="log">Waiting for input...</div>
+</div>
+
+<div id="endcall-footer" aria-hidden="false">
+   <button id="btn-endcall" type="button" class="key" tabindex="-1"
+           title="End call" aria-label="End call">End call</button>
+</div>
+
+<!-- Slide backdrop + preview modal -->
+<div id="slide-backdrop" aria-hidden="true"></div>
+<div id="slide-preview" aria-hidden="true">
+    <div class="preview-actions">
+      <a id="slide-download" class="key small" href="#" download="slide.png">Download</a>
+      <button id="slide-fullscreen" class="key small" title="Fullscreen">Full screen</button>
+      <button id="slide-discard" class="key small" title="Discard">Discard</button>
+      <button id="slide-close" class="key small">Close</button>
+    </div>
+    <img id="slide-img" src="" alt="Slide capture">
+  </div>
+
+<script src="/interact/static/interact.js" defer></script>
+</body>
+</html>

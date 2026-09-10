@@ -115,6 +115,24 @@ class Browsing:
         thread.start()
         return thread
 
+    def monitorLeftMeeting(self, checkInterval=60):
+        def checkLoop():
+            while True:
+                try:
+                    left = self.driver.execute_script(
+                        "return ('hasLeft' in window.meeting) ? window.meeting.hasLeft() : null")
+                except Exception:
+                    return
+                if left is None:
+                    return
+                if left:
+                    print("Gateway is no longer in the conference, hanging up.", flush=True)
+                    subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'], shell=True)
+                    return
+                time.sleep(checkInterval)
+        thread = threading.Thread(target=checkLoop, daemon=True)
+        thread.start()
+        return thread
     def browse(self):
         pass
 
@@ -150,6 +168,7 @@ class Browsing:
                 if joined:
                     break
                 self.interact()
+            self.monitorLeftMeeting()
             if os.getenv("ENDING_TIMEOUT"):
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
             self.manageLayout()

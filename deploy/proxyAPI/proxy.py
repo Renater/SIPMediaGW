@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import base64
 import redis
 import os
 import httpx
@@ -20,7 +21,9 @@ redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           decode_responses=True)
 
 allowedToken = os.getenv("PROXY_TOKEN", "1234")
-adminToken = os.getenv("PROXY_ADMIN_TOKEN", "admin-secret-key")
+# No default: an unset PROXY_ADMIN_TOKEN disables admin routes (same
+# convention as PROXY_ROOM_TOKEN) instead of exposing a well-known secret.
+adminToken = os.getenv("PROXY_ADMIN_TOKEN", "")
 # Dedicated token for room-side clients, which only need to resolve their own
 # gateway id. Empty by default, which keeps /gateway_id closed: the route is
 # only enabled on deployments where endpoints can be trusted to hold a secret.
@@ -28,7 +31,15 @@ roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 # Redis Mapping:
 # gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>|<call_started>"
-# state: started | working | stopped
+# state: created | started | stopped | deleted
+#   created  VM provisioned, container initialised once then stopped, unused
+#   started  container running, a call is in progress
+#   stopped  container stopped after a call — the VM is still reusable
+#   deleted  VM torn down
+# The two pairs answer different questions: created/deleted describe the VM,
+# started/stopped the container running on it.
+
+assetDir = os.path.dirname(os.path.abspath(__file__))
 
 redis_gw_field_count = 11
 
@@ -63,10 +74,107 @@ async def pairing_page(request: Request):
     works and pairing.html.handleQueryParams() can show the message / prefill.
     """
     try:
-        with open("pairing.html", "r", encoding="utf-8") as f:
+        with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
             return Response(content=f.read(), media_type="text/html")
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": "pairing.html not found"})
+
+def adminUnauthorized():
+    """401 for admin pages: Basic challenge so a browser prompts natively."""
+    return Response(
+        json.dumps({"error": "authorization error"}),
+        status_code=401,
+        headers={"WWW-Authenticate": 'Basic realm="SIPMediaGW admin", Bearer error="invalid_token"'},
+        media_type="application/json"
+    )
+
+adminStaticFiles = {"admin.css": "text/css", "admin.js": "application/javascript",
+                    "favicon.svg": "image/svg+xml"}
+
+# The pairing page's stylesheet and script. Served without a check, like the
+# page itself: the pairing code is what grants access, and it is entered on
+# that page.
+pairingStaticFiles = {"pairing.css": "text/css", "pairing.js": "application/javascript"}
+
+
+@app.get("/pairing/static/{file_name}")
+async def pairing_static(file_name: str):
+    """Serve the pairing page's CSS/JS (whitelist, no directory access)."""
+    mediaType = pairingStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    try:
+        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type=mediaType)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
+# The companion page's stylesheet and script. Served without a check, like the
+# page itself: a gw_id is what it takes to reach a gateway, and the page asks
+# for one in its query string.
+interactStaticFiles = {"interact.css": "text/css", "interact.js": "application/javascript"}
+
+
+@app.get("/interact/static/{file_name}")
+async def interact_static(file_name: str):
+    """Serve the companion page's CSS/JS (whitelist, no directory access)."""
+    mediaType = interactStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    try:
+        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type=mediaType)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
+@app.get("/admin/")
+async def admin_page(request: Request):
+    """
+    Serve the admin console. Same credentials as /admin/statuses: the browser
+    re-sends them on the page's own calls. CSS and JS are external files so
+    the page can carry a strict Content-Security-Policy (no inline code).
+    """
+    if not authorizeAdmin(request):
+        return adminUnauthorized()
+    try:
+        with open(os.path.join(assetDir, "admin.html"), "r", encoding="utf-8") as f:
+            return Response(
+                content=f.read(),
+                media_type="text/html",
+                headers={"Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'"}
+            )
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": "admin.html not found"})
+
+@app.get("/admin/static/{file_name}")
+async def admin_static(request: Request, file_name: str):
+    """Serve the console's CSS/JS (whitelist, no directory access)."""
+    if not authorizeAdmin(request):
+        return adminUnauthorized()
+    mediaType = adminStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    try:
+        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type=mediaType)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
+# Connector icons (deploy/proxyAPI/icons, same set as the IVR's domain-icons),
+# kept inside deploy/proxyAPI so the proxy stays a self-contained deployment unit.
+adminIconsDir = os.getenv("ADMIN_ICONS_DIR", "icons")
+
+@app.get("/admin/icons/{name}")
+async def admin_icon(request: Request, name: str):
+    """Serve a connector icon (<name>.png) from the mounted icons directory."""
+    if not authorizeAdmin(request):
+        return adminUnauthorized()
+    if not re.fullmatch(r"[a-z0-9]+", name):
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    path = os.path.join(adminIconsDir, f"{name}.png")
+    if not os.path.isfile(path):
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    return FileResponse(path, media_type="image/png")
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -102,11 +210,23 @@ def authorize(request: Request):
 
 def authorizeAdmin(request: Request):
     """Check if request has valid admin token"""
-    authHeader = request.headers.get("Authorization")
-    if not authHeader or not re.match(r"^Bearer ", authHeader):
+    if not adminToken:
         return False
-    token = authHeader.split(" ", 1)[1]
-    return token == adminToken
+    authHeader = request.headers.get("Authorization")
+    if not authHeader:
+        return False
+    if re.match(r"^Bearer ", authHeader):
+        return authHeader.split(" ", 1)[1] == adminToken
+    # HTTP Basic lets a browser reach admin pages through its native
+    # prompt: any user name, the admin token as password.
+    if re.match(r"^Basic ", authHeader):
+        try:
+            decoded = base64.b64decode(authHeader.split(" ", 1)[1]).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            return False
+        _, _, password = decoded.partition(":")
+        return password == adminToken
+    return False
 
 def authorizeRoom(request: Request):
     """
@@ -131,7 +251,7 @@ def findAvailableGateway():
         parts = value.split("|")
         gwIp = parts[redis_gw_ip_index]
         state = getPart(parts, redis_gw_state_index)
-        if state == "started":
+        if state in ("created", "stopped"):
             return [key, gwIp]
     return None
 
@@ -154,9 +274,10 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
         parts[redis_gw_transcript_progress_index] = f"{transcript}"
     # Update Gateway State
     if (state == "up"):
-        parts[redis_gw_state_index] = "working"
-    elif (state == "down"):
         parts[redis_gw_state_index] = "started"
+    elif (state == "down"):
+        # The container has exited; the VM stays provisioned and reusable.
+        parts[redis_gw_state_index] = "stopped"
     parts[redis_gw_room_index] = f"{room}" if room else "None"
     parts[redis_gw_browsing_index] = f"{browsing}" if browsing else "None"
     parts[redis_gw_peer_uri_index] = f"{peerUri}" if peerUri else "None"
@@ -280,7 +401,7 @@ async def adminStatus(request: Request):
         return Response(
             json.dumps({"error": "authorization error"}),
             status_code=401,
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            headers={"WWW-Authenticate": 'Basic realm="SIPMediaGW admin", Bearer error="invalid_token"'},
             media_type="application/json"
         )
 
@@ -315,13 +436,13 @@ async def adminStatus(request: Request):
             "gateway": gwIp,
             "type": cleanPart(gwType),
             "status": state,
-            "room": room if room else None,
+            "room": cleanPart(room),
             "media_duration": media_duration,
             "transcript_progress": transcript,
-            "browsing": browsing if browsing else None,
-            "peer_uri": peerUri if peerUri else None,
-            "peer_name": peerName if peerName else None,
-            "call_started": callStarted if callStarted else None,
+            "browsing": cleanPart(browsing),
+            "peer_uri": cleanPart(peerUri),
+            "peer_name": cleanPart(peerName),
+            "call_started": cleanPart(callStarted),
             "pairing_code": pairingByGateway.get(gw_id)
         }
     return result
@@ -388,6 +509,39 @@ def get_asset(file_name: str):
         filename=file_name,
     )
 
+@app.post("/pairing/resolve")
+async def pairingResolve(request: Request):
+    """Turn a pairing code into a gw_id, without navigating anywhere.
+
+    The pairing page submits its form to /interact and lets the answer come
+    back as a page: a refused code then lands under /interact?pairingCode=...
+    while showing the pairing form, and carries its error in a <script> the
+    proxy injects into the markup. Asking here first lets the page stay where
+    it is and say so itself.
+
+    /interact keeps accepting pairingCode as before.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    # /interact matches the code as typed; normalising here means a code keyed
+    # in lower case resolves like any other.
+    code = str(body.get("code") or "").strip().upper()
+
+    gwId = redisClient.get(f"pairing:{code}") if code else None
+    if not gwId:
+        # A malformed code and an unknown one get the same answer: the endpoint
+        # says whether a code is live, and nothing else.
+        return JSONResponse(
+            status_code=404,
+            content={"status": "error", "error": {"code": 404, "detail": "Unknown pairing code"}, "data": None},
+        )
+
+    return {"status": "success", "error": None, "data": {"gw_id": gwId}}
+
+
 @app.get("/interact")
 async def interact(request: Request):
 
@@ -402,46 +556,31 @@ async def interact(request: Request):
                 redirectUrl = "{}?gwId={}".format(str(request.url).split('?')[0], resolvedGwId)
                 return RedirectResponse(url=redirectUrl, status_code=302)
             else:
-                # Return pairing.html and inject a JS var so the page can display a translated error
-                try:
-                    with open("pairing.html", "r", encoding="utf-8") as f:
-                        html_form = f.read()
-                except FileNotFoundError:
-                    raise HTTPException(status_code=500, detail="pairing.html not found on server")
-                # inject safe JS literals
-                error_msg = "Invalid pairing code"
-                injection_script = (
-                    f'<script>window.SERVER_ERROR = {json.dumps(error_msg)}; '
-                    f'window.SERVER_PAIRING_CODE = {json.dumps(pairingCode)};</script>'
-                )
-                # insert the script before the first existing <script> so the page's JS sees it
-                if "<script" in html_form:
-                    html_with_msg = html_form.replace("<script", injection_script + "<script", 1)
-                else:
-                    # fallback: insert before </head>
-                    html_with_msg = html_form.replace("</head>", injection_script + "</head>", 1)
-                return Response(content=html_with_msg, media_type="text/html")
+                # The pairing page used to be returned here with the error
+                # injected into its markup, which left the address bar on
+                # /interact while showing the pairing form — and a reload
+                # retried the code that had just been turned down. The visitor
+                # is sent to the pairing page instead, which now checks a code
+                # through /pairing/resolve before going anywhere.
+                return RedirectResponse(url="/pairing", status_code=302)
         else:
-            with open("pairing.html", "r", encoding="utf-8") as f:
+            with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
                 html_form = f.read()
             return Response(content=html_form, media_type="text/html")
 
-    rawData = redisClient.get(f"gateway:{gwId}")
-    if not rawData:
+    # The gateway is still checked before the page is handed over: an unknown
+    # gw_id has nothing to drive.
+    if not redisClient.get(f"gateway:{gwId}"):
         raise HTTPException(status_code=404, detail=f"Gateway '{gwId}' not found")
 
-    parts = rawData.split("|")
-    gwIp = parts[redis_gw_ip_index]
-
-    gwUrl = f"http://{gwIp}/gateway/interact"
-    headers = {"Authorization": request.headers.get("Authorization", "")}
-    params = dict(request.query_params)
-
-    gwResponse = await proxyToGateway(gwUrl, request, params, None, headers)
-
-    content = gwResponse.content
-    mediaType = gwResponse.headers.get("content-type", "text/html")
-    return Response(content=content, status_code=gwResponse.status_code, media_type=mediaType)
+    # The page itself is the same for every gateway — same image, same file —
+    # so it is served from here rather than fetched from the one it drives.
+    # Its commands are relayed as before.
+    try:
+        with open(os.path.join(assetDir, "interact.html"), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/html")
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="interact.html not found on server")
 
 async def proxyToGateway(gwUrl: str, request: Request, params: dict, body: dict,headers: dict):
     """Forward request to gateway and return response"""
@@ -510,7 +649,7 @@ async def startGateway(request: Request):
             rawValue = redisClient.get(f"gateway:{gw_id}")
             parts = rawValue.split("|") if rawValue else [gwIp]
             parts += [""] * (redis_gw_field_count - len(parts))
-            parts[redis_gw_state_index] = "working"
+            parts[redis_gw_state_index] = "started"
             parts[redis_gw_room_index] = room if room else None
             parts[redis_gw_browsing_index] = browsing if browsing else None
             mapping = "|".join(parts)
@@ -567,7 +706,7 @@ async def stopGateway(request: Request):
             parts[redis_gw_peer_uri_index] = ''
             parts[redis_gw_peer_name_index] = ''
             parts[redis_gw_call_started_index] = ''
-            parts[redis_gw_state_index] = "stopped"
+            parts[redis_gw_state_index] = "deleted"
             mapping = "|".join(parts)
             redisClient.set(f"gateway:{gw_id}", mapping)
             responseJson["status"] = "success"
@@ -676,11 +815,11 @@ async def genericGatewayProxy(request: Request, endpoint: str):
     parts = raw_value.split("|")
     gw_ip = parts[redis_gw_ip_index]
 
-    isWorking = (
+    isRunning = (
         len(parts) > redis_gw_state_index
-        and parts[redis_gw_state_index] == "working"
+        and parts[redis_gw_state_index] == "started"
     )
-    if not isWorking:
+    if not isRunning:
         print(f"Gateway '{gw_id}' is stopped, cannot send commands")
         raise HTTPException(status_code=403, detail=f"Gateway '{gw_id}' is stopped, cannot send commands")
 
@@ -780,7 +919,7 @@ async def registerGateway(request: Request):
             callStarted   = parts[redis_gw_call_started_index]
         else:
             # No mapping found => reset
-            gwState = "started"
+            gwState = "created"
             startTime = dt.datetime.now().isoformat()
             roomName = None
             mediaduration   = "0"

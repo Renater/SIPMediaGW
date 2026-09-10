@@ -1,419 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIPMediaGW Remote Control</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: monospace;
-    padding: 1.25rem;
-    background: #f9f9f9;
-    margin: 0;
-  }
-  /* Footer end-call */
-  #endcall-footer {
-    position: fixed;
-    top: 1.25rem;     /* moved to top-right */
-    right: 1.25rem;
-    z-index: 999;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  /* End Call kept visible and visually prominent (red) */
-  #endcall-footer .key {
-    background: #ffecec;
-    border-color: #f85a5a;
-    color: #7a1b1b;
-    height:32px;
-    padding: 0 10px;
-    font-size: 13px;
-    line-height: 32px;
-    border-radius: 6px;
-  }
-
-  /* Slide preview modal (centered) + backdrop */
-  #slide-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 1000;
-    display: none;
-  }
-  #slide-preview {
-    position: fixed;
-    /* fallback and use the small-viewport height to account for the address bar */
-    top: 50vh;
-    top: 50svh;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1001;
-    max-width: 90%;
-    width: 420px;
-    background: #fff;
-    border: 1px solid #e4e4e4;
-    border-radius: 8px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-    padding: 12px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px)); /* respect the notch / safe area */
-    display: none;
-    gap: 8px;
-    flex-direction: column;
-  }
-  /* actions first, image below; actions wrap on small screens */
-  #slide-preview .preview-actions { display:flex; gap:8px; margin-bottom:8px; justify-content:flex-end; flex-wrap:wrap; }
-  #slide-preview img { width: 100%; height: auto; display:block; border-radius:6px; order: 1; max-height: calc(80vh - 84px); object-fit: contain; }
-  #slide-preview .small { font-size:12px; padding:6px 8px; height:32px; line-height:18px; }
-  /* avoid content under the top-right button */
-  .kb-wrap { padding-right: 0; }
-  /* make it less intrusive on very small screens */
-  @media (max-width: 420px) {
-    #endcall-footer { top: 0.6rem; right: 0.6rem; }
-    #endcall-footer .key { height:36px; padding: 0 10px; font-size:13px; }
-    #slide-preview {
-      width: 92vw;
-      max-width: 92vw;
-      left: 50%;
-      top: 50svh;
-      transform: translate(-50%, -50%);
-    }
-  }
-  #lang-switch {
-    margin-bottom: 1em;
-  }
-  #lang-switch button {
-    margin-right: 8px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid #bbb;
-    background: #fff;
-    cursor: pointer;
-    font-size: 13px;
-  }
-  #lang-switch button[disabled] {
-    background: #e0e0e0;
-    color: #888;
-    cursor: default;
-  }
-  #input-row {
-    display: none; /* hidden by default to avoid initial flash; JS will show it when appropriate */
-    flex-wrap: nowrap;
-    align-items: stretch; /* stretch so action buttons can match inputs height */
-    gap: 12px;
-    margin-bottom: 1em;
-    margin-top: 60px;
-  }
-  /* left inputs column */
-  #input-row #inputs { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: space-between; min-height: calc(40px * 2 + 6px); }
-  .input-line { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%; min-height: 40px; }
-  .input-line.display-line { margin-bottom: 16px; }
-  .input-line .input-field-row { display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 100%; }
-  .field-stack { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-  .meeting-input-row { display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 100%; }
-  .meeting-input-row .input-field-row { flex: 1; }
-  .input-line label { display: block; margin-bottom: 4px; font-size: 1em; font-weight: 700; color: #111; }
-  .input-line input { width: 100%; flex: 1; padding: 10px 12px; border-radius: 6px; border: 1px solid #bbb; background: #fff; font-family: monospace; height: 40px; box-sizing: border-box; }
-  .room-name-hint { font-size: 0.9em; color: #555; line-height: 1.35; min-height: 1.2em; padding: 0; }
-  input::placeholder {
-    color: #999;
-    font-style: italic;
-    opacity: 1;
-  }
-  #key-capture { letter-spacing: 0.2em; font-size: 1.15em; min-width: 120px; }
-  #display-name { font-size: 1em; }
-   .key {
-     height: 40px;
-     padding: 0 14px;
-     border: 1px solid #bbb;
-     border-radius: 6px;
-     background: white;
-     font-size: 13px;
-     cursor: pointer;
-     font-family: monospace;
-     white-space: nowrap;
-   }
-   .key:active { background: #e0e0e0; transform: scale(0.94); }
-  /* action column: distribute buttons to match the two input rows */
-  #action-btns {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    padding: 0;
-    margin-top: 0;
-  }
-  #action-btns .key {
-    flex: 1 1 0;
-    min-width: 0;
-    height: 40px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 0 12px;
-    font-size: 13px;
-    margin: 0;
-    background: #f2f6ff;
-    border: 1px solid #aac2ff;
-    color: #1f3f7f;
-  }
-  #action-btns .key:hover {
-    background: #e5edff;
-  }
-  #action-btns .key:active {
-    background: #dfe8ff;
-  }
-  #action-btns .action-ico { font-size: 16px; line-height: 1; }
-  #action-btns .action-label { display: none; } /* keep UI minimal */
-
-  /* show label on wider viewports */
-  @media (min-width: 720px) {
-    #action-btns { width: 96px; }
-    #action-btns .key { width: 84px; }
-    #action-btns .action-label { display: inline-block; font-size: 12px; }
-  }
-  /* responsive: move actions under inputs on narrow viewports */
-  @media (max-width: 520px) {
-    #input-row { flex-direction: column; align-items: stretch; }
-    #input-row #inputs { gap: 12px; }
-    .input-line { flex-direction: column; align-items: stretch; }
-    .input-line .input-field-row { flex-direction: column; align-items: stretch; }
-    .input-line label { min-width: auto; text-align: left; }
-    .meeting-input-row { flex-direction: column; align-items: stretch; }
-    #action-btns { flex-direction: row; width: 100%; gap: 8px; padding: 0; justify-content: space-between; }
-    #action-btns .key { width: calc(50% - 4px); height: 40px; }
-    .room-name-hint { margin-left: 0; margin-bottom: 12px; }
-  }
-
-  #status {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 1rem;
-    min-height: 18px;
-  }
-
-  .domain-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    justify-content: flex-start;
-  }
-
-  .domain-btn img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-    flex: 0 0 32px;
-  }
-
-  /* domain text container: split name and host on two lines (name then host) */
-  .domain-text { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 0; flex: 1 1 auto; }
-  .domain-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 600;
-  }
-  .domain-host {
-    white-space: nowrap;
-    color: #666;
-    font-size: 0.85em;
-    opacity: 0.9;
-  }
-  .label-hint {
-    font-size: 0.9em;
-    color: #666;
-    font-weight: 400;
-    margin-left: 6px;
-  }
-
-  #menu-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 1em;
-  }
-
-  .menu-key {
-    background: #f0f8ff;
-    border: 1px solid #aee;
-    color: #222;
-    font-size: 14px;
-    width: 100%;
-    height: auto;
-    min-height: 40px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-align: left;
-    white-space: normal;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  #log {
-    font-size: 11px;
-    background: #eee;
-    border-radius: 6px;
-    padding: 10px;
-    max-height: 100px;
-    overflow-y: auto;
-    word-break: break-all;
-  }
-
-  /* Chat UI */
-  .chat-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    width: 100%;
-    align-items: center;
-  }
-  .chat-input {
-    flex: 1;
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid #bbb;
-    font-size: 14px;
-  }
-  .chat-send-btn {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #bbb;
-    background: white;
-    cursor: pointer;
-  }
-  .chat-send-btn:active { transform: scale(0.98); }
-
-  /* Slide controls & gallery under the menu (thumbnails accumulate) */
-  #slide-controls {
-    margin-top: 8px;
-    width: 100%;
-    display: none; /* hidden by default; shown only when in-meeting (menuDisplayed) */
-    flex-direction: column;
-    gap: 8px;
-  }
-  #slide-controls .controls-row { display:flex; gap:8px; align-items:center; }
-  #slide-gallery {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-  .slide-thumb {
-    width: 120px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  }
-  .slide-thumb-meta { font-size: 11px; color: #666; margin-top: 4px; }
-  /* accent capture button */
-  #btn-slideShot {
-    background: linear-gradient(180deg,#3b82f6,#2563eb);
-    color: #fff;
-    border-color: #1e40af;
-  }
-  #btn-slideShot:hover { filter: brightness(0.96); }
-
-  /* Chat input focus ring */
-  .chat-input:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-  .room-name-hint {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 0.9em;
-    color: #666;
-    line-height: 1.35;
-    min-height: 1.2em;
-    padding: 0;
-  }
-
-  @media (max-width: 420px) {
-    #key-capture { font-size: 1.1em; }
-    #lang-switch button { padding: 4px 8px; font-size: 12px; }
-  }
-</style>
-</head>
-<body>
-<div class="kb-wrap">
-  <div id="lang-switch"></div>
-  <div id="input-row">
-    <div id="inputs">
-      <!-- Display name first -->
-      <div class="input-line display-line">
-        <div class="input-field-row">
-          <label for="display-name" id="display-label">Display name</label>
-          <div class="field-stack">
-            <input id="display-name" autocomplete="off" placeholder="Your display name" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Meeting name below display name, with hint below the label and above the input -->
-      <div class="input-line">
-        <div class="input-field-row">
-          <label for="key-capture" id="input-label">Meeting Name</label>
-          <div id="room-name-hint" class="room-name-hint" aria-live="polite"></div>
-          <div class="field-stack">
-            <input id="key-capture"
-                   autocomplete="off"
-                   autocapitalize="none"
-                   autocorrect="off"
-                   spellcheck="false"
-                   inputmode="text" />
-            <div id="action-btns" aria-hidden="false">
-              <button id="btn-enter" type="button" class="key" tabindex="-1" title="Send meeting name">Enter</button>
-              <button id="btn-del" type="button" class="key" tabindex="-1" title="Send star key">←</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="status">Ready</div>
-  <div id="menu-options"></div>
-
-  <!-- Slide controls and gallery (placed under the menu so always visible with options) -->
-  <div id="slide-controls" aria-hidden="false">
-    <div class="controls-row">
-      <button id="btn-slideShot" type="button" class="key" tabindex="-1"
-              title="Capture slide" aria-label="Capture slide">Capture</button>
-      <div id="slide-hint" style="font-size:12px;color:#666;">Thumbnails appear here</div>
-    </div>
-    <div id="slide-gallery" aria-live="polite"></div>
-  </div>
-
-  <div id="log">Waiting for input...</div>
-</div>
-
-<div id="endcall-footer" aria-hidden="false">
-   <button id="btn-endcall" type="button" class="key" tabindex="-1"
-           title="End call" aria-label="End call">End call</button>
-</div>
-
-<!-- Slide backdrop + preview modal -->
-<div id="slide-backdrop" aria-hidden="true"></div>
-<div id="slide-preview" aria-hidden="true">
-    <div class="preview-actions">
-      <a id="slide-download" class="key small" href="#" download="slide.png">Download</a>
-      <button id="slide-fullscreen" class="key small" title="Fullscreen">Full screen</button>
-      <button id="slide-discard" class="key small" title="Discard">Discard</button>
-      <button id="slide-close" class="key small">Close</button>
-    </div>
-    <img id="slide-img" src="" alt="Slide capture">
-  </div>
-
-<script>
 const urlParams = new URLSearchParams(window.location.search);
 const gwId = urlParams.get('gwId');
 
@@ -424,9 +8,14 @@ let roomNameInfo = {};
 let browsingName = '';
 let menuOptions = [];
 let menuDisplayed = false;
+const POLL_MS = 2000;
+// Signature of the screen implied by the gateway state. Redrawing on every
+// poll would clear a half-typed conference id and reset the scroll position,
+// so the page only rebuilds when this value changes.
+let lastScreen = null;
 let currentLang = 'en';
 
-// ensure updateSlideControlsVisibility exists early so DOMContentLoaded can call it
+// defined early so the startup callback below can call it
 function updateSlideControlsVisibility() {
   const ctrl = document.getElementById('slide-controls');
   if (!ctrl) return;
@@ -595,76 +184,58 @@ async function sendEndCall() {
   }
 }
 
-async function sendKey(param1) {
+// One request shape, four commands. They differ only in what they send and
+// what they say afterwards, so the differences are arguments: the command
+// name, the label shown on success, and whether the reply should start the
+// status poll — sendKey and roomName only arm it on a submit key, since the
+// gateway has nothing new to report until the entry is confirmed.
+async function sendCommand(command, param1, { successLabel, startPolling }) {
   const status = document.getElementById('status');
   const log = document.getElementById('log');
-  const payload = { gw_id: gwId, payload: { command: "sendKey", param1 } };
+  const payload = { gw_id: gwId, payload: { command, param1 } };
   status.textContent = `Sending: ${param1}`;
   log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
   try {
     const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const text = await res.text();
-    status.textContent = `✓ ${res.status} — key: ${param1}`;
+    status.textContent = `✓ ${res.status} — ${successLabel}`;
     log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
-    if ((param1 === '#' || param1 === 'Enter') && !pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
-  } catch(e) {
+    if (startPolling && !pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
+  } catch (e) {
     status.textContent = `✗ Error: ${e.message}`;
     log.textContent += `\n← ${e.message}`;
   }
+}
+
+// A submit key confirms an entry: only then is there something new to poll for.
+const isSubmitKey = k => k === '#' || k === 'Enter';
+
+async function sendKey(param1) {
+  return sendCommand('sendKey', param1, {
+    successLabel: `key: ${param1}`,
+    startPolling: isSubmitKey(param1),
+  });
 }
 
 async function sendString(str) {
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
-  const payload = { gw_id: gwId, payload: { command: "sendString", param1: str } };
-  status.textContent = `Sending: ${str}`;
-  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
-  try {
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    status.textContent = `✓ ${res.status} — string: ${str}`;
-    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
-    if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
-  } catch(e) {
-    status.textContent = `✗ Error: ${e.message}`;
-    log.textContent += `\n← ${e.message}`;
-  }
+  return sendCommand('sendString', str, {
+    successLabel: `string: ${str}`,
+    startPolling: true,
+  });
 }
 
 async function sendRoomName(param1) {
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
-  const payload = { gw_id: gwId, payload: { command: "roomName", param1 } };
-  status.textContent = `Sending: ${param1}`;
-  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
-  try {
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    status.textContent = `✓ ${res.status} — room name: ${param1}`;
-    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
-    if ((param1 === '#' || param1 === 'Enter') && !pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
-  } catch(e) {
-    status.textContent = `✗ Error: ${e.message}`;
-    log.textContent += `\n← ${e.message}`;
-  }
+  return sendCommand('roomName', param1, {
+    successLabel: `room name: ${param1}`,
+    startPolling: isSubmitKey(param1),
+  });
 }
 
 async function sendChat(message) {
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
-  const payload = { gw_id: gwId, payload: { command: "sendChat", param1: message } };
-  status.textContent = `Sending chat: ${message}`;
-  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
-  try {
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    status.textContent = `✓ ${res.status} — chat sent`;
-    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
-    if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
-  } catch (e) {
-    status.textContent = `✗ Chat error: ${e.message}`;
-    log.textContent += `\n← ${e.message}`;
-  }
+  return sendCommand('sendChat', message, {
+    successLabel: 'chat sent',
+    startPolling: true,
+  });
 }
 
 async function fetchDisplayName() {
@@ -701,6 +272,7 @@ async function fetchIvrConfigAndRestoreState() {
     const statusData = await statusRes.json();
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
+    lastScreen = `${bn || ''}|${rn || ''}`;
     if (rn && bn) {
       menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
       menuDisplayed = true;
@@ -789,30 +361,48 @@ function showInputAndPrepareMenu(selectedDomainKey) {
 }
 
 async function checkGwStatus() {
-  if (!gwId) return setTimeout(checkGwStatus, 2000);
+  if (!gwId) return setTimeout(checkGwStatus, POLL_MS);
   try {
     const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
-    if (!statusRes.ok) { document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — Stopping polling.`; return; }
+    // A transient failure must not silence the page for good: it keeps
+    // polling, more slowly, so a passing outage is recovered from.
+    if (!statusRes.ok) { document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — retrying…`; return setTimeout(checkGwStatus, POLL_MS * 5); }
     const statusData = await statusRes.json();
     if (statusData.data?.gw_state === "down") {
       document.getElementById('status').textContent = `Gateway down ("exited") — Returning to interact…`;
       // small delay so user sees message, then return to interact root (no gwId)
-      setTimeout(() => { window.location.href = apiUrl('/gateway/interact'); }, 800);
+      setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 800);
       return;
     }
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
-    if (rn && bn && !menuDisplayed) {
-      menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
-      renderMenuOptions();
-      menuDisplayed = true;
-    } else {
-      bn ? showInputAndPrepareMenu(bn) : (menuOptions = [], menuDisplayed = false, renderDomainButtons());
-      setTimeout(checkGwStatus, 2000);
+
+    // The gateway is the source of truth: the platform and the conference id
+    // can be entered on the endpoint keypad just as well as here, so the
+    // screen follows the reported state instead of what this page last did.
+    const screen = `${bn || ''}|${rn || ''}`;
+    if (screen !== lastScreen) {
+      lastScreen = screen;
+      if (rn && bn) {
+        menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
+        menuDisplayed = true;
+        renderMenuOptions();
+      } else if (bn) {
+        showInputAndPrepareMenu(bn);
+      } else {
+        menuOptions = [];
+        menuDisplayed = false;
+        renderDomainButtons();
+      }
     }
   } catch(e) {
-    document.getElementById('status').textContent = `Status error — Stopping polling.`;
+    document.getElementById('status').textContent = `Status error — retrying…`;
+    return setTimeout(checkGwStatus, POLL_MS * 5);
   }
+  // Polling used to stop for good once the menu was drawn. The page then sat
+  // on a call that had already ended, and never saw a platform picked from
+  // the room keypad.
+  setTimeout(checkGwStatus, POLL_MS);
 }
 
 function renderMenuOptions() {
@@ -883,11 +473,27 @@ function getIcon(icon) {
   return `<img src="${apiUrl('/icon')}/${icon}?gw_id=${encodeURIComponent(gwId)}" alt="" style="width:1.5em;height:1.5em;vertical-align:middle;">`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// The script is injected at the end of the body, so the document is already
+// parsed by the time it runs and DOMContentLoaded has been and gone. Waiting
+// for an event that has already fired would leave the page inert, so the
+// state is only checked here, and the callback run straight away if parsing
+// is done.
+function onReady(fn) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn);
+  } else {
+    fn();
+  }
+}
+
+onReady(() => {
   fetchIvrConfigAndRestoreState();
   fetchDisplayName();
   // call after initial render to hide slide-controls when appropriate
   updateSlideControlsVisibility();
+  // Polling used to start only once the user had pressed something, so a page
+  // opened on an idle gateway never noticed the room joining a conference.
+  if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, POLL_MS); }
 });
 document.getElementById('btn-enter').onclick = async () => {
   await sendDisplayName(displayInput.value.trim());
@@ -910,13 +516,8 @@ document.getElementById('btn-endcall').onclick = async () => {
     if (b) { b.disabled = true; }
     await sendEndCall();
     // keep disabled briefly while redirecting
-    // compute redirect target: keep everything up to and including "/interact"
-    const href = window.location.href;
-    const token = '/interact';
-    const idx = href.indexOf(token);
-    const redirectTo = (idx !== -1) ? href.slice(0, idx + token.length) : apiUrl('/gateway/interact');
-    // small delay so user sees result, then redirect
-    setTimeout(() => { window.location.href = redirectTo; }, 250);
+    // small delay so user sees result, then back to the pairing page
+    setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 250);
   }
 };
 // slideShot button bindings
@@ -1054,6 +655,3 @@ document.getElementById('slide-discard').onclick = () => {
   }
   hideSlidePreview();
 };
-</script>
-</body>
-</html>

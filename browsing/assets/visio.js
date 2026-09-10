@@ -126,9 +126,17 @@ class Visio extends UIHelper{
             console.error('[✗] media-state element not found');
             return null;
         }
+        // Publish permissions are optional: they are only exposed by Visio
+        // instances that carry the can-publish attributes. Undefined is
+        // reported as null so that a client can tell "not allowed to publish"
+        // from "this instance does not say", instead of assuming the former.
+        const canPublish = (value) =>
+            value === undefined ? null : value === 'true';
         return {
             microphone: el.dataset.microphoneEnabled === 'true',
-            camera: el.dataset.cameraEnabled === 'true'
+            camera: el.dataset.cameraEnabled === 'true',
+            canPublishMicrophone: canPublish(el.dataset.canPublishMicrophone),
+            canPublishCamera: canPublish(el.dataset.canPublishCamera)
         };
     }
     microphone(param) {
@@ -147,6 +155,24 @@ class Visio extends UIHelper{
                 return;
             }
             microphoneButton.click();
+        }
+    }
+    camera(param) {
+        const state = this.mediaState();
+        if (!state) {
+            return;
+        }
+
+        const shouldToggle = (param === 'on' && !state.camera) ||
+                             (param === 'off' && state.camera);
+
+        if (shouldToggle) {
+            const cameraButton = document.querySelector('[aria-label*="Ctrl+e"]');
+            if (!cameraButton) {
+                console.error('[\u2717] Camera button not found');
+                return;
+            }
+            cameraButton.click();
         }
     }
     async reaction(name) {
@@ -179,6 +205,32 @@ class Visio extends UIHelper{
         }
         return true;
     }
+    uiState() {
+        return {
+            media: this.mediaState(),
+            panels: this.panelState()
+        };
+    }
+    panelState() {
+        // Visio's side panels (chat, participants, info) carry a data-attr
+        // suffixed -closed or -open, and are mutually exclusive: opening one
+        // closes the one that was open. The raise-hand button follows another
+        // convention, its label naming the available action, so -hand-lower
+        // means the hand is currently raised.
+        //
+        // The meeting tools panel (toggle-tools) is left out: its data-attr is
+        // the same whether it is open or closed, so its state cannot be
+        // observed this way.
+        const open = (name) =>
+            document.querySelector('[data-attr="controls-' + name + '-open"]') !== null;
+        return {
+            chat: open('chat'),
+            participants: open('participants'),
+            info: open('info'),
+            handRaised:
+                document.querySelector('[data-attr="controls-hand-lower"]') !== null
+        };
+    }
     interact(key) {
         const reactionKeys = {
             "6": "thumbs-up",
@@ -198,6 +250,8 @@ class Visio extends UIHelper{
             document.querySelector('button[data-attr*="controls-hand-raise"], button[data-attr*="controls-hand-lower"]').click();
         if (key == "5")
             document.querySelector('button[data-attr*="controls-participants-closed"], button[data-attr*="controls-participants-open"]').click();
+        if (key == "0")
+            document.querySelector('button[data-attr*="controls-info-closed"], button[data-attr*="controls-info-open"]').click();
         if (key == "s" || key == "q") {
             document.querySelector('[data-attr*="controls-screenshare"]').click();
 
@@ -257,6 +311,11 @@ class Visio extends UIHelper{
         }
         sendButton.click();
         return true;
+    }
+    hasLeft() {
+        // Visio redirects to /feedback once the participant is out of the
+        // conference, including when it evicts an idle one.
+        return window.location.pathname.startsWith('/feedback');
     }
     async leave() {
         console.log('[INFO] Leave the meeting room');

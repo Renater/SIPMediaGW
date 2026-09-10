@@ -77,17 +77,14 @@ class Scaler:
         currentCapacity = self.getCurrentCapacity()
         readyToRunNum  = self.getReadyToRunCapacity()
 
+        # 'unlockedMin' is a buffer of ready (idle) gateways, 'minGw' a floor on
+        # the total number of gateways. Both are optional and both are honoured,
+        # so a time slot can ask for a floor, a buffer, or the two combined.
+        unlockedMin = thresholdTimeLine[th].get('unlockedMin', 0)
+        minGw = thresholdTimeLine[th].get('minGw', 0)
 
         inCallNum = incallsNum if incallsNum else (currentCapacity - readyToRunNum )
-        minCapacity = thresholdTimeLine[th]['unlockedMin'] + inCallNum
-        if readyToRunNum < thresholdTimeLine[th]['unlockedMin']:
-            targetCapacity = min((currentCapacity + thresholdTimeLine[th]['unlockedMin']
-                                  - readyToRunNum),
-                                  thresholdTimeLine[th]['maxGw'])
-            capacityIncrease = math.ceil(targetCapacity - currentCapacity)
-            if capacityIncrease > 0:
-                self.upScale(math.ceil(capacityIncrease*self.config['cpu_per_gw']))
-                currentCapacity = currentCapacity + capacityIncrease
+        minCapacity = max(minGw, unlockedMin + inCallNum)
 
         targetCapacity = min(thresholdTimeLine[th]['maxGw'],
                              max(minCapacity, inCallNum/thresholdTimeLine[th]['loadMax']))
