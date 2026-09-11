@@ -67,6 +67,16 @@ def cleanPart(value):
     return value if value and value != "" and value != "None" else None
 
 
+@app.get("/")
+async def root(request: Request):
+    """The pairing page, at the address a room screen can print in full.
+
+    /pairing keeps working: the redirects after a refused code point at it, and
+    so may links made before this.
+    """
+    return await pairing_page(request)
+
+
 @app.get("/pairing")
 async def pairing_page(request: Request):
     """
