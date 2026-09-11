@@ -155,3 +155,46 @@
 .platforms.is-waiting { opacity: .45; }
 .platform:disabled { cursor: default; }
 .platform:disabled:hover { box-shadow: inset 0 0 0 1px var(--border); }
+
+/* Editing the name the conference shows */
+.room__line { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.room__edit {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.room__edit svg { width: .85rem; height: .85rem; fill: currentColor; }
+.room__edit:hover { background: var(--bg); color: var(--bf); }
+.room__input {
+  flex: 1 1 4rem;
+  min-width: 0;
+  min-height: 1.9rem;
+  padding: .1rem .45rem;
+  border: 0;
+  border-radius: .25rem;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1.5px var(--bf);
+  color: var(--txt);
+  font: inherit;
+  font-size: .8rem;
+}
+.room__save, .room__cancel {
+  min-height: 1.9rem;
+  padding: 0 .45rem;
+  white-space: nowrap;
+  border: 0;
+  border-radius: .25rem;
+  font: inherit;
+  font-size: .75rem;
+  cursor: pointer;
+}
+.room__save { background: var(--bf); color: #fff; font-weight: 600; }
+.room__cancel { background: transparent; box-shadow: inset 0 0 0 1px var(--border); color: var(--txt); }

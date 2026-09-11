@@ -267,3 +267,56 @@ h1 {
 }
 .modal__btn--danger:hover { background: var(--bf-hover, var(--bf)); filter: brightness(1.1); }
 .modal__btn:disabled { opacity: .5; cursor: default; }
+
+/* Tooltips. The browser's own arrive late, sit where they like and ignore the
+   page's styling; these follow the palette and appear at once. They hang below
+   the element rather than above, where a header or a toolbar would sit on top
+   of them. Anything with a data-tip gets one — keep the text short, a tooltip
+   is a reminder, not a sentence. */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + .5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: .35rem .6rem;
+  border-radius: .25rem;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--border), 0 2px 8px rgba(0, 0, 18, .12);
+  color: var(--txt);
+  font-size: .72rem;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .1s;
+}
+[data-tip]::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + .15rem);
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  z-index: 21;
+  width: .5rem;
+  height: .5rem;
+  background: var(--bg);
+  box-shadow: -1px -1px 0 0 var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .1s;
+}
+[data-tip]:hover::after, [data-tip]:hover::before,
+[data-tip]:focus-visible::after, [data-tip]:focus-visible::before { opacity: 1; }
+
+/* Centred, a tooltip on an element near an edge runs off the page. Which edge
+   depends on where the element lands, which depends on the text beside it, so
+   the side is picked as the pointer arrives rather than written into the
+   markup — see the handler in the page's script. */
+[data-tip][data-tip-align="left"]::after { left: 0; transform: none; }
+[data-tip][data-tip-align="left"]::before { left: .75rem; }
+[data-tip][data-tip-align="right"]::after { left: auto; right: 0; transform: none; }
+[data-tip][data-tip-align="right"]::before { left: auto; right: .75rem; }
