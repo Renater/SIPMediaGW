@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIPMediaGW Remote Control</title>
+<!-- Replaced at load with the deployment name, so both pages carry the
+     same one. This is what shows before the script runs. -->
+<title>SIPMediaGW</title>
 <link rel="stylesheet" href="/interact/static/shared.css">
 <link rel="stylesheet" href="/interact/static/interact-connexion.css">
 <link rel="stylesheet" href="/interact/static/interact-controls.css">
@@ -30,8 +32,18 @@
   <!-- Which room this page drives, so the visitor can tell they reached the
        right one. Filled from the first status poll. -->
   <section class="room room--pending" id="room" aria-live="polite">
-    <div><span class="room__label" id="room-name-label"></span>
-         <span class="room__value" id="room-name"></span></div>
+    <div class="room__line">
+      <span class="room__label" id="room-name-label"></span>
+      <span class="room__value" id="room-name"></span>
+      <!-- The name shown to the other participants. It starts out as the
+           endpoint's own but does not have to stay it. -->
+      <button type="button" class="room__edit" id="name-edit" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.2V21h3.8L17.8 10 14 6.2 3 17.2zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8L18.9 8.8l1.8-1.8z"/></svg>
+      </button>
+      <input class="room__input" id="name-input" hidden autocomplete="off" maxlength="64">
+      <button type="button" class="room__save" id="name-save" hidden></button>
+      <button type="button" class="room__cancel" id="name-cancel" hidden></button>
+    </div>
     <div><span class="room__label" id="room-uri-label"></span>
          <span class="room__value" id="room-uri"></span></div>
   </section>
@@ -104,7 +116,7 @@
   <div id="slide-controls" aria-hidden="false">
     <div class="controls-row">
       <button id="btn-slideShot" type="button" class="key" tabindex="-1"
-              title="Capture slide" aria-label="Capture slide">Capture</button>
+              data-tip="Capture slide" aria-label="Capture slide">Capture</button>
       <div id="slide-hint" style="font-size:12px;color:#666;">Thumbnails appear here</div>
     </div>
     <div id="slide-gallery" aria-live="polite"></div>
@@ -118,8 +130,8 @@
 <div id="slide-preview" aria-hidden="true">
     <div class="preview-actions">
       <a id="slide-download" class="key small" href="#" download="slide.png">Download</a>
-      <button id="slide-fullscreen" class="key small" title="Fullscreen">Full screen</button>
-      <button id="slide-discard" class="key small" title="Discard">Discard</button>
+      <button id="slide-fullscreen" class="key small" data-tip="Fullscreen">Full screen</button>
+      <button id="slide-discard" class="key small" data-tip="Discard">Discard</button>
       <button id="slide-close" class="key small">Close</button>
     </div>
     <img id="slide-img" src="" alt="Slide capture">

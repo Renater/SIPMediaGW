@@ -67,6 +67,20 @@ let dark = localStorage.getItem('theme')
   : window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const $ = (id) => document.getElementById(id);
+
+// A tooltip is centred on its element, which puts it off the page when the
+// element sits near an edge - and where it sits depends on the text beside it.
+// The side is therefore chosen as the pointer arrives, not written into the
+// markup.
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest('[data-tip]');
+  if (!el) return;
+  const box = el.getBoundingClientRect();
+  const half = 0.5 * Math.min(window.innerWidth, 320);   // a tooltip's worst case
+  delete el.dataset.tipAlign;
+  if (box.left + box.width / 2 < half) el.dataset.tipAlign = 'left';
+  else if (window.innerWidth - box.right + box.width / 2 < half) el.dataset.tipAlign = 'right';
+}, true);
 const boxes = [];
 
 // --- code entry ------------------------------------------------------------
@@ -190,6 +204,7 @@ function render() {
 }
 
 function applyBrand() {
+  document.title = BRAND.name;
   $('brand-name').textContent = BRAND.name;
   $('brand-tagline').textContent = BRAND.tagline;
   if (BRAND.logo) {

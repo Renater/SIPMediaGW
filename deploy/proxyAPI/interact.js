@@ -33,6 +33,9 @@ const TEXTS = {
     roomUri: 'Adresse vidéo :',
     connecting: 'connexion en cours…',
     waiting: 'En attente de la connexion d\u2019un terminal de visioconf\u00e9rence.',
+    editName: 'Modifier le nom affich\u00e9 dans la conf\u00e9rence',
+    save: 'Valider',
+    cancel: 'Annuler',
     meetingLabel: 'Veuillez saisir l\u2019identifiant de la r\u00e9union',
     meetingFallback: 'Entrez le nom de la réunion',
     join: 'Rejoindre',
@@ -53,6 +56,9 @@ const TEXTS = {
     roomUri: 'Video address:',
     connecting: 'connecting…',
     waiting: 'Waiting for a room endpoint to call in.',
+    editName: 'Change the name shown in the conference',
+    save: 'Save',
+    cancel: 'Cancel',
     meetingLabel: 'Please enter the meeting id',
     meetingFallback: 'Enter the meeting name',
     join: 'Join',
@@ -73,6 +79,20 @@ let dark = localStorage.getItem('theme')
   : window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const $ = (id) => document.getElementById(id);
+
+// A tooltip is centred on its element, which puts it off the page when the
+// element sits near an edge - and where it sits depends on the text beside it.
+// The side is therefore chosen as the pointer arrives, not written into the
+// markup.
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest('[data-tip]');
+  if (!el) return;
+  const box = el.getBoundingClientRect();
+  const half = 0.5 * Math.min(window.innerWidth, 320);   // a tooltip's worst case
+  delete el.dataset.tipAlign;
+  if (box.left + box.width / 2 < half) el.dataset.tipAlign = 'left';
+  else if (window.innerWidth - box.right + box.width / 2 < half) el.dataset.tipAlign = 'right';
+}, true);
 
 // defined early so the startup callback below can call it
 function updateSlideControlsVisibility() {
@@ -127,6 +147,7 @@ function renderLangSwitch() {
   toggle.setAttribute('aria-pressed', String(dark));
   toggle.setAttribute('aria-label', dark ? t.themeToLight : t.themeToDark);
 
+  document.title = BRAND.name;
   $('brand-name').textContent = BRAND.name;
   $('brand-tagline').textContent = BRAND.tagline;
   if (BRAND.logo) { $('brand-logo').src = BRAND.logo; $('brand-logo').alt = BRAND.name; }
@@ -134,6 +155,10 @@ function renderLangSwitch() {
   $('title-text').textContent = t.title;
   $('platforms-subtitle').textContent = t.pickPlatform;
   $('waiting').textContent = t.waiting;
+  $('name-edit').dataset.tip = t.editName;
+  $('name-edit').setAttribute('aria-label', t.editName);
+  $('name-save').textContent = t.save;
+  $('name-cancel').textContent = t.cancel;
   $('room-name-label').textContent = t.roomName;
   $('room-uri-label').textContent = t.roomUri;
   $('btn-enter-label').textContent = t.join;
@@ -141,7 +166,7 @@ function renderLangSwitch() {
   const endBtn = $('btn-endcall');
   if (endBtn) {
     endBtn.textContent = t.hangUp;
-    endBtn.title = t.hangUpTitle;
+    endBtn.dataset.tip = t.hangUpTitle;
   }
   $('confirm-title').textContent = t.confirmTitle;
   $('confirm-body').textContent = t.confirmBody;
@@ -178,16 +203,62 @@ function showScreen(name) {
 let roomName = '';
 let roomUri = '';
 
+// The name the conference shows. It starts out as the endpoint's own — which
+// is why the two usually match — but it is a separate value, and the only one
+// of the pair the room may change.
+let displayName = null;
+
 // Set once a hang-up has been asked for. The status poll clears room and
 // browsing before gw_state turns to stopped, so without this the page would
 // drop back to the platform list for a poll or two on its way out.
 let leaving = false;
 
+async function fetchDisplayName() {
+  if (!gwId) return;
+  try {
+    const res = await fetch(apiUrl('/command'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gw_id: gwId, payload: { command: 'displayName' } }),
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    displayName = json?.data?.displayName || json?.data?.displayname || '';
+    showRoom();
+  } catch (e) {
+    // Left as null: the line then falls back to the endpoint's own name.
+  }
+}
+
+async function sendDisplayName(name) {
+  if (!gwId) return;
+  await sendCommand('displayName', name, {
+    successLabel: `display name: ${name}`,
+    startPolling: false,
+  });
+  displayName = name;
+  showRoom();
+}
+
+function startEditName() {
+  $('name-input').value = displayName || roomName || '';
+  ['room-name', 'name-edit'].forEach((id) => { $(id).hidden = true; });
+  ['name-input', 'name-save', 'name-cancel'].forEach((id) => { $(id).hidden = false; });
+  $('name-input').focus();
+  $('name-input').select();
+}
+
+function stopEditName() {
+  ['name-input', 'name-save', 'name-cancel'].forEach((id) => { $(id).hidden = true; });
+  $('room-name').hidden = false;
+  $('name-edit').hidden = false;
+}
+
 function showRoom() {
   const t = TEXTS[currentLang];
   const known = !!(roomName || roomUri);
   $('room').classList.toggle('room--pending', !known);
-  $('room-name').textContent = roomName || t.connecting;
+  $('room-name').textContent = displayName || roomName || t.connecting;
   $('room-uri').textContent = roomUri || t.connecting;
 
   // Until an endpoint has called in there is nothing on the other end: a
@@ -197,6 +268,9 @@ function showRoom() {
   $('platforms').querySelectorAll('button').forEach((b) => { b.disabled = !known; });
   $('btn-endcall').disabled = !known;
   $('waiting').hidden = known;
+  // Nothing to rename until an endpoint is on the line.
+  if (!known) stopEditName();
+  $('name-edit').hidden = !known || !$('name-input').hidden;
 }
 
 const capture = document.getElementById('key-capture');
@@ -450,9 +524,13 @@ async function checkGwStatus() {
     const peerName = statusData.data.peer_name || '';
     const peerUri = statusData.data.peer_uri || '';
     if (peerName !== roomName || peerUri !== roomUri) {
+      const first = !roomName && !roomUri;
       roomName = peerName;
       roomUri = peerUri;
       showRoom();
+      // Read once, when the endpoint first appears: the name it announced is
+      // the starting point, whatever it had been set to before.
+      if (first && (peerName || peerUri)) fetchDisplayName();
     }
 
     let bn = statusData.data.browsing;
@@ -617,6 +695,18 @@ function closeConfirm() {
   $('confirm').hidden = true;
   $('btn-endcall').focus();
 }
+
+$('name-edit').onclick = startEditName;
+$('name-cancel').onclick = stopEditName;
+$('name-save').onclick = async () => {
+  const value = $('name-input').value.trim();
+  stopEditName();
+  if (value) await sendDisplayName(value);
+};
+$('name-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('name-save').click(); }
+  if (e.key === 'Escape') { e.preventDefault(); stopEditName(); }
+});
 
 $('btn-endcall').onclick = askToHangUp;
 $('confirm-no').onclick = closeConfirm;
