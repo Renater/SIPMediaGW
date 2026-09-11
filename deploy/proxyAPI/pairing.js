@@ -309,6 +309,12 @@ $('code-boxes').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); submit(); }
 });
 
+// A code in the query comes from the room screen, either scanned or typed from
+// the address printed under the QR. It is filled in rather than left for the
+// visitor to copy; submitting stays theirs to do.
+const fromQuery = new URLSearchParams(window.location.search).get('pairingCode');
+if (fromQuery) setCode(fromQuery);
+
 render();
 refresh();
-boxes[0].focus();
+if (!fromQuery) boxes[0].focus();
