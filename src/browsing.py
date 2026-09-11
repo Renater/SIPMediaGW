@@ -24,6 +24,7 @@ class Browsing:
         self.modName =  modName
         self.initScript = ''
         self.screenShared = False
+        self.streamedSlide = False
         self.userInputs = inputs
         self.readPairingCode = readPairingCode
         self.service = service
@@ -145,9 +146,35 @@ class Browsing:
         else: # single screen layout by default (nothing to do)
             return
 
+    def checkStreamedSlide(self):
+        streamedSlide = False
+        try:
+            streamedSlide = self.driver.execute_script("if(meeting.slideStreamer){" \
+                                                                "return meeting.slideStreamer.currentVideo !== null;" \
+                                                            "}" \
+                                                            "else{" \
+                                                                "return false;" \
+                                                            "}")
+        except Exception as e:
+            print(f"Error checking streamed slide status: {e}", flush=True)
+            streamedSlide = False
+
+        if streamedSlide == True and self.streamedSlide == False and self.screenShared == False:
+            subprocess.run(['echo "/slidesrc avformat,http://0.0.0.0:8080,1280x720,15,1000000" | netcat -q 1 127.0.0.1 5555'], shell=True)
+            subprocess.run(['echo "/floorreq" | netcat -q 1 127.0.0.1 5555'], shell=True)
+            self.streamedSlide = True
+        elif (streamedSlide == False or self.screenShared == True) and self.streamedSlide == True:
+            subprocess.run(['echo "/floorrel" | netcat -q 1 127.0.0.1 5555'], shell=True)
+            subprocess.run(['echo "/slidesrc fakevideo,nil,2x2,1,1000" | netcat -q 1 127.0.0.1 5555'], shell=True)
+            self.streamedSlide = False
+
     def interact(self):
         try:
             inKey = self.userInputs.get(True, 0.02)
+            if inKey == 's':
+                self.screenShared = True
+            if inKey == 'q':
+                self.screenShared = False
         except Exception as e:
             return
         self.driver.execute_script(f"document.dispatchEvent(new KeyboardEvent('keydown',{{'key':'{inKey}'}}));")
@@ -189,6 +216,7 @@ class Browsing:
             self.readPairingCode(self.driver)
 
             while self.room:
+                self.checkStreamedSlide()
                 self.interact()
                 self.readPairingCode(self.driver)
         except Exception as e:

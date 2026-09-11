@@ -3,7 +3,7 @@ class SlideStreamer {
         this.selector = options.selector;
         this.fps = options.fps || 5;
         this.wsUrl = options.wsUrl || 'ws://localhost:8080/ws';
-        this.jpegQuality = options.jpegQuality || 0.7;
+        this.jpegQuality = options.jpegQuality || 0.95;
 
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
