@@ -912,10 +912,6 @@ async def ivrConfigGateway(request: Request):
 async def ivrConfigGateway(request: Request):
     return await genericGatewayProxy(request, "browsing")
 
-@app.api_route("/status", methods=["GET"])
-async def statusGatewayProxy(request: Request):
-    return await genericGatewayProxy(request, "status")
-
 @app.api_route("/icon/{icon_name}", methods=["GET"])
 async def iconGateway(request: Request, icon_name: str):
     return await genericGatewayProxy(request, f"icon/{icon_name}")
