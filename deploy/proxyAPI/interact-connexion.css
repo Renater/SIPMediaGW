@@ -4,6 +4,7 @@
 
 /* Leaving the call: a secondary button at the foot of the page, square-edged
    like the primary one. Not the action the visitor came for, but available. */
+/* The one action that ends something, in the colour that says so. */
 .hangup {
   display: block;
   width: 100%;
@@ -12,14 +13,14 @@
   border: 0;
   border-radius: .375rem;
   background: transparent;
-  box-shadow: inset 0 0 0 1px var(--bf);
-  color: var(--bf);
+  box-shadow: inset 0 0 0 1px var(--warning-txt);
+  color: var(--warning-txt);
   font: inherit;
   font-size: .9rem;
   font-weight: 500;
   cursor: pointer;
 }
-.hangup:hover { background: var(--bf); color: #fff; }
+.hangup:hover { background: var(--warning-txt); color: #fff; }
 .hangup:disabled { opacity: .45; cursor: default; }
 .hangup:disabled:hover { background: transparent; }
 

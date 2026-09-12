@@ -650,6 +650,75 @@ async function checkGwStatus() {
 // Which uiState field a command reflects, keyed on its icon: the digit and the
 // label differ from one platform to the next, the icon does not. A command
 // absent from here has no state to show and stays a button.
+// The shapes the six known commands draw, and the words they say in either
+// state. config.json gives one label per command — "Muet / Actif" — which names
+// the action rather than the state: a switch needs to say what is, not what
+// pressing it would do. A command not listed here keeps its config label and
+// the icon the gateway serves.
+const CTRL_SHAPE = {
+  microphone_icon:   'M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z',
+  camera_icon:       'M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z',
+  chat_icon:         'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z',
+  hand_icon:         'M18 11V6a2 2 0 0 0-4 0V4a2 2 0 0 0-4 0v1a2 2 0 0 0-4 0v8l-1.6-1.6A2 2 0 0 0 1.6 14L6 20a5 5 0 0 0 4 2h6a5 5 0 0 0 5-5v-6a2 2 0 0 0-3 0z',
+  participants_icon: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0 1.8c-3 0-6 1.5-6 3.4V19h12v-2.8c0-1.9-3-3.4-6-3.4zM17.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1.6c-.7 0-1.4.1-2 .3 1.3.9 2 2 2 3.3V19h5v-2.5c0-1.7-2.4-3-5-3z',
+  info_icon:         'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
+};
+
+// A slash says "nothing is going out" — it belongs on the microphone and the
+// camera. A hidden panel is not a forbidden one, so chat, participants, info
+// and the hand carry none: grey against green, with the words beside them,
+// says enough.
+const CTRL_SLASHED = ['microphone_icon', 'camera_icon'];
+
+const CTRL_WORDS = {
+  fr: {
+    microphone_icon:   [['Micro coupé', 'Personne ne vous entend'], ['Micro actif', 'Vous êtes entendu']],
+    camera_icon:       [['Caméra coupée', 'Votre image n\u2019est pas diffusée'], ['Caméra active', 'Votre image est diffusée']],
+    chat_icon:         [['Chat masqué', 'Non affiché en salle'], ['Chat affiché', 'Visible sur l\u2019écran de la salle']],
+    hand_icon:         [['Main baissée', 'Vous ne demandez pas la parole'], ['Main levée', 'Vous demandez la parole']],
+    participants_icon: [['Participants masqués', 'Liste non affichée en salle'], ['Participants affichés', 'Liste visible sur l\u2019écran']],
+    info_icon:         [['Informations masquées', 'Non affichées en salle'], ['Informations affichées', 'Visibles sur l\u2019écran']],
+  },
+  en: {
+    microphone_icon:   [['Microphone off', 'Nobody can hear you'], ['Microphone on', 'You can be heard']],
+    camera_icon:       [['Camera off', 'Your picture is not sent'], ['Camera on', 'Your picture is being sent']],
+    chat_icon:         [['Chat hidden', 'Not shown in the room'], ['Chat shown', 'Visible on the room screen']],
+    hand_icon:         [['Hand down', 'You are not asking to speak'], ['Hand raised', 'You are asking to speak']],
+    participants_icon: [['Participants hidden', 'List not shown in the room'], ['Participants shown', 'List visible on the screen']],
+    info_icon:         [['Details hidden', 'Not shown in the room'], ['Details shown', 'Visible on the screen']],
+  },
+};
+
+// Writes a row's state into it: the class, the icon and the two lines. Called
+// when the row is built and again on every read-back.
+function paintCtrlRow(row, icon, on, fallbackLabel) {
+  if (!row) return;
+  row.classList.toggle('ctrl--on', on);
+  row.querySelector('.ctrl__icon').innerHTML = ctrlIcon(icon, on);
+
+  const words = (CTRL_WORDS[currentLang] || {})[icon];
+  const state = row.querySelector('.ctrl__state');
+  const hint = row.querySelector('.ctrl__hint');
+  if (words) {
+    state.textContent = words[on ? 1 : 0][0];
+    hint.textContent = words[on ? 1 : 0][1];
+  } else if (fallbackLabel !== undefined) {
+    state.textContent = fallbackLabel;
+  }
+}
+
+function ctrlIcon(icon, on) {
+  const shape = CTRL_SHAPE[icon];
+  if (!shape) return getIcon(icon);          // a command we do not know: the gateway's own
+  // Two strokes: one in the page's background colour to carve a gap out of the
+  // shape, the slash itself on top. On a solid icon a bare line would vanish
+  // into it.
+  const slash = !on && CTRL_SLASHED.includes(icon)
+    ? '<path d="M3 1.6 22.4 21l-1.4 1.4L1.6 3z" class="ctrl__cut"/>' +
+      '<path d="M3.6 2.3 21.7 20.4l-1.3 1.3L2.3 3.6z"/>' : '';
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${'<path d="' + shape + '"/>'}${slash}</svg>`;
+}
+
 const CTRL_STATE = {
   microphone_icon:   (ui) => ui.media && ui.media.microphone,
   camera_icon:       (ui) => ui.media && ui.media.camera,
@@ -700,9 +769,16 @@ async function syncCtrlState() {
   const ui = await fetchCtrlState();
   ctrlState = ui;
   if (!ui) return;
+  // The switch is not the only thing that says what the state is: the words
+  // and the icon say it too, and moving one without the others leaves the row
+  // contradicting itself.
   document.querySelectorAll('.ctrl__switch[data-icon]').forEach((sw) => {
-    const probe = CTRL_STATE[sw.dataset.icon];
-    if (probe) sw.checked = probe(ui) === true;
+    const icon = sw.dataset.icon;
+    const probe = CTRL_STATE[icon];
+    if (!probe) return;
+    const on = probe(ui) === true;
+    sw.checked = on;
+    paintCtrlRow(sw.closest('.ctrl'), icon, on);
   });
 }
 
@@ -755,17 +831,20 @@ async function renderMenuOptions() {
     if (icon.toLowerCase().includes('chat')) hasChat = true;
 
     if (probe && ctrlState) {
+      const on = probe(ctrlState) === true;
+
       const row = document.createElement('label');
       row.className = 'ctrl';
-      row.innerHTML = `<span class="ctrl__icon">${getIcon(opt.icon)}</span>` +
-                      `<span class="ctrl__label"></span>`;
-      row.querySelector('.ctrl__label').textContent = label;
+      row.innerHTML = '<span class="ctrl__icon"></span>' +
+                      '<span class="ctrl__text"><span class="ctrl__state"></span>' +
+                      '<span class="ctrl__hint"></span></span>';
+      paintCtrlRow(row, icon, on, label);
 
       const sw = document.createElement('input');
       sw.type = 'checkbox';
       sw.className = 'ctrl__switch';
       sw.dataset.icon = icon;
-      sw.checked = probe(ctrlState) === true;
+      sw.checked = on;
       sw.addEventListener('change', async () => {
         await sendKey(opt.dtmf);
         await syncCtrlState();
@@ -777,9 +856,12 @@ async function renderMenuOptions() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ctrl';
-      btn.innerHTML = `<span class="ctrl__icon">${getIcon(opt.icon)}</span>` +
-                      `<span class="ctrl__label"></span>`;
-      btn.querySelector('.ctrl__label').textContent = label;
+      // Same shape as a switch row, one line instead of two: the connector
+      // says nothing about this command's state, so the config label stands
+      // on its own.
+      btn.innerHTML = `<span class="ctrl__icon">${ctrlIcon(icon, true)}</span>` +
+                      '<span class="ctrl__text"><span class="ctrl__state"></span></span>';
+      btn.querySelector('.ctrl__state').textContent = label;
       btn.onclick = async () => {
         await sendKey(opt.dtmf);
         await syncCtrlState();
