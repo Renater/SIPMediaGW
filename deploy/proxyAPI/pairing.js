@@ -27,6 +27,7 @@ const TEXTS = {
     close: 'Fermer ce message',
     errorPrefix: 'Le code',
     errorSuffix: 'est erroné ou expiré, veuillez réessayer.',
+    tooMany: 'Trop de tentatives. Patientez une minute avant de réessayer.',
     themeToLight: 'Passer en thème clair',
     themeToDark: 'Passer en thème sombre',
     boxLabel: (i) => `Caractère ${i + 1} sur ${CODE_LENGTH}`,
@@ -43,6 +44,7 @@ const TEXTS = {
     close: 'Dismiss this message',
     errorPrefix: 'Code',
     errorSuffix: 'is invalid or expired, please try again.',
+    tooMany: 'Too many attempts. Wait a minute before trying again.',
     themeToLight: 'Switch to light theme',
     themeToDark: 'Switch to dark theme',
     boxLabel: (i) => `Character ${i + 1} of ${CODE_LENGTH}`,
@@ -53,6 +55,9 @@ const TEXTS = {
 // are cleared rather than kept: a refused code is not worth correcting one
 // character at a time, re-reading it from the room screen is the point.
 let rejectedCode = '';
+
+// Set when the proxy has had enough attempts from here for the moment.
+let waited = false;
 
 let lang = localStorage.getItem('lang') || 'fr';
 if (!TEXTS[lang]) lang = 'fr';
@@ -179,15 +184,18 @@ function render() {
   // The rejected code is named in the message: on a screen where five boxes
   // now sit empty, "this code" alone would leave the reader wondering which.
   const banner = $('error-banner');
-  banner.hidden = !rejectedCode || dismissed;
-  if (rejectedCode) {
+  banner.hidden = (!rejectedCode && !waited) || dismissed;
+  $('error-close').setAttribute('aria-label', t.close);
+
+  if (waited) {
+    $('error-text').textContent = t.tooMany;
+  } else if (rejectedCode) {
     const text = $('error-text');
     text.textContent = '';
     text.append(t.errorPrefix + ' ');
     const codeEl = document.createElement('b');
     codeEl.textContent = rejectedCode;
     text.append(codeEl, ' ' + t.errorSuffix);
-    $('error-close').setAttribute('aria-label', t.close);
   }
 
   // The address the room screen shows under the code. Taken from where the
@@ -258,10 +266,12 @@ async function submit() {
   $('spinner').hidden = false;
   $('btn').disabled = true;
   rejectedCode = '';
+  waited = false;
   dismissed = false;
   render();
 
   let gwId = null;
+  let throttled = false;
   try {
     const res = await fetch('/pairing/resolve', {
       method: 'POST',
@@ -269,6 +279,10 @@ async function submit() {
       body: JSON.stringify({ code: value }),
     });
     if (res.ok) gwId = (await res.json())?.data?.gw_id || null;
+    // The proxy counts failed attempts and stops answering for a while. Telling
+    // the visitor their code is wrong would be untrue and send them straight
+    // back to try again.
+    throttled = res.status === 429;
   } catch (e) {
     // Unreachable proxy reads the same as a refused code here: either way the
     // visitor has nothing to do but try again.
@@ -280,7 +294,8 @@ async function submit() {
     return;
   }
 
-  rejectedCode = value;
+  rejectedCode = throttled ? '' : value;
+  waited = throttled;
   $('spinner').hidden = true;
   boxes.forEach((b) => { b.value = ''; });
   refresh();
@@ -297,6 +312,7 @@ window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   $('spinner').hidden = true;
   rejectedCode = '';
+  waited = false;
   dismissed = false;
   boxes.forEach((b) => { b.value = ''; });
   refresh();

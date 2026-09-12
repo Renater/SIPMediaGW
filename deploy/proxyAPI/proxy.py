@@ -524,6 +524,45 @@ def get_asset(file_name: str):
         filename=file_name,
     )
 
+# A pairing code is five characters out of thirty-six: some sixty million of
+# them, but fifty gateways mean fifty live codes at any moment and each lasts a
+# minute and a half. That is the one guessable secret in the system, so the two
+# routes that turn a code into a gateway count attempts.
+#
+# Behind a reverse proxy every request carries the proxy's own address, which
+# would put every visitor on one counter and let the first heavy hand lock out
+# the rest. X-Forwarded-For says who asked, but anyone can send it: it is read
+# only where PROXY_TRUST_FORWARDED says a front end sets it.
+codeTryLimit = int(os.getenv("PROXY_CODE_TRY_LIMIT", "10"))
+codeTryWindow = int(os.getenv("PROXY_CODE_TRY_WINDOW", "60"))
+trustForwarded = os.getenv("PROXY_TRUST_FORWARDED", "").lower() in ("1", "true", "yes")
+
+
+def callerAddress(request: Request):
+    if trustForwarded:
+        forwarded = request.headers.get("X-Forwarded-For", "")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def tooManyCodeTries(request: Request):
+    """True once a caller has spent its failed attempts for the window."""
+    if codeTryLimit <= 0:
+        return False
+    return int(redisClient.get(f"codetries:{callerAddress(request)}") or 0) >= codeTryLimit
+
+
+def noteFailedCodeTry(request: Request):
+    """Only failures count: someone reading a code off a room screen gets it
+    right, and it is the repeated miss that marks a search."""
+    if codeTryLimit <= 0:
+        return
+    key = f"codetries:{callerAddress(request)}"
+    if redisClient.incr(key) == 1:
+        redisClient.expire(key, codeTryWindow)
+
+
 @app.post("/pairing/resolve")
 async def pairingResolve(request: Request):
     """Turn a pairing code into a gw_id, without navigating anywhere.
@@ -536,6 +575,12 @@ async def pairingResolve(request: Request):
 
     /interact keeps accepting pairingCode as before.
     """
+    if tooManyCodeTries(request):
+        return JSONResponse(
+            status_code=429,
+            content={"status": "error", "error": {"code": 429, "detail": "Too many attempts"}, "data": None},
+        )
+
     try:
         body = await request.json()
     except Exception:
@@ -547,6 +592,7 @@ async def pairingResolve(request: Request):
 
     gwId = redisClient.get(f"pairing:{code}") if code else None
     if not gwId:
+        noteFailedCodeTry(request)
         # A malformed code and an unknown one get the same answer: the endpoint
         # says whether a code is live, and nothing else.
         return JSONResponse(
@@ -563,6 +609,8 @@ async def interact(request: Request):
     gwId = request.query_params.get("gwId") or request.query_params.get("gw_id")
     if not gwId:
         pairingCode = request.query_params.get("pairingCode")
+        if pairingCode and tooManyCodeTries(request):
+            raise HTTPException(status_code=429, detail="Too many attempts")
         if pairingCode:
             # Look‑up the gw_id stored under the pairing code
             resolvedGwId = redisClient.get(f"pairing:{pairingCode}")
@@ -577,6 +625,7 @@ async def interact(request: Request):
                 # retried the code that had just been turned down. The visitor
                 # is sent to the pairing page instead, which now checks a code
                 # through /pairing/resolve before going anywhere.
+                noteFailedCodeTry(request)
                 return RedirectResponse(url="/pairing", status_code=302)
         else:
             with open(os.path.join(assetDir, "pairing.html"), "r", encoding="utf-8") as f:
