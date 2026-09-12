@@ -7,12 +7,14 @@
    something it cannot see. */
 .ctrl-list { display: grid; gap: .5rem; margin-top: .8rem; }
 
+/* Two lines of text where the state is known, in the height one line used to
+   take: the padding gives back what the second line costs. */
 .ctrl {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: .7rem;
   width: 100%;
-  padding: .7rem .8rem;
+  padding: .5rem .7rem;
   border: 0;
   border-radius: .55rem;
   background: var(--tile);
@@ -26,7 +28,13 @@ button.ctrl { cursor: pointer; }
 button.ctrl:hover { box-shadow: inset 0 0 0 1.5px var(--bf); }
 button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
 
-.ctrl__icon { width: 1.4rem; height: 1.4rem; flex: none; display: inline-flex; }
+/* The icon carries the state as much as the words do: grey when off, green
+   when on, with a slash across it where one applies. */
+.ctrl__icon { width: 1.3rem; height: 1.3rem; flex: none; display: inline-flex; color: var(--muted); }
+.ctrl--on .ctrl__icon { color: var(--on); }
+/* The gap the slash sits in, cut in the colour behind the icon. Only the
+   microphone and the camera carry one. */
+.ctrl__icon .ctrl__cut { fill: var(--tile); }
 .ctrl__icon svg, .ctrl__icon img { width: 100%; height: 100%; fill: currentColor; object-fit: contain; }
 
 /* The command icons are black PNGs served by the gateway: the colour is in the
@@ -34,16 +42,18 @@ button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
    inversion — a tintable SVG would be cleaner, but would mean changing what
    the gateway serves. */
 [data-theme="dark"] .ctrl__icon img { filter: invert(1); }
-.ctrl__label { flex: 1; min-width: 0; }
+.ctrl__text { flex: 1; min-width: 0; line-height: 1.25; }
+.ctrl__state { display: block; font-size: .85rem; font-weight: 600; }
+.ctrl__hint { display: block; font-size: .7rem; color: var(--muted); }
 
 /* Switch. Shows the state the connector reports, never a local guess. */
 .ctrl__switch {
   appearance: none;
-  width: 2.5rem;
-  height: 1.5rem;
+  width: 2.4rem;
+  height: 1.4rem;
   flex: none;
   margin: 0;
-  border: 1px solid var(--bf);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--bg);
   position: relative;
@@ -57,11 +67,11 @@ button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
   width: 1.125rem;
   height: 1.125rem;
   border-radius: 50%;
-  background: var(--bf);
+  background: var(--muted);
   transition: transform .15s;
 }
-.ctrl__switch:checked { background: var(--bf); }
-.ctrl__switch:checked::after { background: var(--bg); transform: translateX(1rem); }
+.ctrl__switch:checked { background: var(--on); border-color: var(--on); }
+.ctrl__switch:checked::after { background: #fff; transform: translateX(1rem); }
 .ctrl__switch:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
 
 /* The conference being driven, on its platform */
@@ -170,8 +180,6 @@ button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
   justify-content: center;
   padding: 1rem;
 }
-/* Le cadre doit contenir l'image : sans cette borne, une capture haute pousse
-   les boutons hors de la boîte. */
 /* Full screen: the box takes the screen. Without this the browser switches and
    the box keeps its size, the image spilling out below. */
 #slide-preview:fullscreen { padding: 0; background: #000; }

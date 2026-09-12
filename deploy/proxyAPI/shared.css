@@ -14,6 +14,7 @@
   --bg: #fff;
   --tile: #f6f6f6;
   --border: #ddd;
+  --on: #18753c;
   --warning-bg: #fdeeee;
   --warning-txt: #b34000;
 }
@@ -24,6 +25,7 @@
   --bg: #161616;
   --tile: #1e1e1e;
   --border: #353535;
+  --on: #27a658;
   --warning-bg: #2e1a12;
   --warning-txt: #fc5d00;
 }
