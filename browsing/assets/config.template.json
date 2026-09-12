@@ -74,8 +74,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -86,8 +86,8 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close the participants panel",
-          "fr": "Ouvrir / Fermer la liste des participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
         },
         {
@@ -126,8 +126,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -138,8 +138,8 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close the participants panel",
-          "fr": "Ouvrir / Fermer la liste des participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
         },
         {
@@ -166,8 +166,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -178,8 +178,8 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close the participants panel",
-          "fr": "Ouvrir / Fermer la liste des participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
         },
         {
@@ -206,8 +206,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -218,8 +218,8 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close the participants panel",
-          "fr": "Ouvrir / Fermer la liste des participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
         },
         {
@@ -246,8 +246,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -258,9 +258,15 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close the participants panel",
-          "fr": "Ouvrir / Fermer la liste des participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
+        },
+        {
+          "dtmf": 0,
+          "en": "Show / Hide meeting details",
+          "fr": "Afficher / Masquer les informations",
+          "icon": "info_icon"
         }
       ]
     },
@@ -280,8 +286,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         }
       ]
@@ -302,8 +308,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -314,8 +320,8 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close the participants panel",
-          "fr": "Ouvrir / Fermer la liste des participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
         }
       ]
@@ -336,8 +342,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {
@@ -348,8 +354,8 @@
         },
         {
           "dtmf": 5,
-          "en": "Open / Close participants",
-          "fr": "Ouvrir / Fermer les participants",
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
           "icon": "participants_icon"
         }
       ]
@@ -370,8 +376,8 @@
         },
         {
           "dtmf": 3,
-          "en": "Open / Close chat",
-          "fr": "Ouvrir / Fermer le chat",
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
           "icon": "chat_icon"
         },
         {

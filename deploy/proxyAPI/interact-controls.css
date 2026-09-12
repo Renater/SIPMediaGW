@@ -1,153 +1,240 @@
-/* The in-meeting screen: the command keys, the chat row, the slide capture and
-   the end-call footer. Moved out of interact.css unchanged — the connection
-   screens are being reworked, this one is not, and keeping them apart means the
-   rework cannot disturb it. */
+/* The in-meeting screen: the platform's commands, the chat row, the reactions
+   and the slide capture. The palette, the brand and the language and theme
+   controls live in shared.css, loaded before this. */
 
-/* Footer end-call */
-/* Slide preview modal (centered) + backdrop */
+/* A command the connector reports the state of is a switch; one it does not is
+   a button. A switch on a state nobody reads would only make the page claim
+   something it cannot see. */
+.ctrl-list { display: grid; gap: .5rem; margin-top: .8rem; }
+
+.ctrl {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  padding: .7rem .8rem;
+  border: 0;
+  border-radius: .55rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--txt);
+  font: inherit;
+  font-size: .9rem;
+  text-align: left;
+}
+button.ctrl { cursor: pointer; }
+button.ctrl:hover { box-shadow: inset 0 0 0 1.5px var(--bf); }
+button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
+
+.ctrl__icon { width: 1.4rem; height: 1.4rem; flex: none; display: inline-flex; }
+.ctrl__icon svg, .ctrl__icon img { width: 100%; height: 100%; fill: currentColor; object-fit: contain; }
+
+/* The command icons are black PNGs served by the gateway: the colour is in the
+   image. On the dark theme they vanish into the background, hence the
+   inversion — a tintable SVG would be cleaner, but would mean changing what
+   the gateway serves. */
+[data-theme="dark"] .ctrl__icon img { filter: invert(1); }
+.ctrl__label { flex: 1; min-width: 0; }
+
+/* Switch. Shows the state the connector reports, never a local guess. */
+.ctrl__switch {
+  appearance: none;
+  width: 2.5rem;
+  height: 1.5rem;
+  flex: none;
+  margin: 0;
+  border: 1px solid var(--bf);
+  border-radius: 1rem;
+  background: var(--bg);
+  position: relative;
+  cursor: pointer;
+}
+.ctrl__switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: var(--bf);
+  transition: transform .15s;
+}
+.ctrl__switch:checked { background: var(--bf); }
+.ctrl__switch:checked::after { background: var(--bg); transform: translateX(1rem); }
+.ctrl__switch:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
+
+/* The conference being driven, on its platform */
+.chosen__room { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.chosen__room::before { content: "\2014"; margin-right: .35rem; }
+
+/* Chat */
+.chat-row { display: flex; gap: .5rem; margin-top: .6rem; }
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: .5rem .7rem;
+  border: 0;
+  border-radius: .5rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1.5px var(--border);
+  color: var(--txt);
+  font: inherit;
+  font-size: .9rem;
+}
+.chat-input:focus { outline: 2px solid var(--bf); outline-offset: 2px; }
+.chat-input::placeholder { color: var(--muted); }
+.chat-send {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: .375rem;
+  background: var(--bf);
+  color: #fff;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Reactions: sent and forgotten, no state to show */
+.reactions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: .6rem; }
+.reaction {
+  min-height: 3rem;
+  border: 0;
+  border-radius: .55rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.reaction:hover { box-shadow: inset 0 0 0 1.5px var(--bf); }
+.reaction:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
+
+/* Commands the connector offers beyond the usual five */
+.ctrl-more { display: grid; gap: .5rem; margin-top: .6rem; }
+
+/* Slide capture */
+#slide-controls { margin-top: 1rem; flex-direction: column; gap: .5rem; }
+.controls-row { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+#slide-hint { font-size: .75rem; color: var(--muted); flex: 1 1 10rem; }
+#slide-gallery { display: flex; flex-wrap: wrap; gap: .4rem; }
+.slide-thumb {
+  width: 4rem;
+  height: 2.6rem;
+  border-radius: .3rem;
+  object-fit: cover;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.slide-thumb-meta { font-size: .65rem; color: var(--muted); margin-top: .25rem; }
+
+/* The generic key style the capture and preview buttons build on */
+.key {
+  min-height: 2.4rem;
+  padding: 0 .9rem;
+  border: 0;
+  border-radius: .375rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--bf);
+  color: var(--bf);
+  font: inherit;
+  font-size: .85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.key:hover { background: var(--bf); color: #fff; }
+.key.small { min-height: 2rem; padding: 0 .7rem; font-size: .8rem; }
+
+/* Slide preview */
+/* Both are put on screen by script when a capture comes back. They start
+   hidden: a rule that showed them would keep them there. */
 #slide-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
-  z-index: 1000;
+  z-index: 9;
+  background: rgba(0, 0, 22, .5);
   display: none;
 }
+/* The capture takes the confirmation dialog's shape: same header, same
+   buttons. Two dialogs on one page have no reason to differ. */
 #slide-preview {
   position: fixed;
-  /* fallback and use the small-viewport height to account for the address bar */
-  top: 50vh;
-  top: 50svh;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1001;
-  max-width: 90%;
-  width: 420px;
-  background: #fff;
-  border: 1px solid #e4e4e4;
-  border-radius: 8px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-  padding: 12px;
-  padding-top: calc(12px + env(safe-area-inset-top, 0px)); /* respect the notch / safe area */
+  inset: 0;
+  z-index: 10;
   display: none;
-  gap: 8px;
-  flex-direction: column;
-}
-/* actions first, image below; actions wrap on small screens */
-#slide-preview .preview-actions { display:flex; gap:8px; margin-bottom:8px; justify-content:flex-end; flex-wrap:wrap; }
-#slide-preview img { width: 100%; height: auto; display:block; border-radius:6px; order: 1; max-height: calc(80vh - 84px); object-fit: contain; }
-#slide-preview .small { font-size:12px; padding:6px 8px; height:32px; line-height:18px; }
-#menu-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 1em;
-}
-.menu-key {
-  background: #f0f8ff;
-  border: 1px solid #aee;
-  color: #222;
-  font-size: 14px;
-  width: 100%;
-  height: auto;
-  min-height: 40px;
-  padding: 8px 12px;
-  display: flex;
   align-items: center;
-  gap: 8px;
-  text-align: left;
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  justify-content: center;
+  padding: 1rem;
 }
-#log {
-  font-size: 11px;
-  background: #eee;
-  border-radius: 6px;
-  padding: 10px;
-  max-height: 100px;
-  overflow-y: auto;
-  word-break: break-all;
-}
-/* Chat UI */
-.chat-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
+/* Le cadre doit contenir l'image : sans cette borne, une capture haute pousse
+   les boutons hors de la boîte. */
+/* Full screen: the box takes the screen. Without this the browser switches and
+   the box keeps its size, the image spilling out below. */
+#slide-preview:fullscreen { padding: 0; background: #000; }
+#slide-preview:fullscreen .modal__box {
+  max-width: none;
+  max-height: 100vh;
   width: 100%;
-  align-items: center;
-}
-.chat-input {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #bbb;
-  font-size: 14px;
-}
-.chat-send-btn {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #bbb;
-  background: white;
-  cursor: pointer;
-}
-.chat-send-btn:active { transform: scale(0.98); }
-/* Slide controls & gallery under the menu (thumbnails accumulate) */
-#slide-controls {
-  margin-top: 8px;
-  width: 100%;
-  display: none; /* hidden by default; shown only when in-meeting (menuDisplayed) */
-  flex-direction: column;
-  gap: 8px;
-}
-#slide-controls .controls-row { display:flex; gap:8px; align-items:center; }
-#slide-gallery {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-.slide-thumb {
-  width: 120px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-.slide-thumb-meta { font-size: 11px; color: #666; margin-top: 4px; }
-/* accent capture button */
-#btn-slideShot {
-  background: linear-gradient(180deg,#3b82f6,#2563eb);
-  color: #fff;
-  border-color: #1e40af;
-}
-#btn-slideShot:hover { filter: brightness(0.96); }
-/* Chat input focus ring */
-.chat-input:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-/* Command feedback. Both belong to the meeting screen; showScreen hides them
-   while a connection screen is up. */
-#status {
-  margin-top: .8rem;
-  font-size: .8rem;
-  color: var(--muted);
+  height: 100%;
+  border-radius: 0;
 }
 
-/* The generic key style the in-meeting buttons build on: the slide capture
-   button and the preview actions. Was indented in the old interact.css, which
-   is how it nearly went missing in the split. */
-.key {
-  height: 40px;
-  padding: 0 14px;
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  background: white;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: monospace;
-  white-space: nowrap;
+#slide-preview .modal__box {
+  max-width: 34rem;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
 }
-.key:active { background: #e0e0e0; transform: scale(0.94); }
+
+/* Download is a link, but presents like the other two. */
+#slide-download {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+/* The box stacks header, image and actions; the image takes what is left and
+   no more, or it slides under the bottom row. */
+#slide-img {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  object-fit: contain;
+  background: var(--tile);
+}
+#slide-preview .modal__head,
+#slide-preview .modal__actions { flex: none; }
+/* The row has its own space below the image: without top padding the buttons
+   bite into it. */
+#slide-preview .modal__actions {
+  background: var(--bg);
+  padding: 1rem;
+}
+
+/* Command feedback. Both belong to the meeting screen; showScreen hides them
+   while a connection screen is up. */
+#status { margin-top: .8rem; font-size: .8rem; color: var(--muted); }
+#log {
+  margin-top: .5rem;
+  padding: .6rem .7rem;
+  border-radius: .4rem;
+  background: var(--tile);
+  color: var(--muted);
+  font-family: monospace;
+  font-size: .68rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.modal__btn svg { width: .9rem; height: .9rem; fill: currentColor; margin-right: .35rem; vertical-align: -.1rem; }
+
+/* Enlarge and shrink sit in the header next to the close cross: that is where
+   a window carries its size controls. */
+#slide-fullscreen svg { width: .9rem; height: .9rem; fill: currentColor; }
+#slide-fullscreen { margin-left: auto; }
+#slide-close { margin-left: .25rem; }

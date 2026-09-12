@@ -182,12 +182,14 @@ h1 {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Confirmation dialog. In the page and centred, rather than the browser's own
-   confirm() sitting at the top of the window in its own styling. */
+/* Every question the page asks. In the page and centred, rather than the
+   browser's own confirm() sitting at the top of the window in its own styling,
+   and above the capture window: the question is about what that window
+   shows. */
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -258,7 +260,8 @@ h1 {
   font-weight: 500;
   cursor: pointer;
 }
-.modal__btn:hover { background: color-mix(in srgb, var(--bf) 8%, transparent); }
+.modal__btn:hover { background: var(--bf); color: #fff; }
+.modal__btn:hover svg { fill: #fff; }
 .modal__btn--danger {
   background: var(--bf);
   box-shadow: none;

@@ -19,7 +19,7 @@
   font-weight: 500;
   cursor: pointer;
 }
-.hangup:hover { background: color-mix(in srgb, var(--bf) 8%, transparent); }
+.hangup:hover { background: var(--bf); color: #fff; }
 .hangup:disabled { opacity: .45; cursor: default; }
 .hangup:disabled:hover { background: transparent; }
 
