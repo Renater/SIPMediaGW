@@ -524,11 +524,6 @@ def get_asset(file_name: str):
         filename=file_name,
     )
 
-# A pairing code is five characters out of thirty-six: some sixty million of
-# them, but fifty gateways mean fifty live codes at any moment and each lasts a
-# minute and a half. That is the one guessable secret in the system, so the two
-# routes that turn a code into a gateway count attempts.
-#
 # Behind a reverse proxy every request carries the proxy's own address, which
 # would put every visitor on one counter and let the first heavy hand lock out
 # the rest. X-Forwarded-For says who asked, but anyone can send it: it is read
