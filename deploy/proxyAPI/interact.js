@@ -36,6 +36,18 @@ const TEXTS = {
     editName: 'Modifier le nom affich\u00e9 dans la conf\u00e9rence',
     save: 'Valider',
     cancel: 'Annuler',
+    chatPlaceholder: 'Envoyer un message au chat\u2026',
+    chatSend: 'Envoyer',
+    capture: 'Capturer l\u2019\u00e9cran partag\u00e9',
+    captureHint: 'Prend une image du contenu partag\u00e9 pendant la r\u00e9union.',
+    captureNone: 'Aucun contenu partag\u00e9 \u00e0 capturer pour le moment.',
+    captureFail: 'La capture a \u00e9chou\u00e9.',
+    slideTitle: 'Capture de l\u2019\u00e9cran partag\u00e9',
+    slideDownload: 'T\u00e9l\u00e9charger',
+    slideFullscreen: 'Plein \u00e9cran',
+    slideShrink: 'R\u00e9duire',
+    slideDiscard: 'Supprimer',
+    discardBody: 'Supprimer cette capture ?',
     meetingLabel: 'Veuillez saisir l\u2019identifiant de la r\u00e9union',
     meetingFallback: 'Entrez le nom de la réunion',
     join: 'Rejoindre',
@@ -59,6 +71,18 @@ const TEXTS = {
     editName: 'Change the name shown in the conference',
     save: 'Save',
     cancel: 'Cancel',
+    chatPlaceholder: 'Send a message to chat\u2026',
+    chatSend: 'Send',
+    capture: 'Capture the shared screen',
+    captureHint: 'Takes a still of the content being shared in the meeting.',
+    captureNone: 'Nothing is being shared to capture right now.',
+    captureFail: 'The capture failed.',
+    slideTitle: 'Shared screen capture',
+    slideDownload: 'Download',
+    slideFullscreen: 'Full screen',
+    slideShrink: 'Shrink',
+    slideDiscard: 'Discard',
+    discardBody: 'Discard this capture?',
     meetingLabel: 'Please enter the meeting id',
     meetingFallback: 'Enter the meeting name',
     join: 'Join',
@@ -80,6 +104,23 @@ let dark = localStorage.getItem('theme')
 
 const $ = (id) => document.getElementById(id);
 
+const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zM5 18h14v2H5z"/></svg>';
+const ICON_EXPAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v2H6v5H4V4zm9 0h7v7h-2V6h-5V4zM4 13h2v5h5v2H4v-7zm14 0h2v7h-7v-2h5v-5z"/></svg>';
+const ICON_SHRINK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4V7h3V4h2zm6 0h2v3h3v2h-5V4zM4 15h5v5H7v-3H4v-2zm11 0h5v2h-3v3h-2v-5z"/></svg>';
+const ICON_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>';
+
+
+// Messages are worth reading once — a gateway out of reach, a call that has
+// ended — and then they are in the way. They fade on their own rather than
+// sitting under the controls for the rest of the session.
+let sayTimer = null;
+function say(text) {
+  const el = $('status');
+  el.textContent = text || '';
+  clearTimeout(sayTimer);
+  if (text) sayTimer = setTimeout(() => { el.textContent = ''; }, 6000);
+}
+
 // A tooltip is centred on its element, which puts it off the page when the
 // element sits near an edge - and where it sits depends on the text beside it.
 // The side is therefore chosen as the pointer arrives, not written into the
@@ -96,14 +137,14 @@ document.addEventListener('mouseover', (e) => {
 
 // defined early so the startup callback below can call it
 function updateSlideControlsVisibility() {
-  const ctrl = document.getElementById('slide-controls');
+  const ctrl = $('slide-controls');
   if (!ctrl) return;
   // Only in the meeting: the two connection screens have nothing to capture.
   ctrl.style.display = menuDisplayed ? 'flex' : 'none';
 }
 
 function getRoomNamePlaceholder() {
-  const captureEl = document.getElementById('key-capture');
+  const captureEl = $('key-capture');
   if (!captureEl) return '';
   const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
   const lang = currentLang === 'fr' ? 'fr' : 'en';
@@ -112,8 +153,8 @@ function getRoomNamePlaceholder() {
 }
 
 function updateRoomNameInputUi() {
-  const captureEl = document.getElementById('key-capture');
-  const hintEl = document.getElementById('room-name-hint');
+  const captureEl = $('key-capture');
+  const hintEl = $('room-name-hint');
   if (!captureEl) return;
 
   const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
@@ -121,7 +162,7 @@ function updateRoomNameInputUi() {
   const placeholder = getRoomNamePlaceholder();
   const hint = selectedInfo?.hint?.[lang] || selectedInfo?.hint?.en || '';
 
-  const labelEl = document.getElementById('meeting-label');
+  const labelEl = $('meeting-label');
   if (labelEl) labelEl.textContent = TEXTS[currentLang].meetingLabel;
 
   captureEl.placeholder = captureEl.value ? '' : placeholder;
@@ -171,31 +212,42 @@ function renderLangSwitch() {
   $('confirm-title').textContent = t.confirmTitle;
   $('confirm-body').textContent = t.confirmBody;
   $('confirm-no').textContent = t.confirmNo;
-  $('confirm-yes').textContent = t.confirmYes;
+  // Only while closed: with the dialog open the label is the question's own.
+  if ($('confirm').hidden) $('confirm-yes').textContent = t.confirmYes;
   $('confirm-close').setAttribute('aria-label', t.close);
 
+  // The button only does anything while content is being shared, which the
+  // old one-word label gave no hint of.
+  $('slide-title').textContent = t.slideTitle;
+  // Icon and word: the icon catches the eye, the word settles what it means.
+  $('slide-download').innerHTML = ICON_DOWNLOAD + '<span></span>';
+  $('slide-download').lastChild.textContent = t.slideDownload;
+  $('slide-discard').innerHTML = ICON_TRASH + '<span></span>';
+  $('slide-discard').lastChild.textContent = t.slideDiscard;
+  $('slide-close').setAttribute('aria-label', t.close);
+  $('slide-close').dataset.tip = t.close;
+
   const ss = $('btn-slideShot');
-  if (ss) ss.textContent = 'Capture';
+  if (ss) ss.textContent = t.capture;
+  const hint = $('slide-hint');
+  if (hint) hint.textContent = t.captureHint;
 
   updateRoomNameInputUi();
   showRoom();
+
+  // The command labels come from config.json and are set when drawn: without
+  // this they would stay in whichever language the screen was built in.
+  if (menuDisplayed) renderMenuOptions();
 }
 
 // Which of the two connection screens is up, or neither once in the meeting.
+// Which of the three screens is up. The title, the room block, the hang-up
+// button and the message line belong to the frame and stay put: which room is
+// being driven, and the way out of it, matter on every screen.
 function showScreen(name) {
   $('screen-platforms').hidden = (name !== 'platforms');
   $('screen-meeting').hidden = (name !== 'meeting');
-  $('btn-endcall').hidden = false;
-  $('title').hidden = (name === null);
-  $('room').hidden = (name === null);
-
-  // Command feedback and the request log belong to the meeting: on the way in
-  // they would only show the keys the page sends on the visitor's behalf.
-  const inMeeting = (name === null);
-  $('status').hidden = !inMeeting;
-  $('log').hidden = !inMeeting;
-  // Hanging up stays available throughout: reaching the wrong room is exactly
-  // the sort of mistake to correct before joining anything.
+  $('screen-controls').hidden = (name !== null);
 }
 
 // The room this page drives. Both values come from the same status poll that
@@ -233,7 +285,6 @@ async function fetchDisplayName() {
 async function sendDisplayName(name) {
   if (!gwId) return;
   await sendCommand('displayName', name, {
-    successLabel: `display name: ${name}`,
     startPolling: false,
   });
   displayName = name;
@@ -270,10 +321,45 @@ function showRoom() {
   $('waiting').hidden = known;
   // Nothing to rename until an endpoint is on the line.
   if (!known) stopEditName();
-  $('name-edit').hidden = !known || !$('name-input').hidden;
+  // Only before the conference is joined: displayName goes into the connector's
+  // URL when the browser starts, so changing it afterwards would move nothing.
+  // Reaching into the platform's own interface, the way the mic and chat
+  // commands do, would take a route of its own in the connector.
+  $('name-edit').hidden = !known || menuDisplayed || !$('name-input').hidden;
+
+  showInCall(known);
 }
 
-const capture = document.getElementById('key-capture');
+// Which conference, on which platform. Drawn from here rather than with the
+// commands: the commands are redrawn only when the screen changes, while this
+// has to follow the poll — platform, room and endpoint arrive over several
+// turns, and a line built once would show whichever of them had landed first.
+function showInCall(roomKnown) {
+  const line = $('in-call');
+  const val = webrtcDomains[browsingName] || {};
+  const platform = (val.name || browsingName || '').replace(/\s*\(.*\)$/, '').trim();
+
+  // Nothing about the conference until the room itself is known: a page that
+  // cannot say which room it drives has no business naming what that room
+  // joined.
+  line.hidden = !menuDisplayed || !platform || !roomKnown;
+  if (line.hidden) return;
+
+  $('in-call-name').textContent = platform;
+  $('in-call-room').textContent = currentRoom || '';
+  $('in-call-room').hidden = !currentRoom;
+
+  const icon = $('in-call-icon');
+  const src = `${apiUrl('/logo')}/${encodeURIComponent(browsingName)}?gw_id=${encodeURIComponent(gwId)}`;
+  if (icon.getAttribute('src') !== src) {
+    icon.hidden = true;
+    icon.onload = () => { icon.hidden = false; };
+    icon.onerror = () => { icon.hidden = true; };
+    icon.src = src;
+  }
+}
+
+const capture = $('key-capture');
 updateRoomNameInputUi();
 
 function captureReset() {
@@ -289,7 +375,6 @@ capture.addEventListener('keydown', async function(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
     if (this.value.length > 0) {
-      //await sendString(this.value + '#');
       await sendRoomName(this.value);
       await captureReset();
       await setTimeout(() => sendKey('#'), 450);
@@ -303,44 +388,23 @@ function apiUrl(path) {
 }
 
 async function sendEndCall() {
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
-  const payload = { gw_id: gwId, payload: { command: "endCall" } };
-  status.textContent = currentLang === 'fr' ? "Envoi: fin d'appel…" : "Sending: end call…";
-  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
-  try {
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    status.textContent = `✓ ${res.status} — end call`;
-    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
-    // after requesting hangup, keep polling to observe end state
-    if (!pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
-  } catch (e) {
-    status.textContent = `✗ End call error: ${e.message}`;
-    log.textContent += `\n← ${e.message}`;
-  }
+  // startPolling: the page leaves once the gateway reports the call over.
+  return sendCommand('endCall', undefined, { startPolling: true });
 }
 
-// One request shape, four commands. They differ only in what they send and
-// what they say afterwards, so the differences are arguments: the command
-// name, the label shown on success, and whether the reply should start the
-// status poll — sendKey and roomName only arm it on a submit key, since the
-// gateway has nothing new to report until the entry is confirmed.
-async function sendCommand(command, param1, { successLabel, startPolling }) {
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
+// One request shape for every command. They differ only in what they send and
+// whether the reply should start the status poll — sendKey and roomName only
+// arm it on a submit key, since the gateway has nothing new to report until the
+// entry is confirmed.
+async function sendCommand(command, param1, { startPolling }) {
   const payload = { gw_id: gwId, payload: { command, param1 } };
-  status.textContent = `Sending: ${param1}`;
-  log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
   try {
-    const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    status.textContent = `✓ ${res.status} — ${successLabel}`;
-    log.textContent += `\n← ${res.status} ${text.slice(0, 120)}`;
+    await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (startPolling && !pollingStarted) { pollingStarted = true; setTimeout(checkGwStatus, 1000); }
   } catch (e) {
-    status.textContent = `✗ Error: ${e.message}`;
-    log.textContent += `\n← ${e.message}`;
+    // Nothing to announce: the switches are read back from the connector
+    // either way, and the console has the detail.
+    console.error('command failed:', command, e);
   }
 }
 
@@ -349,28 +413,18 @@ const isSubmitKey = k => k === '#' || k === 'Enter';
 
 async function sendKey(param1) {
   return sendCommand('sendKey', param1, {
-    successLabel: `key: ${param1}`,
     startPolling: isSubmitKey(param1),
-  });
-}
-
-async function sendString(str) {
-  return sendCommand('sendString', str, {
-    successLabel: `string: ${str}`,
-    startPolling: true,
   });
 }
 
 async function sendRoomName(param1) {
   return sendCommand('roomName', param1, {
-    successLabel: `room name: ${param1}`,
     startPolling: isSubmitKey(param1),
   });
 }
 
 async function sendChat(message) {
   return sendCommand('sendChat', message, {
-    successLabel: 'chat sent',
     startPolling: true,
   });
 }
@@ -378,6 +432,11 @@ async function sendChat(message) {
 
 async function fetchIvrConfigAndRestoreState() {
   if (!gwId) return;
+  const reveal = () => { $('wrap').style.visibility = 'visible'; };
+  // Whatever happens — a screen drawn, an error, a gateway that never answers —
+  // the page becomes visible. A safety net rather than a delay: 1.5s is well
+  // past a normal load.
+  const net = setTimeout(reveal, 1500);
   try {
     const res = await fetch(apiUrl('/ivrConfig') + `?gw_id=${encodeURIComponent(gwId)}`);
     const data = await res.json();
@@ -388,18 +447,36 @@ async function fetchIvrConfigAndRestoreState() {
     const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
     if (!statusRes.ok) { renderDomainButtons(); return; }
     const statusData = await statusRes.json();
+
+    // The same response carries who is on the line. Reading it here rather than
+    // waiting for the first poll is what keeps a reload from building itself in
+    // stages: room, then conference, then logo, two seconds apart.
+    roomName = statusData.data.peer_name || '';
+    roomUri = statusData.data.peer_uri || '';
+    // Awaited: it answers in about half a second, and it changes the name on
+    // screen. Left to resolve on its own it would rewrite the line after the
+    // page had been shown, which reads as one more step.
+    if (roomName || roomUri) await fetchDisplayName();
+
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
     lastScreen = `${bn || ''}|${rn || ''}`;
     if (rn && bn) {
       menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
       menuDisplayed = true;
-      renderMenuOptions();
+      currentRoom = rn;
+      browsingName = bn;
+      // Awaited: it reads the connector's state before drawing, so leaving it
+      // to run on its own would reveal the page mid-build.
+      await renderMenuOptions();
     } else {
       bn ? showInputAndPrepareMenu(bn) : renderDomainButtons();
     }
   } catch(e) {
-    document.getElementById('status').textContent = "Error loading IVR config.";
+    say('Error loading IVR config.');
+  } finally {
+    clearTimeout(net);
+    reveal();
   }
 }
 
@@ -466,7 +543,6 @@ function showInputAndPrepareMenu(selectedDomainKey) {
   browsingName = selectedDomainKey;
   menuOptions = [];
   menuDisplayed = false;
-  renderMenuOptions();
   showScreen('meeting');
 
   // The platform is recalled at the top: there is no way back to the list, the
@@ -475,10 +551,11 @@ function showInputAndPrepareMenu(selectedDomainKey) {
   const name = (val.name || selectedDomainKey).replace(/\s*\(.*\)$/, '').trim();
   $('chosen-name').textContent = name;
   const icon = $('chosen-icon');
-  icon.src = `${apiUrl('/logo')}/${encodeURIComponent(selectedDomainKey)}?gw_id=${encodeURIComponent(gwId)}`;
   icon.alt = '';
-  icon.hidden = false;
+  icon.hidden = true;
+  icon.onload = () => { icon.hidden = false; };
   icon.onerror = () => { icon.hidden = true; };
+  icon.src = `${apiUrl('/logo')}/${encodeURIComponent(selectedDomainKey)}?gw_id=${encodeURIComponent(gwId)}`;
 
   const capture = $('key-capture');
   capture.disabled = false;
@@ -504,7 +581,7 @@ async function checkGwStatus() {
     const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
     // A transient failure must not silence the page for good: it keeps
     // polling, more slowly, so a passing outage is recovered from.
-    if (!statusRes.ok) { document.getElementById('status').textContent = `Gateway unreachable (code ${statusRes.status}) — retrying…`; return setTimeout(checkGwStatus, POLL_MS * 5); }
+    if (!statusRes.ok) { say(`Gateway unreachable (code ${statusRes.status}) — retrying…`); return setTimeout(checkGwStatus, POLL_MS * 5); }
     const statusData = await statusRes.json();
     // stopped: the container exited, the call is over. deleted: the VM is gone.
     // Either way there is nothing left to drive from here. The page used to
@@ -512,10 +589,9 @@ async function checkGwStatus() {
     // renamed.
     const state = statusData.data?.gw_state;
     if (state === "stopped" || state === "deleted") {
-      $('status').hidden = false;
-      $('status').textContent = currentLang === 'fr'
+      say(currentLang === 'fr'
         ? 'L\u2019appel est termin\u00e9.'
-        : 'The call has ended.';
+        : 'The call has ended.');
       // a beat so the message is seen, then back to the pairing page
       setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 800);
       return;
@@ -545,7 +621,8 @@ async function checkGwStatus() {
       if (rn && bn) {
         menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
         menuDisplayed = true;
-        showScreen(null);
+        currentRoom = rn;
+        browsingName = bn;
         renderMenuOptions();
       } else if (bn) {
         showInputAndPrepareMenu(bn);
@@ -556,75 +633,170 @@ async function checkGwStatus() {
       }
     }
   } catch(e) {
-    document.getElementById('status').textContent = `Status error — retrying…`;
+    say('Status error — retrying…');
     return setTimeout(checkGwStatus, POLL_MS * 5);
   }
+  // A control touched on the room tablet moves the same state as one touched
+  // here, so the switches are read back on the poll rather than only after the
+  // page's own commands.
+  if (menuDisplayed) syncCtrlState();
+
   // Polling used to stop for good once the menu was drawn. The page then sat
   // on a call that had already ended, and never saw a platform picked from
   // the room keypad.
   setTimeout(checkGwStatus, POLL_MS);
 }
 
-function renderMenuOptions() {
-  const menuDiv = document.getElementById('menu-options');
-  menuDiv.innerHTML = '';
+// Which uiState field a command reflects, keyed on its icon: the digit and the
+// label differ from one platform to the next, the icon does not. A command
+// absent from here has no state to show and stays a button.
+const CTRL_STATE = {
+  microphone_icon:   (ui) => ui.media && ui.media.microphone,
+  camera_icon:       (ui) => ui.media && ui.media.camera,
+  chat_icon:         (ui) => ui.panels && ui.panels.chat,
+  hand_icon:         (ui) => ui.panels && ui.panels.handRaised,
+  participants_icon: (ui) => ui.panels && ui.panels.participants,
+  info_icon:         (ui) => ui.panels && ui.panels.info,
+};
+
+// The five every connector offers. What comes after is its own, and is drawn
+// as plain buttons below the chat row.
+const CTRL_COMMON = Object.keys(CTRL_STATE);
+
+// The same four the room tablet offers, out of the eight the connector knows.
+const REACTIONS = [
+  ['thumbs-up', '\u{1F44D}'],
+  ['clapping-hands', '\u{1F44F}'],
+  ['red-heart', '\u2764\uFE0F'],
+  ['face-with-tears-of-joy', '\u{1F602}'],
+];
+
+// The conference the gateway has joined, as the status poll reports it.
+let currentRoom = '';
+
+// Last state read from the connector, or null on one that reports none.
+let ctrlState = null;
+
+async function fetchCtrlState() {
+  if (!gwId) return null;
+  try {
+    const res = await fetch(apiUrl('/command'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gw_id: gwId, payload: { command: 'uiState', param1: '' } }),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data?.uiState || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Reads the connector's state and moves the switches onto it. Called after
+// every command, since most of them toggle on the far side: without the
+// read-back a switch would show what it assumed rather than what happened.
+async function syncCtrlState() {
+  const ui = await fetchCtrlState();
+  ctrlState = ui;
+  if (!ui) return;
+  document.querySelectorAll('.ctrl__switch[data-icon]').forEach((sw) => {
+    const probe = CTRL_STATE[sw.dataset.icon];
+    if (probe) sw.checked = probe(ui) === true;
+  });
+}
+
+async function renderMenuOptions() {
+  const list = $('ctrl-list');
+  const more = $('ctrl-more');
+  list.innerHTML = '';
+  more.innerHTML = '';
+  // Nothing to draw: leave the screens as they are rather than switching to an
+  // empty one, which would show the platform line with no platform behind it.
   if (!menuOptions.length) return;
 
-  let chatInjected = false;
-
-  // in the meeting: neither connection screen belongs on screen any more
   showScreen(null);
-
-  // mark that we're showing the IVR/menu options inside the meeting
   menuDisplayed = true;
+  // showRoom may have run just before this, while menuDisplayed was still
+  // false, and hidden the line on that basis. Nothing else would bring it back
+  // until the room details next change.
+  showInCall(!!(roomName || roomUri));
 
-  // render existing options and inject chat input directly after the chat option (no toggle)
-  for (const opt of menuOptions) {
-    const btn = document.createElement('button');
-    btn.className = 'key menu-key';
-    btn.innerHTML = `${getIcon(opt.icon)} ${opt[currentLang] || opt['en'] || ''}`;
-    btn.onclick = () => sendKey(opt.dtmf);
-    menuDiv.appendChild(btn);
+  // Read the state before drawing, so a switch never appears in the wrong
+  // position and then corrects itself under the visitor's eyes.
+  ctrlState = await fetchCtrlState();
 
-    // if this option represents chat (icon name contains 'chat'), append visible chat row right away
-    if (!chatInjected && opt.icon && String(opt.icon).toLowerCase().includes('chat')) {
-      chatInjected = true;
-
-      const chatRow = document.createElement('div');
-      chatRow.className = 'chat-row';
-
-      const chatInput = document.createElement('input');
-      chatInput.type = 'text';
-      chatInput.className = 'chat-input';
-      chatInput.placeholder = currentLang === 'fr' ? 'Envoyer un message au chat…' : 'Send a message to chat…';
-
-      chatInput.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const v = chatInput.value.trim();
-          if (v.length) { await sendChat(v); chatInput.value = ''; }
-        }
+  // Reactions ride on the same command set as the switches: a connector that
+  // reports its state is one that implements them. There is no capability list
+  // to ask, so their presence follows from that rather than from a guess.
+  const reactionRow = $('reactions');
+  reactionRow.hidden = !ctrlState;
+  if (ctrlState && !reactionRow.childElementCount) {
+    for (const [name, glyph] of REACTIONS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'reaction';
+      btn.textContent = glyph;
+      btn.setAttribute('aria-label', name);
+      btn.onclick = () => sendCommand('reaction', name, {
+        startPolling: false,
       });
-
-      const sendBtn = document.createElement('button');
-      sendBtn.className = 'chat-send-btn key';
-      sendBtn.textContent = currentLang === 'fr' ? 'Envoyer' : 'Send';
-      sendBtn.onclick = async () => {
-        const v = chatInput.value.trim();
-        if (v.length) { await sendChat(v); chatInput.value = ''; }
-      };
-
-      chatRow.appendChild(chatInput);
-      chatRow.appendChild(sendBtn);
-      menuDiv.appendChild(chatRow);
-
-      // focus first chat input when chat injected
-      setTimeout(() => chatInput.focus(), 50);
-      // DO NOT break — allow remaining menu options to render under the chat row
+      reactionRow.appendChild(btn);
     }
   }
 
-  // ensure slide controls are visible now that menu options are rendered
+  let hasChat = false;
+
+  for (const opt of menuOptions) {
+    const icon = String(opt.icon || '');
+    const label = opt[currentLang] || opt['en'] || '';
+    const probe = CTRL_STATE[icon];
+    const common = CTRL_COMMON.includes(icon);
+    if (icon.toLowerCase().includes('chat')) hasChat = true;
+
+    if (probe && ctrlState) {
+      const row = document.createElement('label');
+      row.className = 'ctrl';
+      row.innerHTML = `<span class="ctrl__icon">${getIcon(opt.icon)}</span>` +
+                      `<span class="ctrl__label"></span>`;
+      row.querySelector('.ctrl__label').textContent = label;
+
+      const sw = document.createElement('input');
+      sw.type = 'checkbox';
+      sw.className = 'ctrl__switch';
+      sw.dataset.icon = icon;
+      sw.checked = probe(ctrlState) === true;
+      sw.addEventListener('change', async () => {
+        await sendKey(opt.dtmf);
+        await syncCtrlState();
+      });
+
+      row.appendChild(sw);
+      list.appendChild(row);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ctrl';
+      btn.innerHTML = `<span class="ctrl__icon">${getIcon(opt.icon)}</span>` +
+                      `<span class="ctrl__label"></span>`;
+      btn.querySelector('.ctrl__label').textContent = label;
+      btn.onclick = async () => {
+        await sendKey(opt.dtmf);
+        await syncCtrlState();
+      };
+      (common ? list : more).appendChild(btn);
+    }
+  }
+
+  // The chat row sits under the commands rather than among them: typing a
+  // message is a different gesture from pressing a control.
+  const chatRow = $('chat-row');
+  chatRow.hidden = !hasChat;
+  if (hasChat) {
+    $('chat-input').placeholder = TEXTS[currentLang].chatPlaceholder;
+    $('chat-send').textContent = TEXTS[currentLang].chatSend;
+  }
+
   updateSlideControlsVisibility();
 }
 
@@ -678,23 +850,55 @@ $('btn-enter').onclick = async () => {
   if (capture.value.length > 0) {
     $('spinner').hidden = false;
     $('btn-enter').disabled = true;
-    //await sendString(capture.value + '#');
     await sendRoomName(capture.value);
     await captureReset();
     await setTimeout(() => sendKey('#'), 450);
   }
 };
-// Leaving is asked for twice: the browser's own confirm() sat at the top of the
-// window, out of the page and out of its styling.
-function askToHangUp() {
+// One dialog for every question the page asks. The browser's own confirm()
+// sits at the top of the window, out of the page and out of its styling, so
+// this one carries the text and the action it is asked for.
+let confirmAction = null;
+let confirmReturnTo = null;
+
+function ask(message, actionLabel, onYes, returnTo) {
+  $('confirm-body').textContent = message;
+  $('confirm-yes').textContent = actionLabel;
+  $('confirm-yes').disabled = false;
+  confirmAction = onYes;
+  confirmReturnTo = returnTo || null;
   $('confirm').hidden = false;
   $('confirm-no').focus();
 }
 
 function closeConfirm() {
   $('confirm').hidden = true;
-  $('btn-endcall').focus();
+  confirmAction = null;
+  if (confirmReturnTo) confirmReturnTo.focus();
+  confirmReturnTo = null;
 }
+
+function askToHangUp() {
+  const t = TEXTS[currentLang];
+  ask(t.confirmBody, t.confirmYes, async () => {
+    $('confirm-yes').disabled = true;
+    $('btn-endcall').disabled = true;
+    leaving = true;
+    await sendEndCall();
+    setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 250);
+  }, $('btn-endcall'));
+}
+
+$('chat-send').onclick = async () => {
+  const v = $('chat-input').value.trim();
+  if (!v) return;
+  await sendChat(v);
+  $('chat-input').value = '';
+  await syncCtrlState();     // sending opens the chat panel on some connectors
+};
+$('chat-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('chat-send').click(); }
+});
 
 $('name-edit').onclick = startEditName;
 $('name-cancel').onclick = stopEditName;
@@ -716,21 +920,21 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('confirm').hidden) closeConfirm();
 });
 
-$('confirm-yes').onclick = async () => {
-  $('confirm-yes').disabled = true;
-  $('btn-endcall').disabled = true;
-  leaving = true;
-  await sendEndCall();
-  setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 250);
+// Runs whatever ask() was given, rather than one action written in here: the
+// dialog now serves every question the page puts.
+$('confirm-yes').onclick = () => {
+  const action = confirmAction;
+  closeConfirm();
+  if (action) action();
 };
 // slideShot button bindings
-document.getElementById('btn-slideShot').onclick = async () => { await sendSlideShot(); };
-document.getElementById('slide-close').onclick = () => { hideSlidePreview(); };
+$('btn-slideShot').onclick = async () => { await sendSlideShot(); };
+$('slide-close').onclick = () => { hideSlidePreview(); };
 
 function showSlidePreview(b64) {
-  const panel = document.getElementById('slide-preview');
-  const img = document.getElementById('slide-img');
-  const dl = document.getElementById('slide-download');
+  const panel = $('slide-preview');
+  const img = $('slide-img');
+  const dl = $('slide-download');
   if (!panel || !img || !dl) return;
   const dataUrl = `data:image/png;base64,${b64}`;
   img.src = dataUrl;
@@ -739,26 +943,26 @@ function showSlidePreview(b64) {
   updateFullscreenButtonLabel();
   panel.style.display = 'flex';
   panel.setAttribute('aria-hidden', 'false');
-  document.getElementById('slide-backdrop').style.display = 'block';
-  document.getElementById('slide-backdrop').setAttribute('aria-hidden', 'false');
+  $('slide-backdrop').style.display = 'block';
+  $('slide-backdrop').setAttribute('aria-hidden', 'false');
 }
 
 function hideSlidePreview() {
-  const panel = document.getElementById('slide-preview');
+  const panel = $('slide-preview');
   if (!panel) return;
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(()=>{});
   }
    panel.style.display = 'none';
    panel.setAttribute('aria-hidden', 'true');
-   document.getElementById('slide-img').src = '';
-   document.getElementById('slide-backdrop').style.display = 'none';
-   document.getElementById('slide-backdrop').setAttribute('aria-hidden', 'true');
+   $('slide-img').src = '';
+   $('slide-backdrop').style.display = 'none';
+   $('slide-backdrop').setAttribute('aria-hidden', 'true');
 }
 
 // Append a thumbnail to the gallery and wire click -> preview
 function addSlideThumbnail(b64) {
-  const gallery = document.getElementById('slide-gallery');
+  const gallery = $('slide-gallery');
   if (!gallery) return;
   const wrapper = document.createElement('div');
   wrapper.style.display = 'flex';
@@ -783,27 +987,24 @@ function addSlideThumbnail(b64) {
 }
 
 async function sendSlideShot() {
-   const status = document.getElementById('status');
-   const log = document.getElementById('log');
-   const btn = document.getElementById('btn-slideShot');
+   const btn = $('btn-slideShot');
    const payload = { gw_id: gwId, payload: { command: "slideShot" } };
    if (btn) { btn.disabled = true; }
-   status.textContent = currentLang === 'fr' ? 'Envoi: capture…' : 'Sending: capture…';
-   log.textContent = `→ POST ${apiUrl('/command')}\n   ${JSON.stringify(payload)}`;
    try {
      const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
      const json = await res.json();
      if (!res.ok || !json.data || !json.data.slideImg) {
        throw new Error(json.error?.message || 'No image returned');
      }
-     status.textContent = `✓ ${res.status} — slide captured`;
-     log.textContent += `\n← ${res.status} (slide received)`;
     // add to gallery and show preview for the new capture
     addSlideThumbnail(json.data.slideImg);
     showSlidePreview(json.data.slideImg);
    } catch (e) {
-     status.textContent = currentLang === 'fr' ? `✗ Erreur capture: ${e.message}` : `✗ Capture error: ${e.message}`;
-     log.textContent += `\n← ${e.message}`;
+     // The one failure worth a word is the ordinary one: nothing on screen to
+     // capture. Anything else is a fault, and the console has its detail.
+     const t = TEXTS[currentLang];
+     say(/no image/i.test(e.message) ? t.captureNone : t.captureFail);
+     console.error('capture failed:', e);
    } finally {
      if (btn) { btn.disabled = false; }
    }
@@ -811,16 +1012,20 @@ async function sendSlideShot() {
 
 // toggle fullscreen using Fullscreen API
 function updateFullscreenButtonLabel() {
-  const fsBtn = document.getElementById('slide-fullscreen');
+  const fsBtn = $('slide-fullscreen');
   if (!fsBtn) return;
   const isFs = !!document.fullscreenElement;
-  fsBtn.textContent = isFs
+  const t = TEXTS[currentLang];
+  fsBtn.innerHTML = isFs ? ICON_SHRINK : ICON_EXPAND;
+  fsBtn.setAttribute('aria-label', isFs ? t.slideShrink : t.slideFullscreen);
+  fsBtn.dataset.tip = isFs ? t.slideShrink : t.slideFullscreen;
+  const unused = isFs
     ? (currentLang === 'fr' ? 'Quitter' : 'Exit')
     : (currentLang === 'fr' ? 'Agrandir' : 'Full screen');
 }
 
 async function toggleFullscreen() {
-  const panel = document.getElementById('slide-preview');
+  const panel = $('slide-preview');
   if (!panel) return;
   try {
     if (!document.fullscreenElement) {
@@ -837,15 +1042,18 @@ async function toggleFullscreen() {
 document.addEventListener('fullscreenchange', updateFullscreenButtonLabel);
 
 // wire fullscreen button
-document.getElementById('slide-fullscreen').onclick = () => { toggleFullscreen(); };
+$('slide-fullscreen').onclick = () => { toggleFullscreen(); };
 
 // wire discard button: remove matching thumbnail(s) from gallery then close preview
-document.getElementById('slide-discard').onclick = () => {
-  const img = document.getElementById('slide-img');
+$('slide-discard').onclick = () => {
+  const img = $('slide-img');
   if (!img || !img.src) return;
-  const confirmMsg = currentLang === 'fr' ? "Supprimer cette vignette ?" : "Discard this slide?";
-  if (!confirm(confirmMsg)) return;
-  const gallery = document.getElementById('slide-gallery');
+  const t = TEXTS[currentLang];
+  ask(t.discardBody, t.slideDiscard, () => discardSlide(img), $('slide-discard'));
+};
+
+function discardSlide(img) {
+  const gallery = $('slide-gallery');
   if (gallery) {
     const thumbs = Array.from(gallery.querySelectorAll('img.slide-thumb'));
     thumbs.forEach(t => {
