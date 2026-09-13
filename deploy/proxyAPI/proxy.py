@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 import json
 import re
 import base64
@@ -14,7 +15,24 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.responses import RedirectResponse
 from urllib.parse import quote_plus
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Runs the gateway monitor for as long as the proxy is up.
+
+    on_event("startup") did the first half of this and FastAPI has been warning
+    about it at every boot. It had no second half: the task was created and
+    never cancelled, so a reload left it running against a closed Redis client.
+    """
+    monitor = asyncio.create_task(monitorGateways(intervalSeconds=30))
+    yield
+    monitor.cancel()
+    try:
+        await monitor
+    except asyncio.CancelledError:
+        pass
+
+
+app = FastAPI(lifespan=lifespan)
 
 redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           port=int(os.getenv('REDIS_PORT', '6379')),
@@ -507,9 +525,6 @@ async def monitorGateways(intervalSeconds: int = 30):
 
         await asyncio.sleep(intervalSeconds)
 
-@app.on_event("startup")
-async def startupEvent():
-    asyncio.create_task(monitorGateways(intervalSeconds=30))
 
 @app.get("/assets/{file_name}")
 def get_asset(file_name: str):
