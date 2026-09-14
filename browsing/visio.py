@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchWindowException
+from selenium.common.exceptions import InvalidSessionIdException
 import traceback
 
 
@@ -47,8 +48,8 @@ class Visio (Browsing):
                                 break  # next polling will catch the new element
                             continue  # DOM changed between, let's retry with a fresh find_element
 
-                        except NoSuchWindowException:
-                            pass
+                        except (NoSuchWindowException, InvalidSessionIdException):
+                            break  # Browser window closed, exit the loop
 
                         except Exception as e:
                             print("Error in unpinSlide thread: {}".format(e), flush=True)

@@ -9,6 +9,7 @@ import time
 import threading
 import subprocess
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchWindowException, WebDriverException
 
 class Browsing:
     def __init__(self, width, height, config,
@@ -138,7 +139,19 @@ class Browsing:
         pass
 
     def dualScreenLayout(self):
-        self.driver.execute_script("if(meeting.dualScreenLayout){meeting.dualScreenLayout();}")
+        slideRes = os.getenv("VID_SIZE_SLIDE", "1280x720")
+        js = """
+        console.log('[INFO] Setting up dual screen layout...');
+        try {
+            meeting.slideStreamer = new SlideStreamer({
+                selector: meeting.slideSelector
+            });
+            meeting.slideStreamer.start(arguments[0]);
+        } catch (error) {
+            console.error('[✗] Dual screen layout setup failed:', error);
+        }
+        """
+        self.driver.execute_script(js, slideRes)
 
     def manageLayout(self):
         if os.getenv("DUAL_SCREEN_LAYOUT") == "true":
@@ -147,7 +160,8 @@ class Browsing:
             return
 
     def checkStreamedSlide(self):
-        streamedSlide = False
+        if not self.driver:
+            return
         try:
             streamedSlide = self.driver.execute_script("if(meeting.slideStreamer){" \
                                                                 "return meeting.slideStreamer.currentVideo !== null;" \
@@ -155,12 +169,18 @@ class Browsing:
                                                             "else{" \
                                                                 "return false;" \
                                                             "}")
-        except Exception as e:
+        except NoSuchWindowException:
+            print("Chromium window closed", flush=True)
+            self.driver = None
+            return
+        except WebDriverException as e:
             print(f"Error checking streamed slide status: {e}", flush=True)
-            streamedSlide = False
+            return
 
         if streamedSlide == True and self.streamedSlide == False and self.screenShared == False:
-            subprocess.run(['echo "/slidesrc avformat,http://0.0.0.0:8080,1280x720,15,1000000" | netcat -q 1 127.0.0.1 5555'], shell=True)
+            slideRes = os.getenv("VID_SIZE_SLIDE", "1280x720")
+            slideSrcCommand  = 'echo "/slidesrc avformat,http://0.0.0.0:8080,{},5,1000000" | netcat -q 1 127.0.0.1 5555'.format(slideRes)
+            subprocess.run([slideSrcCommand], shell=True)
             subprocess.run(['echo "/floorreq" | netcat -q 1 127.0.0.1 5555'], shell=True)
             self.streamedSlide = True
         elif (streamedSlide == False or self.screenShared == True) and self.streamedSlide == True:
@@ -227,8 +247,11 @@ class Browsing:
             self.room={}
             self.name=''
             if self.driver:
-                if self.driver.execute_script("return window.meeting"):
-                    self.unset()
+                try:
+                    if self.driver.execute_script("return window.meeting"):
+                        self.unset()
+                except:
+                    pass
                 self.driver.close()
                 self.driver.quit()
                 self.driver = []

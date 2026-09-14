@@ -10,7 +10,7 @@ class SlideStreamer {
         this.ws = null;
         this.intervalId = null;
         this.currentVideo = null;
-
+        this.slideResMax = options.slideResMax || "1280x720";
         this.observer = new MutationObserver(() => this.checkState());
     }
 
@@ -35,7 +35,8 @@ class SlideStreamer {
         `;
         document.head.appendChild(style);
     }
-    start() {
+    start(slideResMax = "1280x720") {
+        this.slideResMax = slideResMax;
         this._injectForceStyle();
         this.observer.observe(document.body, { childList: true, subtree: true });
         this.checkState();
@@ -88,8 +89,8 @@ class SlideStreamer {
         if (!video || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
         if (!video.videoWidth || !video.videoHeight) return;
 
-        const MAX_WIDTH = 1280;
-        const MAX_HEIGHT = 720;
+        const MAX_WIDTH = this.slideResMax.split('x')[0] || 1280;
+        const MAX_HEIGHT = this.slideResMax.split('x')[1] || 720;
 
         const videoWidth = video.videoWidth & ~1;
         const videoHeight = video.videoHeight & ~1;

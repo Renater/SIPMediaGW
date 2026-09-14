@@ -6,6 +6,8 @@ networks:
 services:
   gw:
     image: "${DOCKER_IMAGE}"
+    build:
+      context: .
     container_name: gw${ID}
     networks:
       default:

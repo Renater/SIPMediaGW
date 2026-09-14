@@ -43,16 +43,6 @@ class Visio extends UIHelper{
         }
     }
 
-    async dualScreenLayout() {
-        console.log('[INFO] Setting up dual screen layout...');
-        try {
-            this.slideStreamer = new SlideStreamer({"selector":this.slideSelector})
-            this.slideStreamer.start();
-        } catch (error) {
-            console.error('[✗] Dual screen layout setup failed:', error);
-        }
-    }
-
     async slideShot() {
         try {
             const selector = "video.lk-participant-media-video[data-lk-source='screen_share']";
