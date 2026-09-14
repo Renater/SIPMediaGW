@@ -17,12 +17,7 @@ from urllib.parse import quote_plus
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Runs the gateway monitor for as long as the proxy is up.
-
-    on_event("startup") did the first half of this and FastAPI has been warning
-    about it at every boot. It had no second half: the task was created and
-    never cancelled, so a reload left it running against a closed Redis client.
-    """
+    """Runs the gateway monitor for as long as the proxy is up."""
     monitor = asyncio.create_task(monitorGateways(intervalSeconds=30))
     yield
     monitor.cancel()
