@@ -152,6 +152,8 @@ def test_adminStatus_returns_gateways_with_admin_token(client, redis_mock):
             "gateway": "1.2.3.4",
             "type": "media",
             "status": "started",
+            # started with a room: the gateway is in a conference
+            "state": "call",
             "room": "room",
             "media_duration": "00:05:30",
             "transcript_progress": "40%",
@@ -1179,3 +1181,30 @@ def test_monitorOneGateway_empty_redis_response(redis_mock):
         asyncio.run(proxy.monitorOneGateway("gw1", "1.2.3.4"))
 
     assert redis_mock.get.called
+
+# ----------------------- deriveState ============
+# The cases come from watching a gateway through a call in the lab: what Redis
+# held at each step, and what a console should have shown.
+@pytest.mark.parametrize("entry, expected", [
+    # Nothing running, or a container that has finished and can be reused.
+    ({"gw_state": "created"}, "free"),
+    ({"gw_state": "stopped"}, "free"),
+    # On its way out.
+    ({"gw_state": "deleted"}, "gone"),
+    # Container up, nobody on the line yet.
+    ({"gw_state": "started"}, "idle"),
+    # A SIP peer but no room: the caller is on the voice menu.
+    ({"gw_state": "started", "peer_uri": "sip:test@lab"}, "ivr"),
+    ({"gw_state": "started", "call_started": "2026-09-15T08:24:41Z"}, "ivr"),
+    # A room means a conference was joined. A browsing-only gateway has no peer.
+    ({"gw_state": "started", "room": "qahilvkdit"}, "call"),
+    ({"gw_state": "started", "room": "qahilvkdit", "peer_uri": "sip:test@lab"}, "call"),
+    # Entries written before the JSON mapping carry the text "None" where a
+    # field was empty; it reads as absence, not as a room called None.
+    ({"gw_state": "started", "room": "None", "peer_uri": "None"}, "idle"),
+    # A value this proxy does not know is surfaced rather than guessed at.
+    ({"gw_state": "brand-new-value"}, "other"),
+    ({}, "other"),
+])
+def test_deriveState(entry, expected):
+    assert proxy.deriveState(entry) == expected
