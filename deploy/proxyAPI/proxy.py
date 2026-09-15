@@ -132,11 +132,13 @@ adminStaticFiles = {"admin.css": "text/css", "admin.js": "application/javascript
 # Neither list is behind a check, as neither page is: the pairing code is what
 # grants access and it is entered on one of them, while reaching a gateway
 # takes a gw_id the other carries in its query string.
-pairingStaticFiles = {"shared.css": "text/css",
+pairingStaticFiles = {"brand.js": "application/javascript",
+                      "shared.css": "text/css",
                       "pairing.css": "text/css",
                       "pairing.js": "application/javascript"}
 
-interactStaticFiles = {"shared.css": "text/css",
+interactStaticFiles = {"brand.js": "application/javascript",
+                       "shared.css": "text/css",
                        "interact-connexion.css": "text/css",
                        "interact-controls.css": "text/css",
                        "interact.js": "application/javascript"}

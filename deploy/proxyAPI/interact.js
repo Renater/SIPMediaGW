@@ -19,12 +19,6 @@ let currentLang = 'en';
 // Per-deployment settings, gathered here rather than spread through the markup.
 // The pairing page carries the same block.
 // ---------------------------------------------------------------------------
-const BRAND = {
-  name: 'SIPMediaGW',
-  tagline: '',
-  logo: '',                       // empty hides it
-};
-
 const TEXTS = {
   fr: {
     title: 'Contrôler votre réunion',
