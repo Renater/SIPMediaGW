@@ -8,6 +8,22 @@ import redis
 from contextlib import closing
 from Scaler import Scaler
 
+def gwLoad(raw):
+   """Read a gateway entry, written by the proxy as JSON."""
+   if not raw:
+      return {}
+   try:
+      value = json.loads(raw)
+   except (TypeError, ValueError):
+      return {}
+   return value if isinstance(value, dict) else {}
+
+
+def gwDump(gw):
+   """Write one back."""
+   return json.dumps(gw)
+
+
 def getSeconds(stringHMS):
    timedeltaObj = dt.datetime.strptime(stringHMS, "%H:%M:%S") - dt.datetime(1900,1,1)
    return timedeltaObj.total_seconds()
@@ -32,20 +48,20 @@ class ScalerMedia(Scaler):
           if numGW <= 0:
               break
           value = self.redisClient.get(key)
-          parts = value.split("|")
-          gwIp = parts[0].split(':', 1)[0]
-          state = parts[1] if len(parts) > 1 else None
+          gw = gwLoad(value)
+          gwIp = gw["gw_ip"].split(':', 1)[0]
+          state = gw.get("gw_state")
           # created: never used; stopped: call over. Both are idle, so both
           # can be reclaimed.
           if state in ["created", "stopped"]:
                 # No rooms assigned, can downscale
                 ipList.append(gwIp)
                 # Update gateway state to stopping
-                parts[1] = "stopping"
+                gw["gw_state"] = "stopping"
                 #update last status_update_time
-                parts[4] = dt.datetime.now().isoformat()
+                gw["start_time"] = dt.datetime.now().isoformat()
 
-                self.redisClient.set(key, "|".join(parts))
+                self.redisClient.set(key, gwDump(gw))
                 numGW -= 1
         if ipList:
             print(f"Downscaling gateways: {ipList}", flush=True)
@@ -59,10 +75,10 @@ class ScalerMedia(Scaler):
         ipList = []
         for key in self.redisClient.scan_iter(match="gateway:*"):
             value = self.redisClient.get(key)
-            parts = value.split("|")
-            gwIp = parts[0]
-            state = parts[1] if len(parts) > 1 else None
-            lastUpdateStr = parts[4] if len(parts) > 4 else None
+            gw = gwLoad(value)
+            gwIp = gw["gw_ip"]
+            state = gw.get("gw_state")
+            lastUpdateStr = gw.get("start_time")
             if state == "stopping" and lastUpdateStr:
                 lastUpdate = du.parse(lastUpdateStr)
                 if (now - lastUpdate).total_seconds() > thresholdSeconds:
@@ -87,7 +103,7 @@ class ScalerMedia(Scaler):
         readyToRun = 0
         for key in self.redisClient.scan_iter(match="gateway:*"):
             value = self.redisClient.get(key)
-            parts = value.split("|")
-            if len(parts) > 1 and parts[1] in ("created", "stopped"):
+            gw = gwLoad(value)
+            if gw.get("gw_state") in ("created", "stopped"):
                 readyToRun += 1
         return readyToRun
