@@ -248,6 +248,15 @@ function showScreen(name) {
   $('screen-platforms').hidden = (name !== 'platforms');
   $('screen-meeting').hidden = (name !== 'meeting');
   $('screen-controls').hidden = (name !== null);
+
+  // Renaming stops at the door of the conference: displayName goes into the
+  // connector's URL when the browser starts, so changing it afterwards moves
+  // nothing. This is where the page learns it is in — showRoom runs before
+  // menuDisplayed turns true, so it cannot tell.
+  if (name === null) {
+    stopEditName();
+    $('name-edit').hidden = true;
+  }
 }
 
 // The room this page drives. Both values come from the same status poll that
@@ -302,7 +311,7 @@ function startEditName() {
 function stopEditName() {
   ['name-input', 'name-save', 'name-cancel'].forEach((id) => { $(id).hidden = true; });
   $('room-name').hidden = false;
-  $('name-edit').hidden = false;
+  // Left to showRoom and showScreen to decide: this only closes the field.
 }
 
 function showRoom() {
@@ -463,7 +472,6 @@ async function fetchIvrConfigAndRestoreState() {
     lastScreen = `${bn || ''}|${rn || ''}`;
     if (rn && bn) {
       menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
-      menuDisplayed = true;
       currentRoom = rn;
       browsingName = bn;
       // Awaited: it reads the connector's state before drawing, so leaving it
@@ -620,7 +628,6 @@ async function checkGwStatus() {
       lastScreen = screen;
       if (rn && bn) {
         menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
-        menuDisplayed = true;
         currentRoom = rn;
         browsingName = bn;
         renderMenuOptions();
@@ -662,6 +669,12 @@ const CTRL_SHAPE = {
   hand_icon:         'M18 11V6a2 2 0 0 0-4 0V4a2 2 0 0 0-4 0v1a2 2 0 0 0-4 0v8l-1.6-1.6A2 2 0 0 0 1.6 14L6 20a5 5 0 0 0 4 2h6a5 5 0 0 0 5-5v-6a2 2 0 0 0-3 0z',
   participants_icon: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0 1.8c-3 0-6 1.5-6 3.4V19h12v-2.8c0-1.9-3-3.4-6-3.4zM17.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1.6c-.7 0-1.4.1-2 .3 1.3.9 2 2 2 3.3V19h5v-2.5c0-1.7-2.4-3-5-3z',
   info_icon:         'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
+  // No state to report, but drawn here all the same: served as PNGs they kept
+  // their own darker grey next to the six above.
+  mosaic_icon:       'M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z',
+  lobby_icon:        'M12 2a5 5 0 0 0-5 5v3H5v12h14V10h-2V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3zm0 10a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z',
+  muteall_icon:      'M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2zM3 1.6 22.4 21l-1.4 1.4L1.6 3z',
+  accept_icon:       'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
 };
 
 // A slash says "nothing is going out" — it belongs on the microphone and the
@@ -746,6 +759,11 @@ let currentRoom = '';
 // Last state read from the connector, or null on one that reports none.
 let ctrlState = null;
 
+// Set once a read has come back empty on a gateway that is started. The second
+// such read is taken at face value: this connector does not report its state,
+// and its commands are drawn as buttons.
+let ctrlOnceBlind = false;
+
 async function fetchCtrlState() {
   if (!gwId) return null;
   try {
@@ -767,7 +785,12 @@ async function fetchCtrlState() {
 // read-back a switch would show what it assumed rather than what happened.
 async function syncCtrlState() {
   const ui = await fetchCtrlState();
+
+  // A screen drawn without a state shows buttons; syncing the switches cannot
+  // turn one into the other, so it is drawn again instead.
+  const wasBlind = !ctrlState;
   ctrlState = ui;
+  if (ui && wasBlind && menuDisplayed) return renderMenuOptions();
   if (!ui) return;
   // The switch is not the only thing that says what the state is: the words
   // and the icon say it too, and moving one without the others leaves the row
@@ -791,16 +814,33 @@ async function renderMenuOptions() {
   // empty one, which would show the platform line with no platform behind it.
   if (!menuOptions.length) return;
 
+  // The flag is this function's to set: it says the controls are on screen,
+  // and they are not until the state has been read and the screen drawn.
+  menuDisplayed = false;
+
+  // Read the state before anything is shown. The proxy turns commands down
+  // with a 403 until the gateway is started, a beat after room and browsing
+  // appear in its Redis entry, so this read can come back empty — and a screen
+  // drawn as buttons, then redrawn as switches, reads as a fault. The
+  // connection screen stays up for that beat instead; the poll returns every
+  // two seconds. A started gateway that still reports nothing is one whose
+  // connector has no uiState: the second empty read is taken as the answer.
+  ctrlState = await fetchCtrlState();
+  if (!ctrlState && !ctrlOnceBlind) {
+    // Nothing is drawn yet, and menuDisplayed is left false so the next poll
+    // comes back here rather than deciding the screen is already up. Without
+    // that the page would wait for ever on the first empty read.
+    ctrlOnceBlind = true;
+    menuDisplayed = false;
+    return setTimeout(renderMenuOptions, POLL_MS);
+  }
+
   showScreen(null);
   menuDisplayed = true;
   // showRoom may have run just before this, while menuDisplayed was still
   // false, and hidden the line on that basis. Nothing else would bring it back
   // until the room details next change.
   showInCall(!!(roomName || roomUri));
-
-  // Read the state before drawing, so a switch never appears in the wrong
-  // position and then corrects itself under the visitor's eyes.
-  ctrlState = await fetchCtrlState();
 
   // Reactions ride on the same command set as the switches: a connector that
   // reports its state is one that implements them. There is no capability list
