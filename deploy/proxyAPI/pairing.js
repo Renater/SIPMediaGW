@@ -3,15 +3,6 @@
 // Visiby Connect on NUBO — so the name, the logo and the documentation link are
 // gathered here rather than scattered through the markup.
 // ---------------------------------------------------------------------------
-const BRAND = {
-  name: 'SIPMediaGW',
-  tagline: '',
-  logo: '',                       // e.g. '/pairing/static/logo.svg'; empty hides it
-  docUrl: '',                     // empty hides the documentation link
-  docLabelFr: 'Documentation et présentation du service',
-  docLabelEn: 'Service documentation and overview',
-};
-
 const CODE_LENGTH = 5;
 
 const TEXTS = {
