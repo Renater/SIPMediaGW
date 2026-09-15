@@ -114,39 +114,25 @@ def adminUnauthorized():
 adminStaticFiles = {"admin.css": "text/css", "admin.js": "application/javascript",
                     "favicon.svg": "image/svg+xml"}
 
-# The pairing page's stylesheet and script. Served without a check, like the
-# page itself: the pairing code is what grants access, and it is entered on
-# that page.
+# What each page is allowed to ask for. A whitelist rather than a directory:
+# the name arrives in a URL, and these are the only files a page ever wants.
+#
+# Neither list is behind a check, as neither page is: the pairing code is what
+# grants access and it is entered on one of them, while reaching a gateway
+# takes a gw_id the other carries in its query string.
 pairingStaticFiles = {"shared.css": "text/css",
                       "pairing.css": "text/css",
                       "pairing.js": "application/javascript"}
 
-
-@app.get("/pairing/static/{file_name}")
-async def pairing_static(file_name: str):
-    """Serve the pairing page's CSS/JS (whitelist, no directory access)."""
-    mediaType = pairingStaticFiles.get(file_name)
-    if not mediaType:
-        return JSONResponse(status_code=404, content={"detail": "not found"})
-    try:
-        with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
-            return Response(content=f.read(), media_type=mediaType)
-    except FileNotFoundError:
-        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
-
-# The companion page's stylesheet and script. Served without a check, like the
-# page itself: a gw_id is what it takes to reach a gateway, and the page asks
-# for one in its query string.
 interactStaticFiles = {"shared.css": "text/css",
                        "interact-connexion.css": "text/css",
                        "interact-controls.css": "text/css",
                        "interact.js": "application/javascript"}
 
 
-@app.get("/interact/static/{file_name}")
-async def interact_static(file_name: str):
-    """Serve the companion page's CSS/JS (whitelist, no directory access)."""
-    mediaType = interactStaticFiles.get(file_name)
+def serveAsset(file_name: str, allowed: dict):
+    """One file from a page's whitelist, or a 404."""
+    mediaType = allowed.get(file_name)
     if not mediaType:
         return JSONResponse(status_code=404, content={"detail": "not found"})
     try:
@@ -154,6 +140,17 @@ async def interact_static(file_name: str):
             return Response(content=f.read(), media_type=mediaType)
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+
+
+@app.get("/pairing/static/{file_name}")
+async def pairing_static(file_name: str):
+    return serveAsset(file_name, pairingStaticFiles)
+
+
+@app.get("/interact/static/{file_name}")
+async def interact_static(file_name: str):
+    return serveAsset(file_name, interactStaticFiles)
+
 
 @app.get("/admin/")
 async def admin_page(request: Request):
