@@ -434,11 +434,9 @@ async def gatewayIdFromPeerUri(request: Request, peer_uri: str = None):
         "browsing": best["browsing"],
     }
 
-# What gw_state means operationally. The stored value says whether a container
+# gw_state means operationally. The stored value says whether a container
 # runs; it does not say whether anyone is in a call, which is what a console
-# shows. That reading was being done again in every client — and when #75
-# renamed the values and reversed the sense of two of them, each client had to
-# be corrected separately, or show a busy gateway as free without saying so.
+# shows.
 #
 #   free   nothing running, or a container waiting to be used
 #   idle   in a call with the gateway, but no conference joined yet
