@@ -43,7 +43,10 @@ adminToken = os.getenv("PROXY_ADMIN_TOKEN", "")
 roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 # Redis Mapping:
-# gateway:<gw_id> => "<gw_ip>|<state>|type|room_name|start_time|<media_duration>|<transcript_progress>|<browsing>|<peer_uri>|<peer_name>|<call_started>"
+# gateway:<gw_id> => {"gw_ip": …, "gw_state": …, "gw_type": …, "room": …,
+#                     "start_time": …, "media_duration": …,
+#                     "transcript_progress": …, "browsing": …,
+#                     "peer_uri": …, "peer_name": …, "call_started": …}
 # state: created | started | stopped | deleted
 #   created  VM provisioned, container initialised once then stopped, unused
 #   started  container running, a call is in progress
@@ -54,29 +57,38 @@ roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 assetDir = os.path.dirname(os.path.abspath(__file__))
 
-redis_gw_field_count = 11
-
-redis_gw_ip_index = 0
-redis_gw_state_index = 1
-redis_gw_type_index = 2
-redis_gw_room_index = 3
-redis_gw_start_time_index = 4
-redis_gw_media_duration_index = 5
-redis_gw_transcript_progress_index = 6
-redis_gw_browsing_index = 7
-redis_gw_peer_uri_index = 8
-redis_gw_peer_name_index = 9
-redis_gw_call_started_index = 10
+# A gateway's entry, by name. Adding a field here is the whole of adding a
+# field: nothing reads by position any more, and an entry written before a
+# field existed simply does not carry it.
+gwFields = ("gw_ip", "gw_state", "gw_type", "room", "start_time",
+            "media_duration", "transcript_progress", "browsing",
+            "peer_uri", "peer_name", "call_started")
 
 
-def getPart(parts: list, index: int):
-    """Safely read a mapping field, tolerating entries written before new
-    fields were appended."""
-    return parts[index] if len(parts) > index else None
+def gwLoad(raw):
+    """Read an entry. Anything unreadable comes back as an empty one, which
+    every caller already had to handle."""
+    if not raw:
+        return {}
+    try:
+        value = json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def gwDump(gw: dict):
+    """Write an entry, fields in their declared order so a human reading the
+    key with redis-cli sees them the same way twice."""
+    ordered = {k: gw[k] for k in gwFields if k in gw}
+    ordered.update({k: v for k, v in gw.items() if k not in ordered})
+    return json.dumps(ordered)
 
 
 def cleanPart(value):
-    """Normalise a mapping field: empty and 'None' are returned as None."""
+    """Normalise a field: empty and the string 'None' — which the old
+    pipe-separated form had no way to tell from a real absence — read as
+    None."""
     return value if value and value != "" and value != "None" else None
 
 
@@ -273,14 +285,14 @@ def authorizeRoom(request: Request):
 def findAvailableGateway():
     for key in redisClient.scan_iter(match="gateway:*"):
         value = redisClient.get(key)
-        parts = value.split("|")
-        gwIp = parts[redis_gw_ip_index]
-        state = getPart(parts, redis_gw_state_index)
+        gw = gwLoad(value)
+        gwIp = gw["gw_ip"]
+        state = gw.get("gw_state")
         if state in ("created", "stopped"):
             return [key, gwIp]
     return None
 
-def updateProgressInfo(gw_id: str, parts: list, data: dict):
+def updateProgressInfo(gw_id: str, gw: dict, data: dict):
     recording = data.get("recording_duration")
     streaming = data.get("streaming_duration")
     transcript = data.get("transcript_progress")
@@ -290,43 +302,44 @@ def updateProgressInfo(gw_id: str, parts: list, data: dict):
     peerUri = data.get("peer_uri")
     peerName = data.get("peer_name")
     callStarted = data.get("call_started")
-    parts += [""] * (redis_gw_field_count - len(parts) )
     if recording:
-        parts[redis_gw_media_duration_index] = f"{recording}"
+        gw["media_duration"] = f"{recording}"
     if streaming:
-        parts[redis_gw_media_duration_index] = f"{streaming}"
+        gw["media_duration"] = f"{streaming}"
     if transcript:
-        parts[redis_gw_transcript_progress_index] = f"{transcript}"
+        gw["transcript_progress"] = f"{transcript}"
     # Update Gateway State
     if (state == "up"):
-        parts[redis_gw_state_index] = "started"
+        gw["gw_state"] = "started"
     elif (state == "down"):
         # The container has exited; the VM stays provisioned and reusable.
-        parts[redis_gw_state_index] = "stopped"
-    parts[redis_gw_room_index] = f"{room}" if room else "None"
-    parts[redis_gw_browsing_index] = f"{browsing}" if browsing else "None"
-    parts[redis_gw_peer_uri_index] = f"{peerUri}" if peerUri else "None"
-    parts[redis_gw_peer_name_index] = f"{peerName}" if peerName else "None"
-    parts[redis_gw_call_started_index] = f"{callStarted}" if callStarted else "None"
+        gw["gw_state"] = "stopped"
+    # null where the pipe-separated form had to write the word "None", having
+    # no way to tell an absent value from that text.
+    gw["room"] = f"{room}" if room else None
+    gw["browsing"] = f"{browsing}" if browsing else None
+    gw["peer_uri"] = f"{peerUri}" if peerUri else None
+    gw["peer_name"] = f"{peerName}" if peerName else None
+    gw["call_started"] = f"{callStarted}" if callStarted else None
 
-    mapping = "|".join(parts)
+    mapping = gwDump(gw)
     redisClient.set(f"gateway:{gw_id}", mapping)
 
 def getGatewayStatusFromRedis(gw_id: str):
     rawValue = redisClient.get(f"gateway:{gw_id}")
     if not rawValue:
         return None
-    parts = rawValue.split("|")
-    gwIp = parts[redis_gw_ip_index]
-    room = getPart(parts, redis_gw_room_index)
-    state = getPart(parts, redis_gw_state_index)
-    media_duration = getPart(parts, redis_gw_media_duration_index)
-    transcript = getPart(parts, redis_gw_transcript_progress_index)
-    browsing = getPart(parts, redis_gw_browsing_index)
-    gwType = getPart(parts, redis_gw_type_index)
-    peerUri = getPart(parts, redis_gw_peer_uri_index)
-    peerName = getPart(parts, redis_gw_peer_name_index)
-    callStarted = getPart(parts, redis_gw_call_started_index)
+    gw = gwLoad(rawValue)
+    gwIp = gw["gw_ip"]
+    room = gw.get("room")
+    state = gw.get("gw_state")
+    media_duration = gw.get("media_duration")
+    transcript = gw.get("transcript_progress")
+    browsing = gw.get("browsing")
+    gwType = gw.get("gw_type")
+    peerUri = gw.get("peer_uri")
+    peerName = gw.get("peer_name")
+    callStarted = gw.get("call_started")
     return {
         "status": "success",
         "data": {
@@ -392,18 +405,18 @@ async def gatewayIdFromPeerUri(request: Request, peer_uri: str = None):
         rawValue = redisClient.get(key)
         if not rawValue:
             continue
-        parts = rawValue.split("|")
+        gw = gwLoad(rawValue)
 
-        peerUri = cleanPart(getPart(parts, redis_gw_peer_uri_index))
+        peerUri = cleanPart(gw.get("peer_uri"))
         if not peerUri or normalizeSipUri(peerUri).lower() != wanted:
             continue
 
-        callStarted = cleanPart(getPart(parts, redis_gw_call_started_index)) or ""
+        callStarted = cleanPart(gw.get("call_started")) or ""
         if best is None or callStarted > best["call_started"]:
             best = {
                 "gw_id": key.split(":")[-1],
-                "room": cleanPart(getPart(parts, redis_gw_room_index)),
-                "browsing": cleanPart(getPart(parts, redis_gw_browsing_index)),
+                "room": cleanPart(gw.get("room")),
+                "browsing": cleanPart(gw.get("browsing")),
                 "call_started": callStarted,
             }
 
@@ -445,17 +458,17 @@ async def adminStatus(request: Request):
         raw = redisClient.get(key)
         if not raw:
             continue
-        parts = raw.split("|")
-        gwIp = parts[redis_gw_ip_index]
-        room = getPart(parts, redis_gw_room_index)
-        state = getPart(parts, redis_gw_state_index)
-        media_duration = getPart(parts, redis_gw_media_duration_index)
-        transcript = getPart(parts, redis_gw_transcript_progress_index)
-        browsing = getPart(parts, redis_gw_browsing_index)
-        gwType = getPart(parts, redis_gw_type_index)
-        peerUri = getPart(parts, redis_gw_peer_uri_index)
-        peerName = getPart(parts, redis_gw_peer_name_index)
-        callStarted = getPart(parts, redis_gw_call_started_index)
+        gw = gwLoad(raw)
+        gwIp = gw["gw_ip"]
+        room = gw.get("room")
+        state = gw.get("gw_state")
+        media_duration = gw.get("media_duration")
+        transcript = gw.get("transcript_progress")
+        browsing = gw.get("browsing")
+        gwType = gw.get("gw_type")
+        peerUri = gw.get("peer_uri")
+        peerName = gw.get("peer_name")
+        callStarted = gw.get("call_started")
 
         result[gw_id] = {
             "gateway": gwIp,
@@ -472,7 +485,7 @@ async def adminStatus(request: Request):
         }
     return result
 
-async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, parts: list):
+async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, gw: dict):
     """
     Fetch /gateway/status from a single gateway and update its Redis entry.
     Used by the periodic monitor and the on‑demand monitor.
@@ -485,7 +498,7 @@ async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, parts: list):
 
         data = response.json()
         if data.get("status") == "success":
-            updateProgressInfo(gw_id, parts, data.get("data"))
+            updateProgressInfo(gw_id, gw, data.get("data"))
         else:
             print(f"Gateway {gw_id} returned error → delete mapping")
             redisClient.delete(f"gateway:{gw_id}")
@@ -496,8 +509,8 @@ async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, parts: list):
 async def monitorOneGateway(gw_id: str, gw_ip: str):
     """Check a single gateway (baresip case) and refresh its Redis entry."""
     raw = redisClient.get(f"gateway:{gw_id}")
-    parts = raw.split("|") if raw else []
-    await _fetchAndStoreGatewayStatus(gw_id, gw_ip, parts)
+    gw = gwLoad(raw)
+    await _fetchAndStoreGatewayStatus(gw_id, gw_ip, gw)
 
 # Background task to monitor gateways
 async def monitorGateways(intervalSeconds: int = 30):
@@ -510,10 +523,10 @@ async def monitorGateways(intervalSeconds: int = 30):
             if not value:
                 continue
 
-            parts = value.split("|")
-            gw_ip = parts[redis_gw_ip_index]
+            gw = gwLoad(value)
+            gw_ip = gw["gw_ip"]
 
-            await _fetchAndStoreGatewayStatus(gw_id, gw_ip, parts)
+            await _fetchAndStoreGatewayStatus(gw_id, gw_ip, gw)
 
         await asyncio.sleep(intervalSeconds)
 
@@ -713,12 +726,11 @@ async def startGateway(request: Request):
         if status == "success":
             # Mark as working
             rawValue = redisClient.get(f"gateway:{gw_id}")
-            parts = rawValue.split("|") if rawValue else [gwIp]
-            parts += [""] * (redis_gw_field_count - len(parts))
-            parts[redis_gw_state_index] = "started"
-            parts[redis_gw_room_index] = room if room else None
-            parts[redis_gw_browsing_index] = browsing if browsing else None
-            mapping = "|".join(parts)
+            gw = gwLoad(rawValue) or {"gw_ip": gwIp}
+            gw["gw_state"] = "started"
+            gw["room"] = room if room else None
+            gw["browsing"] = browsing if browsing else None
+            mapping = gwDump(gw)
             redisClient.set(f"gateway:{gw_id}", mapping)
         else:
             raise HTTPException(status_code=503, detail=responseJson.get("error").get("detail"))
@@ -750,8 +762,8 @@ async def stopGateway(request: Request):
     if not rawValue:
         raise HTTPException(status_code=404, detail=f"No mapping found for gateway '{gw_id}'")
 
-    parts = rawValue.split("|")
-    gwIp = parts[redis_gw_ip_index]
+    gw = gwLoad(rawValue)
+    gwIp = gw["gw_ip"]
     body = await request.json()
 
     params = dict(request.query_params)
@@ -766,14 +778,13 @@ async def stopGateway(request: Request):
         detailsRes = responseJson.get("data", {}).get("processing_state", "")
         if "stopping" in detailsRes or "stopped" in detailsRes:
             # Mark as stopped
-            parts += [""] * (redis_gw_field_count - len(parts))
-            parts[redis_gw_room_index] = ''
-            parts[redis_gw_browsing_index] = ''
-            parts[redis_gw_peer_uri_index] = ''
-            parts[redis_gw_peer_name_index] = ''
-            parts[redis_gw_call_started_index] = ''
-            parts[redis_gw_state_index] = "deleted"
-            mapping = "|".join(parts)
+            gw["room"] = ''
+            gw["browsing"] = ''
+            gw["peer_uri"] = ''
+            gw["peer_name"] = ''
+            gw["call_started"] = ''
+            gw["gw_state"] = "deleted"
+            mapping = gwDump(gw)
             redisClient.set(f"gateway:{gw_id}", mapping)
             responseJson["status"] = "success"
         else:
@@ -814,8 +825,8 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
             rawValue = redisClient.get(key)
             if not rawValue:
                 continue
-            parts = rawValue.split("|")
-            gwRoom = getPart(parts, redis_gw_room_index)
+            gw = gwLoad(rawValue)
+            gwRoom = gw.get("room")
             if gwRoom == room:
                 gw_id = key.split(":")[-1]
                 break
@@ -826,11 +837,11 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
     if not rawValue:
         raise HTTPException(status_code=404, detail=f"Gateway '{gw_id}' not found")
 
-    parts = rawValue.split("|")
-    gwIp = parts[redis_gw_ip_index]
+    gw = gwLoad(rawValue)
+    gwIp = gw["gw_ip"]
 
     # ----- Refresh baresip gateways on demand --------------------
-    gw_type = getPart(parts, redis_gw_type_index)
+    gw_type = gw.get("gw_type")
     if gw_type == "baresip":
         # call the on‑demand monitor to get a fresh status
         await monitorOneGateway(gw_id, gwIp)
@@ -842,7 +853,7 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
                 status_code=404,
                 detail=f"Gateway '{gw_id}' unreachable after on‑the‑fly check"
             )
-        parts = rawValue.split("|")
+        gw = gwLoad(rawValue)
     # ------------------------------------------------------------------
 
     # Get Status from Redis
@@ -878,13 +889,10 @@ async def genericGatewayProxy(request: Request, endpoint: str):
     if not raw_value:
         raise HTTPException(status_code=404, detail=f"Gateway '{gw_id}' not found")
 
-    parts = raw_value.split("|")
-    gw_ip = parts[redis_gw_ip_index]
+    gw = gwLoad(raw_value)
+    gw_ip = gw["gw_ip"]
 
-    isRunning = (
-        len(parts) > redis_gw_state_index
-        and parts[redis_gw_state_index] == "started"
-    )
+    isRunning = gw.get("gw_state") == "started"
     if not isRunning:
         print(f"Gateway '{gw_id}' is stopped, cannot send commands")
         raise HTTPException(status_code=403, detail=f"Gateway '{gw_id}' is stopped, cannot send commands")
@@ -964,40 +972,26 @@ async def registerGateway(request: Request):
         if not gwIp or not gwId:
             raise HTTPException(status_code=400, detail="Missing 'gwIp' or 'gw_id'")
 
-        # Look for existing mapping
-        existing_raw = redisClient.get(f"gateway:{gwId}")
-        if existing_raw:
-            # Keep status based metrics
-            parts = existing_raw.split("|")
-            parts += [""] * (redis_gw_field_count - len(parts))
-            gwState = parts[redis_gw_state_index]
-            startTime = parts[redis_gw_start_time_index]
-            roomName        = parts[redis_gw_room_index]
-            mediaduration   = parts[redis_gw_media_duration_index]
-            transcriptprog  = parts[redis_gw_transcript_progress_index]
-            browsing      = parts[redis_gw_browsing_index]
-            peerUri       = parts[redis_gw_peer_uri_index]
-            peerName      = parts[redis_gw_peer_name_index]
-            callStarted   = parts[redis_gw_call_started_index]
-        else:
-            # No mapping found => reset
-            gwState = "created"
-            startTime = dt.datetime.now().isoformat()
-            roomName = None
-            mediaduration   = "0"
-            transcriptprog  = "0"
-            browsing      = None
-            peerUri       = None
-            peerName      = None
-            callStarted   = None
-
-        # Build new mapping
-        # format : gwIp|state|type|room|startTime|media|transcript|browsing|peerUri|peerName|callStarted
-        gwValue = (
-            f"{gwIp}|{gwState}|{gwType}|{roomName}|{startTime}|"
-            f"{mediaduration}|{transcriptprog}|{browsing}|{peerUri}|{peerName}|{callStarted}"
-        )
-        redisClient.set(f"gateway:{gwId}", gwValue)
+        # A gateway re-registers every thirty seconds, and what it reports is
+        # only its address and kind: everything the monitor and the calls have
+        # written stays as it is. Keeping the entry and setting two fields says
+        # that; taking eleven fields apart to put them back did not.
+        gw = gwLoad(redisClient.get(f"gateway:{gwId}"))
+        if not gw:
+            gw = {
+                "gw_state": "created",
+                "start_time": dt.datetime.now().isoformat(),
+                "room": None,
+                "media_duration": "0",
+                "transcript_progress": "0",
+                "browsing": None,
+                "peer_uri": None,
+                "peer_name": None,
+                "call_started": None,
+            }
+        gw["gw_ip"] = gwIp
+        gw["gw_type"] = gwType
+        redisClient.set(f"gateway:{gwId}", gwDump(gw))
         print(f"Gateway registered / updated: {gwId} ({gwIp})")
         return Response(
             content=json.dumps({"status": "success",
