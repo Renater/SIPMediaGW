@@ -434,6 +434,31 @@ async def gatewayIdFromPeerUri(request: Request, peer_uri: str = None):
         "browsing": best["browsing"],
     }
 
+# gw_state means operationally. The stored value says whether a container
+# runs; it does not say whether anyone is in a call, which is what a console
+# shows.
+#
+#   free   nothing running, or a container waiting to be used
+#   idle   in a call with the gateway, but no conference joined yet
+#   ivr    on the voice menu: a SIP peer, no room
+#   call   in a conference
+#   gone   the VM is on its way out
+#   other  a value this proxy does not know — surfaced, not guessed at
+def deriveState(gw: dict):
+    state = cleanPart(gw.get("gw_state"))
+    if state in ("created", "stopped"):
+        return "free"
+    if state == "deleted":
+        return "gone"
+    if state != "started":
+        return "other"
+    if cleanPart(gw.get("room")):
+        return "call"
+    if cleanPart(gw.get("call_started")) or cleanPart(gw.get("peer_uri")):
+        return "ivr"
+    return "idle"
+
+
 @app.get("/admin/statuses")
 async def adminStatus(request: Request):
     """GET /admin/statuses - Get status of all gateways (admin only)"""
@@ -461,7 +486,9 @@ async def adminStatus(request: Request):
         if not raw:
             continue
         gw = gwLoad(raw)
-        gwIp = gw["gw_ip"]
+        # .get like everything below it: one malformed entry should not take
+        # the whole listing down with it.
+        gwIp = gw.get("gw_ip")
         room = gw.get("room")
         state = gw.get("gw_state")
         media_duration = gw.get("media_duration")
@@ -476,6 +503,9 @@ async def adminStatus(request: Request):
             "gateway": gwIp,
             "type": cleanPart(gwType),
             "status": state,
+            # What the stored value means, worked out once here rather than in
+            # each client.
+            "state": deriveState(gw),
             "room": cleanPart(room),
             "media_duration": media_duration,
             "transcript_progress": transcript,
