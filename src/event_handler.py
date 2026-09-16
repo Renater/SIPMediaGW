@@ -12,6 +12,7 @@ import signal
 import argparse
 import json
 import threading
+from baresipCmd import BaresipCmd
 from ivr import IVR
 from netstring import Netstring
 
@@ -97,6 +98,31 @@ def endBrowse(args):
         args['ivr'].browsingObj.stop()
     subprocess.run(["xdotool", "key", "ctrl+W"])
 
+# How often the control port is asked how the media is doing, in seconds.
+# Zero turns the sampling off — recording and streaming gateways have no
+# control port to ask.
+mediaStatsInterval = int(os.getenv("MEDIA_STATS_INTERVAL", "10"))
+
+
+def mediaStatsLoop(startedAt):
+    """Ask the control port how the media is doing, at a steady interval.
+
+    The call-end statistics say what the whole call averaged, which is what an
+    incident does not look like: a stream that stops decoding halfway through
+    leaves an impeccable average behind it. These say when.
+    """
+    baresip = BaresipCmd()
+    while True:
+        time.sleep(mediaStatsInterval)
+        elapsed = round(time.time() - startedAt, 1)
+        video = baresip.videoStats(elapsed)
+        if not video:
+            continue          # the call is over, or baresip has gone
+
+        print({"type": "MEDIA_STATS", "seconds": elapsed, "video": video},
+              flush=True)
+
+
 # Event handler callback
 def event_handler(data, args):
     if data['type'] == 'CALL_INCOMING':
@@ -127,6 +153,13 @@ def event_handler(data, args):
         args['ivr'].name = displayName
         browseThread = threading.Thread(target=browse, daemon=True, args=(args,))
         browseThread.start()
+
+        # Only where there is a control port to ask: recording and streaming
+        # gateways run no baresip.
+        if mediaStatsInterval > 0 and os.getenv("MAIN_APP", "baresip") == "baresip":
+            statsThread = threading.Thread(target=mediaStatsLoop, daemon=True,
+                                           args=(time.time(),))
+            statsThread.start()
 
     if data['type'] == 'CALL_DTMF_START':
         print('Received DTMF:'+ data['param'], flush=True)
