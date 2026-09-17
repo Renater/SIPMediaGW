@@ -59,6 +59,12 @@ def isoZ(dt: datetime, *, ms: bool = False) -> str:
 def rawTimestamp(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%b %d %H:%M:%S")
 
+# "Set audio encoder: opus 48000Hz 2ch"
+# "Set video encoder: H264 packetization-mode=0 (2000000 bit/s, 30.00 fps)"
+encoderRegex = re.compile(
+    r"Set (?P<media>audio|video) encoder:\s*(?P<rest>.+)$")
+
+
 def parseIso(timestamp: str) -> Optional[datetime]:
     if not timestamp:
         return None
@@ -249,7 +255,13 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
     peerDisplay = ""
     closeReason = ""
     lastEventType = ""
-
+    # What the endpoint announced itself as. Empty until baresip carries the
+    # User-Agent header through to the event.
+    peerUserAgent = ""
+    # Which way each stream was agreed to run, from CALL_ESTABLISHED.
+    mediaDir: Dict[str, str] = {}
+    # What the gateway settled on: one audio line, one video line per stream.
+    encoders: Dict[str, Any] = {}
 
     sourceUri = ""
     destinationUri = ""
@@ -287,12 +299,26 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
             callStartTimestamp = callStartTimestamp or (recordData.get("timestamp") or "")
             if recordData.get("url"):
                 callUrl = recordData.get("url") or ""
+            if recordData.get("peerUserAgent"):
+                peerUserAgent = recordData["peerUserAgent"]
+            if recordData.get("mediaDir"):
+                mediaDir = recordData["mediaDir"]
 
         elif recordType == "call_end":
             if recordData.get("raw"):
                 callEndRaw = recordData.get("raw") or ""
             if recordData.get("timestamp"):
                 callEndTimestamp = recordData.get("timestamp") or ""
+
+        elif recordType == "encoder":
+            # Not "media": that name holds the MediaStats object a few lines
+            # above, and rebinding it here took the whole payload down with it.
+            encoderMedia = (recordData.get("media") or "").strip()
+            encoderValue = (recordData.get("value") or "").strip()
+            if encoderMedia == "audio":
+                encoders["audio"] = encoderValue
+            elif encoderMedia == "video":
+                encoders.setdefault("video", []).append(encoderValue)
 
         elif recordType == "room":
             roomLineValue = (recordData.get("value") or "").strip()
@@ -428,6 +454,9 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
             },
             "closeReason": closeReason,
             "lastEventType": lastEventType,
+            "peerUserAgent": peerUserAgent,
+            "encoders": encoders,
+            "mediaDir": mediaDir,
         },
         "dtmfEvents": dtmfEvents,
         "mediaStats": mediaStats,
@@ -517,6 +546,22 @@ def main() -> None:
                     gwStartLogged = True
                     continue
 
+                ### Encoders ###
+                # What the gateway settled on, printed once per stream as it
+                # starts. The video line comes twice where a presentation
+                # stream exists, the second being the slides.
+                encMatch = encoderRegex.search(line.strip())
+                if encMatch:
+                    appendHistory(
+                        historyFile,
+                        "encoder",
+                        {
+                            "media": encMatch.group("media").lower(),
+                            "value": encMatch.group("rest").strip(),
+                        },
+                    )
+                    continue
+
                 ### Room ###
                 if "room:" in line:
                     appendHistory(historyFile, "room", {"value": line.split("room:", 1)[1].strip()})
@@ -557,6 +602,23 @@ def main() -> None:
                                     "peerDisplayName": str(
                                         eventDict.get("peerdisplayname") or ""
                                     ).strip(),
+                                    # What the endpoint announced itself as.
+                                    # Absent until the gateway's baresip
+                                    # carries the header through.
+                                    "peerUserAgent": str(
+                                        eventDict.get("peeruseragent") or ""
+                                    ).strip(),
+                                    # Which way each stream was agreed to run.
+                                    # A sendonly on one side is what an empty
+                                    # picture looks like in the signalling.
+                                    "mediaDir": {
+                                        "audio": str(eventDict.get("audiodir") or "").strip(),
+                                        "video": str(eventDict.get("videodir") or "").strip(),
+                                        "remoteAudio": str(eventDict.get("remoteaudiodir") or "").strip(),
+                                        "remoteVideo": str(eventDict.get("remotevideodir") or "").strip(),
+                                        "localAudio": str(eventDict.get("localaudiodir") or "").strip(),
+                                        "localVideo": str(eventDict.get("localvideodir") or "").strip(),
+                                    },
                                 },
                             )
                             continue
