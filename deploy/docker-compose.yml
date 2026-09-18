@@ -8,6 +8,7 @@ services:
     build:
       context: kamailio
     container_name: kamailio
+    restart: unless-stopped
     network_mode: host
     logging:
       driver: syslog
@@ -29,6 +30,7 @@ services:
   sip_db:
     image: mysql
     container_name: kamailioDB
+    restart: unless-stopped
     volumes:
       - kamailio_db:/var/lib/mysql
       - ./kamailio/db_healthcheck.sh:/usr/local/bin/db_healtcheck
@@ -142,6 +144,7 @@ services:
     build:
       context: coturn
     container_name: coturn
+    restart: unless-stopped
     network_mode: host
     logging:
       driver: syslog
