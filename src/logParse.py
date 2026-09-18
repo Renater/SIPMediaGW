@@ -274,6 +274,7 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
     sourceName = ""
     dtmfEvents: List[Dict[str, str]] = []
     media = MediaStats()
+    mediaSamples: List[Dict[str, Any]] = []
 
     haveFinalCallClosed = False
 
@@ -356,6 +357,12 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
             if ts and inp:
                 dtmfEvents.append({"timestamp": ts, "input": inp})
 
+        elif recordType == "media_sample":
+            mediaSamples.append({
+                "seconds": recordData.get("seconds"),
+                "video": recordData.get("video") or {},
+            })
+
         elif recordType == "stats_value":
             mediaType = (recordData.get("media") or "").strip().lower()
             field = (recordData.get("field") or "").strip()
@@ -421,6 +428,9 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
     mediaStats = {
         "audio": {"tx": media.audioTx, "rx": media.audioRx},
         "video": [media.videoStreams[i] for i in sorted(media.videoStreams)] if media.videoStreams else [],
+        # The same figures over time, one reading every MEDIA_STATS_INTERVAL
+        # seconds: totals say how the call went, these say when it went wrong.
+        "samples": mediaSamples,
     }
 
     callObj = {
@@ -585,6 +595,17 @@ def main() -> None:
                         continue
 
                     eventDict = parseEventDict(line)
+
+                    # The gateway's own reading of how the media is doing,
+                    # printed every few seconds while the call is up. The
+                    # call-end block says what the whole call averaged, which
+                    # is what an incident does not look like: a stream that
+                    # stops decoding halfway through leaves an impeccable
+                    # average behind it.
+                    if eventDict and eventDict.get("type") == "MEDIA_STATS":
+                        appendHistory(historyFile, "media_sample", eventDict)
+                        continue
+
                     if eventDict and eventDict.get("class") == "call":
                         lastType = str(eventDict.get("type") or "").strip()
 
