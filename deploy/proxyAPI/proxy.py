@@ -47,13 +47,23 @@ roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 #                     "start_time": …, "media_duration": …,
 #                     "transcript_progress": …, "browsing": …,
 #                     "peer_uri": …, "peer_name": …, "call_started": …}
-# state: created | started | stopped | deleted
+# state: created | started | stopped | deleted, and stopping
 #   created  VM provisioned, container initialised once then stopped, unused
 #   started  container running, a call is in progress
 #   stopped  container stopped after a call — the VM is still reusable
 #   deleted  VM torn down
 # The two pairs answer different questions: created/deleted describe the VM,
 # started/stopped the container running on it.
+#
+# stopping is written by the media scaler, not by this proxy: it marks a VM it
+# has asked the provider to destroy, and it is the scaler alone that reads it
+# back — to find the ones whose destruction never completed. deriveState
+# surfaces it as "other", which is what an unknown value gets and is right
+# here: the gateway is neither free nor in a call.
+#
+# Not to be confused with the "stopping" this proxy looks for in a gateway's
+# processing_state when stopping one: same word, different field, and that one
+# says the container is on its way down rather than the VM.
 
 assetDir = os.path.dirname(os.path.abspath(__file__))
 
