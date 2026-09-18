@@ -8,6 +8,16 @@ services:
     image: "${DOCKER_IMAGE}"
     build:
       context: .
+      args:
+        # A local build says nothing and gets `dev`; a release build exports
+        # GW_VERSION first:
+        #   GW_VERSION=$(git describe --tags --always --dirty) docker compose build
+        GW_VERSION: ${GW_VERSION:-dev}
+        # The guard in the Dockerfile refuses `dev` unless this is set. Defaulted
+        # here so the lab builds without ceremony — which means the guard only
+        # bites where it is deliberately unset, and a release pipeline must
+        # export ALLOW_DEV_BUILD=0 for it to bite at all.
+        ALLOW_DEV_BUILD: ${ALLOW_DEV_BUILD:-1}
     container_name: gw${ID}
     networks:
       default:
