@@ -1,5 +1,18 @@
 FROM debian:12-slim
 
+ARG BARESIP_BRANCH=v3.15.0_patchv4
+ARG BARESIP_VERSION=3.15.0
+ARG ALLOW_DEV_BUILD=
+ARG GW_VERSION=dev
+RUN test "$GW_VERSION" != "dev" -o "$ALLOW_DEV_BUILD" = "1" || ( \
+        echo 'GW_VERSION is required for a release build.'; \
+        echo 'Use --build-arg GW_VERSION=$(git describe --tags --always --dirty),'; \
+        echo 'or --build-arg ALLOW_DEV_BUILD=1 for a local one.'; \
+        false )
+ENV BARESIP_BRANCH=${BARESIP_BRANCH} \
+    BARESIP_VERSION=${BARESIP_VERSION} \
+    GW_VERSION=${GW_VERSION}
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat-openbsd wget unzip net-tools sudo psmisc procps sngrep jq \
     v4l2loopback-utils libsdl2-2.0-0 libgl1-mesa-dri \
@@ -16,9 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libv4l-dev libx11-dev libxext-dev libspandsp-dev libasound2-dev libsdl2-dev \
     libssl-dev \
     build-essential cmake git \
-    && git clone --branch v3.15.0_patchv4 https://github.com/Renater/re.git && cd re \
+    && git clone --branch ${BARESIP_BRANCH} https://github.com/Renater/re.git && cd re \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
-    && git clone --branch v3.15.0_patchv4 https://github.com/Renater/baresip.git && cd baresip \
+    && git clone --branch ${BARESIP_BRANCH} https://github.com/Renater/baresip.git && cd baresip \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j && cmake --install build && cd .. \
     && rm -r baresip re \
     && apt-get remove --purge -y \

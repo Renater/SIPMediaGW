@@ -10,6 +10,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse, urlsplit
 
@@ -63,6 +64,32 @@ def rawTimestamp(dt: datetime) -> str:
 # "Set video encoder: H264 packetization-mode=0 (2000000 bit/s, 30.00 fps)"
 encoderRegex = re.compile(
     r"Set (?P<media>audio|video) encoder:\s*(?P<rest>.+)$")
+
+
+def gatewayVersions() -> Dict[str, str]:
+    """
+    What this gateway is, for the call history.
+
+    Three values are fixed at build time and read from the environment; the
+    fourth is read from the image, because the Chromium build falls back to
+    whatever the Debian pool still carries and only the file it writes knows
+    what was installed.
+
+    A missing value yields "unknown" rather than raising: a payload has to leave
+    even when an environment field is absent.
+    """
+    chromium = "unknown"
+    try:
+        chromium = Path("/etc/chromium.version").read_text().strip() or "unknown"
+    except OSError:
+        # Images built before the Chromium fallback have no such file.
+        pass
+    return {
+        "gwVersion": os.environ.get("GW_VERSION", "unknown"),
+        "baresipVersion": os.environ.get("BARESIP_VERSION", "unknown"),
+        "baresipPatch": os.environ.get("BARESIP_BRANCH", "unknown"),
+        "chromiumVersion": chromium,
+    }
 
 
 def parseIso(timestamp: str) -> Optional[datetime]:
@@ -470,6 +497,8 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
         },
         "dtmfEvents": dtmfEvents,
         "mediaStats": mediaStats,
+        # What served the call, as opposed to what the call was.
+        "gateway": gatewayVersions(),
     }
 
     jsonBody = {"call": callObj}

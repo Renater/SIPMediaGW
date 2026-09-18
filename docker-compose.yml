@@ -8,6 +8,9 @@ services:
     image: "${DOCKER_IMAGE}"
     build:
       context: .
+      args:
+        GW_VERSION: ${GW_VERSION:-dev}
+        ALLOW_DEV_BUILD: ${ALLOW_DEV_BUILD:-1}
     container_name: gw${ID}
     networks:
       default:
