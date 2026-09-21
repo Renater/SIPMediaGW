@@ -263,6 +263,16 @@
           "icon": "participants_icon"
         },
         {
+          "dtmf": 6,
+          "en": "Dual screen display / single screen",
+          "fr": "Affiche double écran / Écran unique",
+          "icon": "dual_screen_icon",
+          "enable": {
+            "value": ${DUAL_SCREEN_LAYOUT},
+            "ref": true
+          }
+        },
+        {
           "dtmf": 0,
           "en": "Show / Hide meeting details",
           "fr": "Afficher / Masquer les informations",

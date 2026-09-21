@@ -1,6 +1,5 @@
 class Menu {
     constructor(menu, lang) {
-        debugger;
         this.meeting = window.meeting;
         this.overlayTimeouts = {};
         this.img = {
@@ -101,6 +100,11 @@ class Menu {
 
         const dtmfOptions = this.getDtmfOptions();
         dtmfOptions.forEach((option) => {
+            if (option.enable) {
+                if (option.enable.value !== option.enable.ref) {
+                    return; // Skip this option if the condition is not met
+                }
+            }
             column.appendChild(this.createFlexLine(option));
         });
 
@@ -330,7 +334,6 @@ window.updateQrCode = function() {
     // Ensure visible and on top
     container.style.display = 'flex';
     container.style.zIndex = '10001';
-    debugger;
     if (!document.body.contains(container)) {
         if (window.menu) {
             const menuDtmf = document.getElementById('menu_dtmf');

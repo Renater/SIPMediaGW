@@ -855,9 +855,15 @@ async function renderMenuOptions() {
     }
   }
 
+  // Filter out options explicitly disabled via an "enable" block where
+  // enable.value !== enable.ref (same rule as in browsing/assets/IVR/menu.js)
+  const visibleOptions = menuOptions.filter(o => !(o.enable && o.enable.value !== o.enable.ref));
+
   let hasChat = false;
 
-  for (const opt of menuOptions) {
+  // Render controls in the same order as provided by the menu JSON. This
+  // keeps the behaviour generic: no special-case icons required server-side.
+  for (const opt of visibleOptions) {
     const icon = String(opt.icon || '');
     const label = opt[currentLang] || opt['en'] || '';
     const probe = CTRL_STATE[icon];
@@ -890,9 +896,6 @@ async function renderMenuOptions() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ctrl';
-      // Same shape as a switch row, one line instead of two: the connector
-      // says nothing about this command's state, so the config label stands
-      // on its own.
       btn.innerHTML = `<span class="ctrl__icon">${ctrlIcon(icon, true)}</span>` +
                       '<span class="ctrl__text"><span class="ctrl__state"></span></span>';
       btn.querySelector('.ctrl__state').textContent = label;
@@ -900,10 +903,9 @@ async function renderMenuOptions() {
         await sendKey(opt.dtmf);
         await syncCtrlState();
       };
-      (common ? list : more).appendChild(btn);
+      list.appendChild(btn);
     }
   }
-
   // The chat row sits under the commands rather than among them: typing a
   // message is a different gesture from pressing a control.
   const chatRow = $('chat-row');

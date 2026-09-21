@@ -105,8 +105,6 @@ checkEventSrv() {
 
 envsubst < /var/browsing/assets/config.template.json > /var/browsing/assets/config.json
 
-
-
 if [[ "$MAIN_APP" == "recording" && $(ls /var/recording/*.mp4 2>/dev/null) ]]; then
 
     echo "Start recording post-processing" | logParse -p "Recording"

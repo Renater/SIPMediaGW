@@ -1,5 +1,5 @@
 class Visio extends UIHelper{
-    constructor(domain, roomName, displayName, lang, prompts, token, audioOnly) {
+    constructor(domain, roomName, displayName, lang, prompts, token, audioOnly, dualScreenOn) {
         super();
         this.domain = domain;
         this.roomName = roomName;
@@ -9,6 +9,7 @@ class Visio extends UIHelper{
         this.joined = false;
         this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
         this.slideSelector = "video.lk-participant-media-video[data-lk-source='screen_share']";
+        this.dualScreenOn = dualScreenOn;
     }
 
     async join() {
@@ -95,20 +96,69 @@ class Visio extends UIHelper{
             return null;
         }
     }
-    unpinSlide(){
-        const video = document.querySelector(this.slideSelector);
-        if (video) {
-            setTimeout(() => {
-                const buttons = [...document.querySelectorAll("button")]
-                    .filter(b => b.offsetParent !== null);
+    _PIN_ICONS = {
+        unpin: {
+            // icon "pin crossed out" : present when the video IS pinned (click = unpin)
+            path: 'M20.9701 17.1716 19.5559 18.5858 16.0214 15.0513',
+            announce: ['no longer pinned', "n'est plus épinglé"],
+        },
+        pin: {
+            // "simple pin" : present when the video is NOT pinned (click = pin)
+            path: 'M18 3V5H17V11L19',
+            announce: ['is pinned', 'est épinglé'],
+        },
+    };
 
-                const pinButton = buttons.find(b =>
-                    b.querySelector("svg path[d^='M20.9701 17.1716']")
-                );
-                console.log("pinButton =", pinButton);
-                pinButton?.click();
-            }, 100);
+    _togglePin(action) {
+        const video = document.querySelector(this.slideSelector);
+        if (!video) return Promise.resolve(false);
+
+        const { path, announce } = this._PIN_ICONS[action];
+
+        const button = [...document.querySelectorAll('button')]
+            .filter(b => b.offsetParent !== null)
+            .find(b => b.querySelector(`svg.remixicon path[d^="${path}"]`));
+
+        if (!button) {
+            // wanted action icon of the requested action is not displayed :
+            // either the state is already the desired one, or the controls are not visible
+            console.log(`_togglePin(${action}): button not found, nothing to do`);
+            return Promise.resolve(false);
         }
+
+        const confirmed = this._waitForAnnounce(announce, 2000);  // trigger before click
+        button.click();
+        return confirmed;
+    }
+
+    pinSlide() {
+        let succeeded = this._togglePin('pin');
+        if (succeeded){
+            document.getElementById("slide-streamer-force-style")?.remove();
+        }
+        return this._togglePin('pin');
+    }
+
+    unpinSlide() { return this._togglePin('unpin'); }
+
+    _waitForAnnounce(needles, timeout = 2000) {
+        return new Promise(resolve => {
+            const region = document.querySelector('[data-announce-channel="global"]');
+            if (!region) return resolve(false);
+
+            const matches = () => {
+                const t = region.textContent.toLowerCase();
+                return needles.some(n => t.includes(n.toLowerCase()));
+            };
+
+            if (matches()) return resolve(true);
+
+            const obs = new MutationObserver(() => {
+                if (matches()) { obs.disconnect(); clearTimeout(timer); resolve(true); }
+            });
+            obs.observe(region, { childList: true, subtree: true, characterData: true });
+            const timer = setTimeout(() => { obs.disconnect(); resolve(false); }, timeout);
+        });
     }
     mediaState() {
         const el = document.getElementById('media-state');
@@ -223,10 +273,10 @@ class Visio extends UIHelper{
     }
     interact(key) {
         const reactionKeys = {
-            "6": "thumbs-up",
-            "7": "red-heart",
-            "8": "clapping-hands",
-            "9": "face-with-tears-of-joy"
+            "7": "thumbs-up",
+            "8": "red-heart",
+            "9": "clapping-hands",
+            "a": "face-with-tears-of-joy"
         };
         if (key in reactionKeys)
             this.reaction(reactionKeys[key]);
@@ -240,6 +290,8 @@ class Visio extends UIHelper{
             document.querySelector('button[data-attr*="controls-hand-raise"], button[data-attr*="controls-hand-lower"]').click();
         if (key == "5")
             document.querySelector('button[data-attr*="controls-participants-closed"], button[data-attr*="controls-participants-open"]').click();
+        if (key == "6")
+            this.dualScreenOn = !this.dualScreenOn;
         if (key == "0")
             document.querySelector('button[data-attr*="controls-info-closed"], button[data-attr*="controls-info-open"]').click();
         if (key == "s" || key == "q") {

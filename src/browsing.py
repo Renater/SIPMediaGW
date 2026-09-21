@@ -34,14 +34,15 @@ class Browsing:
             self.chromeOptions.add_argument('--headless=new')
             self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.driver = None
-        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}')".format(
+        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(
                                                     self.room['config']['webrtc_domain'],
                                                     self.room['roomName'],
                                                     self.room['displayName'],
                                                     self.room['config']['lang'],
                                                     json.dumps(self.room['config']['ivr_prompts']),
                                                     self.room['roomToken'],
-                                                    os.environ.get('AUDIO_ONLY'))
+                                                    os.environ.get('AUDIO_ONLY'),
+                                                    True if os.getenv("DUAL_SCREEN_LAYOUT") == "true" else False)
 
     def loadJS(self, jsScript):
         cssPath = os.path.join(os.path.dirname(__file__),
@@ -139,22 +140,35 @@ class Browsing:
         pass
 
     def dualScreenLayout(self):
-        slideRes = os.getenv("VID_SIZE_SLIDE", "1280x720")
-        js = """
-        console.log('[INFO] Setting up dual screen layout...');
-        try {
-            meeting.slideStreamer = new SlideStreamer({
-                selector: meeting.slideSelector
-            });
-            meeting.slideStreamer.start(arguments[0]);
-        } catch (error) {
-            console.error('[✗] Dual screen layout setup failed:', error);
-        }
-        """
-        self.driver.execute_script(js, slideRes)
+        self.slideSelector = self.driver.execute_script("return window.meeting.slideSelector;")
 
     def manageLayout(self):
         if os.getenv("DUAL_SCREEN_LAYOUT") == "true":
+            #if self.dualScreenOn ==True and self.slideSelector == None:
+            slideRes = os.getenv("VID_SIZE_SLIDE", "1280x720")
+            js = """
+            if (window.meeting.dualScreenOn && !window.meeting.slideStreamer) {
+                console.log('[INFO] Setting up dual screen layout...');
+                try {
+                    meeting.slideStreamer = new SlideStreamer({
+                        selector: meeting.slideSelector
+                    });
+                    meeting.slideStreamer.start(arguments[0]);
+                } catch (error) {
+                    console.error('[✗] Dual screen layout setup failed:', error);
+                }
+            }
+            if (!window.meeting.dualScreenOn && window.meeting.slideStreamer) {
+                console.log('[INFO] Tearing down dual screen layout...');
+                try {
+                    meeting.slideStreamer.stop();
+                    meeting.slideStreamer = null;
+                } catch (error) {
+                    console.error('[✗] Dual screen layout teardown failed:', error);
+                }
+            }
+            """
+            self.driver.execute_script(js, slideRes)
             self.dualScreenLayout()
         else: # single screen layout by default (nothing to do)
             return
@@ -218,7 +232,6 @@ class Browsing:
             self.monitorLeftMeeting()
             if os.getenv("ENDING_TIMEOUT"):
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
-            self.manageLayout()
 
             self.loadImages(os.path.join(os.path.dirname(os.path.normpath(__file__)),'../browsing/assets/'),
                             self.config['lang'])
@@ -237,6 +250,7 @@ class Browsing:
 
             while self.room:
                 self.checkStreamedSlide()
+                self.manageLayout()
                 self.interact()
                 self.readPairingCode(self.driver)
         except Exception as e:
