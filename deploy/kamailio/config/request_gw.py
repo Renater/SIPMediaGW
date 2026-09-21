@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import Router.Logger as Logger
 import KSR as KSR
 import httplib2
 import json
@@ -11,6 +10,14 @@ import mysql.connector as mysqlcon
 import datetime
 from contextlib import closing
 from configparser import ConfigParser
+
+
+class Logger:
+    """Kamailio 6 dropped the legacy Router module: log through KSR."""
+    @staticmethod
+    def LM_ERR(text):
+        KSR.err(text)
+
 
 parser = ConfigParser()
 parser.optionxform = str
@@ -100,27 +107,27 @@ class RequestGw:
 
     def handler(self, msg, args):
         Logger.LM_ERR("Loggers.py:      LM_ERR: msg: %s" % str(args))
-        Logger.LM_ERR('RequestGw.handler(%s, %s)\n' % (msg.Type, str(args)))
-        if (msg.Type == 'SIP_REQUEST' and
-            (any((msg.RURI).find(d) != -1 for d in self.sipDomains) or
-             (msg.RURI).find(self.publicIP) != -1)):
-            if msg.Method == 'INVITE' and (msg.RURI).find(self.gwNamePart) == -1:
-                Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
-                uri = msg.RURI
+        Logger.LM_ERR('RequestGw.handler(%s, %s)\n' % (KSR.pv.get("$mt"), str(args)))
+        if (KSR.pv.get("$mt") == 1 and
+            (any(KSR.pv.get("$ru").find(d) != -1 for d in self.sipDomains) or
+             KSR.pv.get("$ru").find(self.publicIP) != -1)):
+            if KSR.pv.get("$rm") == 'INVITE' and KSR.pv.get("$ru").find(self.gwNamePart) == -1:
+                Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (KSR.pv.get("$rm"), KSR.pv.get("$ru"), KSR.pv.get("$hdr(From)")))
+                uri = KSR.pv.get("$ru")
                 room = (uri.split(":", 1)[1]).split('@')[0]
                 displayName = ""
-                if "<" in msg.getHeader('from'):
-                    displayName = (msg.getHeader('from').split('<')[0])
+                if "<" in KSR.pv.get("$hdr(From)"):
+                    displayName = (KSR.pv.get("$hdr(From)").split('<')[0])
                 Logger.LM_ERR('Room Name %s\n' % room )
                 gwRes = self.lockGw()
                 if gwRes:
                     gwUri = gwRes['username']
                     gwSocket = gwRes['socket'].split(':')[1]
                     Logger.LM_ERR('Returned Gateway: %s\n' % gwUri)
-                    msg.rewrite_ruri("sip:%s@%s" % (gwUri, gwSocket))
+                    KSR.pv.sets("$ru", "sip:%s@%s" % (gwUri, gwSocket))
                     displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))
                     KSR.uac.uac_replace_from(displayNameWRoom, "")
-                    Logger.LM_ERR('########## SIP request, method = %s, RURI = %s, From = %s\n' % (msg.Method, msg.RURI, msg.getHeader('from')))
+                    Logger.LM_ERR('########## SIP request, method = %s, RURI = %s, From = %s\n' % (KSR.pv.get("$rm"), KSR.pv.get("$ru"), KSR.pv.get("$hdr(From)")))
 
         return 1
 
