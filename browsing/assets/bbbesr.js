@@ -98,7 +98,7 @@ class BBBESR extends UIHelper {
             let nameInput;
             try {
                 nameInput = await this.waitForElement(
-                                        '#joinFormName, input.c__input',
+                                        '#joinFormName, input.c__input, #fullname',
                                         { visible: true }
                                     );
             } catch (e) {
