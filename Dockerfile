@@ -51,24 +51,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # what it installed: two images from the same commit may then differ, and
 # /etc/chromium.version says how. The pool also carries Debian 13 packages,
 # hence the ~deb12u filter: the base image here is debian:12-slim.
-ARG CHROMIUM_VERSION=152.0.7977.82-1~deb12u1
+ARG CHROMIUM_VERSION=153.0.8010.52-1~deb12u1
 RUN set -eu \
    && url='http://security.debian.org/debian-security/pool/updates/main/c/chromium/' \
+   && pkgs='chromium chromium-common chromium-sandbox chromium-driver' \
+   && complete() { for p in $pkgs; do wget -q --spider "$url${p}_$1_amd64.deb" || return 1; done; } \
    && v="$CHROMIUM_VERSION" \
-   && if ! wget -q --spider $url'chromium_'$v'_amd64.deb'; then \
+   && if ! complete "$v"; then \
         echo '=============================================================='; \
-        echo "WARNING: Chromium $v is gone from the Debian security pool."; \
-        v=$(wget -qO- $url \
+        echo "WARNING: Chromium $v is incomplete or gone from the Debian security pool."; \
+        v=''; \
+        for c in $(wget -qO- $url \
             | grep -o 'chromium_[0-9][^"]*~deb12u[0-9]*_amd64\.deb' \
-            | sed 's/chromium_//;s/_amd64\.deb//' | sort -V | tail -1); \
-        [ -n "$v" ] || { echo 'No Debian 12 build found in the pool.'; exit 1; }; \
+            | sed 's/chromium_//;s/_amd64\.deb//' | sort -uVr); do \
+          if complete "$c"; then v="$c"; break; fi; \
+        done; \
+        [ -n "$v" ] || { echo 'No complete Debian 12 build found in the pool.'; exit 1; }; \
         echo "Falling back to $v. This build is NOT reproducible;"; \
         echo 'see /etc/chromium.version in the resulting image.'; \
         echo '=============================================================='; \
       fi \
-   && for pkg in chromium chromium-common chromium-sandbox chromium-driver; do \
-        wget $url$pkg'_'$v'_amd64.deb'; \
-      done \
+   && for p in $pkgs; do wget -q "$url${p}_${v}_amd64.deb" || exit 1; done \
    && apt install -y './chromium-sandbox_'$v'_amd64.deb' \
    && apt install -y './chromium-common_'$v'_amd64.deb' \
    && apt install -y './chromium_'$v'_amd64.deb' \
