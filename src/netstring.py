@@ -73,13 +73,16 @@ class Netstring:
         self._sock.sendall(bytes(data,encoding="utf-8"))
 
 
-    def getEvents(self, callBack, args, timeOut=None):
+    def getEvents(self, callBack, args, timeOut=None, onConnect=None):
         try:
             # Create a socket (SOCK_STREAM means a TCP socket)
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # Connect to server and send data
             self._sock.connect((self.host, self.port))
             self._sock.settimeout(timeOut)
+            # Events sent from now on are buffered on this socket, not lost
+            if onConnect:
+                onConnect()
             while True:
                 status = self.decodeNetString(self.__getStatus())
                 if not status:

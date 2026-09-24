@@ -203,9 +203,15 @@ if os.environ.get('MAIN_APP') != 'baresip':
     browseThread = threading.Thread(target=browse, args=(argDict,))
     browseThread.start()
 
+# Register with the SIP server only now: before this point an incoming
+# call would ring with nobody to accept it (baresip.sh starts with regint=0)
+def registerSip():
+    subprocess.run(['echo "/uareg 60 0" | netcat -q 1 127.0.0.1 5555'], shell=True)
+
 # Start event handler loop
 ns = Netstring(baresipHost, 4444)
-ns.getEvents(event_handler, argDict)
+ns.getEvents(event_handler, argDict,
+             onConnect=registerSip if os.environ.get('MAIN_APP') == 'baresip' else None)
 
 # Terminate
 endBrowse(argDict)

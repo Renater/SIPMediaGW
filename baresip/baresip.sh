@@ -1,22 +1,5 @@
 #!/bin/bash
 
-checkRegister() {
-    # 5 seconds timeout before exit
-    timeOut=5
-    timer=0
-    OK="OK "
-    state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555  2>/dev/null | grep -c "$OK")"
-    while [[ ($state == "0") && ($timer -lt $timeOut) ]] ; do
-        timer=$(($timer + 1))
-        sleep 1
-        state="$(echo "/reginfo" | netcat -q 1  127.0.0.1 5555 2>/dev/null | grep -c "$OK")"
-    done
-    if [ $timer -eq $timeOut ]; then
-        echo "Baresip failed to register" | logParse -p "Baresip"
-        exit 1
-    fi
-}
-
 checkV4l2() {
     # 5 seconds timeout before exit
     timeOut=5
@@ -57,7 +40,7 @@ userNamePref=$GW_NAME_PREFIX"."$GW_ID
 if [[ "$SIP_NAME_PREFIX" ]]; then
     userNamePref=${SIP_NAME_PREFIX}"."${userNamePref}
 fi
-sipAccount="<sip:"${userNamePref}"@"$SIP_REGISTRAR";transport=$SIP_PROTOCOL>;regint=60;"
+sipAccount="<sip:"${userNamePref}"@"$SIP_REGISTRAR";transport=$SIP_PROTOCOL>;regint=0;"
 sipAccount+="auth_user="${userNamePref}";auth_pass="$SIP_SECRET";"
 if [[ "$TURN_SRV" ]] && [[ "$TURN_USER" ]]  ; then
     sipAccount+="medianat=turn;stunserver=turn:"$TURN_SRV":3478;stunuser="$TURN_USER";stunpass="$TURN_PASS
@@ -100,10 +83,9 @@ DISPLAY=$DISPLAY_APP LD_LIBRARY_PATH=/usr/local/lib  baresip -f .baresip $BARESI
                      2> >( logParse -p "Baresip" -i $HISTORY ) &
                      # "sed -u 's/\[..." => to remove already printed \r characters...
 
-### Check Baresip registering ###
-if [ "$CHECK_REGISTER" == "yes" ]; then
-    checkRegister
-fi
+### SIP registration ###
+# No REGISTER here (regint=0): event_handler.py registers the account once
+# it is connected to the control port and can answer incoming calls.
 
 ### Slide bridge ###
 exec python3 src/slideBridge.py 1> >( logParse -p "Slide Bridge") \
