@@ -577,27 +577,43 @@ function refreshJoin() {
   $('btn-enter').disabled = !capture || !capture.value.trim();
 }
 
+// stopped, deleted, or dropped by the proxy: nothing left to drive from here.
+function endOfCall() {
+  say(currentLang === 'fr'
+    ? 'L\u2019appel est termin\u00e9.'
+    : 'The call has ended.');
+  // a beat so the message is seen, then back to the pairing page
+  setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 800);
+}
+
+let goneCount = 0;
+
 async function checkGwStatus() {
   if (!gwId) return setTimeout(checkGwStatus, POLL_MS);
   try {
     const statusRes = await fetch(apiUrl('/status') + `?gw_id=${encodeURIComponent(gwId)}`);
+    // A 404 twice running: the proxy has dropped the gateway, and the next one
+    // comes back under another id.
+    if (statusRes.status === 404) {
+      if (++goneCount >= 2) return endOfCall();
+      return setTimeout(checkGwStatus, POLL_MS);
+    }
     // A transient failure must not silence the page for good: it keeps
     // polling, more slowly, so a passing outage is recovered from.
-    if (!statusRes.ok) { say(`Gateway unreachable (code ${statusRes.status}) — retrying…`); return setTimeout(checkGwStatus, POLL_MS * 5); }
+    if (!statusRes.ok) {
+      say(currentLang === 'fr'
+        ? `Passerelle injoignable (code ${statusRes.status}), nouvelle tentative…`
+        : `Gateway unreachable (code ${statusRes.status}) — retrying…`);
+      return setTimeout(checkGwStatus, POLL_MS * 5);
+    }
+    goneCount = 0;
     const statusData = await statusRes.json();
     // stopped: the container exited, the call is over. deleted: the VM is gone.
     // Either way there is nothing left to drive from here. The page used to
     // watch for "down", a value the proxy stopped writing when the states were
     // renamed.
     const state = statusData.data?.gw_state;
-    if (state === "stopped" || state === "deleted") {
-      say(currentLang === 'fr'
-        ? 'L\u2019appel est termin\u00e9.'
-        : 'The call has ended.');
-      // a beat so the message is seen, then back to the pairing page
-      setTimeout(() => { window.location.href = apiUrl('/pairing'); }, 800);
-      return;
-    }
+    if (state === "stopped" || state === "deleted") return endOfCall();
     // The room this page drives, shown in the header.
     const peerName = statusData.data.peer_name || '';
     const peerUri = statusData.data.peer_uri || '';
@@ -634,7 +650,9 @@ async function checkGwStatus() {
       }
     }
   } catch(e) {
-    say('Status error — retrying…');
+    say(currentLang === 'fr'
+      ? 'Erreur de statut, nouvelle tentative…'
+      : 'Status error — retrying…');
     return setTimeout(checkGwStatus, POLL_MS * 5);
   }
   // A control touched on the room tablet moves the same state as one touched

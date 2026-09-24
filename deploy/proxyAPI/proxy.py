@@ -689,10 +689,10 @@ async def interact(request: Request):
                 html_form = f.read()
             return Response(content=html_form, media_type="text/html")
 
-    # The gateway is still checked before the page is handed over: an unknown
-    # gw_id has nothing to drive.
+    # A gateway gone since the link was made (a reload after the call, an old
+    # tab) has nothing to drive: back to the pairing page, for the next code.
     if not redisClient.get(f"gateway:{gwId}"):
-        raise HTTPException(status_code=404, detail=f"Gateway '{gwId}' not found")
+        return RedirectResponse(url="/pairing", status_code=302)
 
     # The page itself is the same for every gateway — same image, same file —
     # so it is served from here rather than fetched from the one it drives.

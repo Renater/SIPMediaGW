@@ -388,10 +388,10 @@ def test_interact_gateway_not_found(client, redis_mock):
 
     with patch.object(proxy, 'redisClient', redis_mock), \
         patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
-        response = client.get("/interact?gw_id=nonexistent")
+        response = client.get("/interact?gw_id=nonexistent", follow_redirects=False)
 
-    assert response.status_code == 404
-    assert "not found" in response.json()["error"]["detail"]
+    assert response.status_code == 302
+    assert response.headers["location"] == "/pairing"
 
 
 def test_interact_successful_proxy(client, redis_mock):
