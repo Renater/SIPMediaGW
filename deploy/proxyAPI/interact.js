@@ -365,9 +365,14 @@ function showInCall(roomKnown) {
 const capture = $('key-capture');
 updateRoomNameInputUi();
 
-function captureReset() {
-  capture.value = '';
-  updateRoomNameInputUi();
+// The id stays in the field until the meeting screen replaces it: cleared at
+// once, it read as lost while the gateway was still joining.
+async function joinRoom() {
+  if (!capture.value || $('btn-enter').disabled) return;
+  $('spinner').hidden = false;
+  $('btn-enter').disabled = true;
+  await sendRoomName(capture.value);
+  setTimeout(() => sendKey('#'), 450);
 }
 
 
@@ -377,11 +382,7 @@ capture.addEventListener('input', function() {
 capture.addEventListener('keydown', async function(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
-    if (this.value.length > 0) {
-      await sendRoomName(this.value);
-      await captureReset();
-      await setTimeout(() => sendKey('#'), 450);
-    }
+    joinRoom();
   }
 });
 
@@ -964,15 +965,7 @@ onReady(() => {
 });
 $('key-capture').addEventListener('input', refreshJoin);
 
-$('btn-enter').onclick = async () => {
-  if (capture.value.length > 0) {
-    $('spinner').hidden = false;
-    $('btn-enter').disabled = true;
-    await sendRoomName(capture.value);
-    await captureReset();
-    await setTimeout(() => sendKey('#'), 450);
-  }
-};
+$('btn-enter').onclick = joinRoom;
 // One dialog for every question the page asks. The browser's own confirm()
 // sits at the top of the window, out of the page and out of its styling, so
 // this one carries the text and the action it is asked for.
