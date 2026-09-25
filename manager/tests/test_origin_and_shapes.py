@@ -1,5 +1,5 @@
 """
-P26, from the review of 24/09, the parts that need no web framework: which
+The parts that need no web framework: which
 writes origin.py refuses, and how the mapping reads a push of the wrong shape.
 The routes are played in test_writes_and_sessions.py.
 """

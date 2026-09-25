@@ -2,7 +2,6 @@
 Usage and adoption: how much the service is used, by whom, on what.
 """
 
-from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Query
 
@@ -31,8 +30,8 @@ def summary(period: str = Query(None), units: str = Query(None)):
     """, where=where), [since, until] + unitParams)
     # The most calls at once during the period, over the same calls as the
     # other tiles (units included). Swept over the calls that overlap the
-    # period only: daily_peak_concurrency sorted the whole table on every
-    # request, and knew nothing of units. A call begun before the period
+    # period only: a whole-table view sorted every call on every request, and
+    # knew nothing of units. A call begun before the period
     # counts from its start, so the running total is right at `since`.
     overlap = sqlWith("""established AND call_start IS NOT NULL AND call_end IS NOT NULL
                   AND call_end > %s AND call_start < %s{where}""", where=where)
@@ -127,11 +126,3 @@ def orgUnits(period: str = Query(None), units: str = Query(None)):
          GROUP BY 1, 2 ORDER BY 1, calls DESC
     """, where=where), [since, until] + unitParams)
     return {"label": label, "units": rows, "platform_mix": mix}
-
-
-@router.get("/reporting/concurrency")
-def concurrency(days: int = Query(31, ge=1, le=366)):
-    return fetch("""
-        SELECT day, peak_concurrent FROM daily_peak_concurrency
-         WHERE day >= %s ORDER BY day
-    """, (date.today() - timedelta(days=days),))

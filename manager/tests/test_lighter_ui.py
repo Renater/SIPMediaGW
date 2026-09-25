@@ -1,9 +1,8 @@
 """
-P14 — the screens carry values, not paragraphs.
-
-Every hourly chart gets the hover box; the explanatory paragraphs removed on
-2026-09-24 do not come back through a template or a translation key. Column
-"?" hints stay: they are read when wanted, not in the way.
+The screens carry values, not paragraphs: every hourly chart gets the hover
+box, and the explanatory paragraphs once shown under the charts do not come
+back through a template or a translation key. Column "?" hints stay: they are
+read when wanted, not in the way.
 """
 
 import re
@@ -28,8 +27,3 @@ def test_removed_paragraphs_stay_removed():
         assert f'"{key}"' not in templates and f"'{key}'" not in templates, f"a template shows {key} again"
         assert not re.search(rf"^\s+{key}:", dictionary, re.M), f"i18n defines {key} again"
     assert 'data-i18n="note"' not in templates
-
-
-def test_capacity_no_longer_asks_for_the_previous_period():
-    text = (FRONT / "js" / "views" / "capacity.js").read_text()
-    assert "pool-profile?${query}&compare=false" in text

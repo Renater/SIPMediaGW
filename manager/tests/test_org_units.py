@@ -1,5 +1,5 @@
 """
-P22: entities and the rules that classify a calling endpoint.
+Entities and the rules that classify a calling endpoint.
 
 Rules match the caller only (SIP URI, alias), literally and without regard
 to case, by prefix or suffix. The list is read top to bottom and the
@@ -67,7 +67,7 @@ def test_only_the_caller_is_classified():
 
 
 def test_the_old_order_is_kept_when_positions_are_first_given():
-    """Before P22 the longest pattern won; numbered from the shortest up, the
+    """With rules v1 the longest pattern won; numbered from the shortest up, the
     last-match rule decides the same way. Only rules without a position, once."""
     update = SCHEMA[SCHEMA.index("UPDATE org_unit_rules r SET position"):]
     update = update[:update.index(";")]

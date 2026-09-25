@@ -14,7 +14,7 @@ import { fillMonths, press } from '../ui.js';
 
 // The month under way by default: the tab is opened to see where things stand.
 let period = 'month', dayType = 'default';
-let profile = { profile: [], previous: [] }, hours = [], sizing = [], sizingDayType = 'default';
+let profile = { profile: [] }, hours = [], sizing = [], sizingDayType = 'default';
 // VM-hours over the period and the part in conference. They replaced a cost in
 // euros, which left out the fixed infrastructure and the services around it
 // and was read as the cost of the service.
@@ -46,7 +46,7 @@ function drawProfile() {
   $('capProfile').innerHTML = hourlyLines(rows, [
     { key: 'provisioned_avg', label: t().capProvisioned, color: themeVar('--mention') },
     { key: 'busy_avg', label: t().capBusy, color: themeVar('--blue') },
-  ], [], t().capProfileTitle);
+  ], t().capProfileTitle);
   attachHover($('capProfile'));
   $('capProfileTitle').textContent = t().capProfileTitle;
 }
@@ -88,7 +88,7 @@ function drawSizing() {
   $('capSizingChart').innerHTML = hourlyLines(rows, [
     { key: 'peak', label: t().capPeakLabel, color: themeVar('--mention') },
     { key: 'p95', label: t().capHighLabel, color: themeVar('--blue') },
-  ], [], t().capSizingTitle);
+  ], t().capSizingTitle);
   attachHover($('capSizingChart'));
 
   // Only the slots that carry something: twenty-four rows of zeroes bury the
@@ -144,7 +144,7 @@ function drawHours() {
 async function load() {
   const query = `period=${encodeURIComponent(period)}`;
   const { value, failure } = await settleAll([
-    get(`/api/reporting/pool-profile?${query}&compare=false`),
+    get(`/api/reporting/pool-profile?${query}`),
     get(`/api/reporting/pool-pressure?${query}`),
     get('/api/reporting/pool-hours?months=12'),
     get(`/api/reporting/concurrency/hourly?${query}&dayType=${sizingDayType}`),

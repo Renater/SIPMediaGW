@@ -1,6 +1,6 @@
 -- Gateway Manager — accounts
 --
--- Apply after schema_rates.sql. Before this file, accounts were configuration
+-- Before this file existed, accounts were configuration
 -- (MANAGER_PASSWORD, MANAGER_OPERATORS): no password could be changed from
 -- the console and no account created. auth.py fills an empty table with the
 -- local admin and its default password, to be changed at first sign-in.

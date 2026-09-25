@@ -115,8 +115,8 @@ function stopHealthProbe() {
 function showApp(fresh = false) {
   $('loginView').hidden = true;
   $('app').hidden = false;
-  // Settings is where the rate is written: an operator has no business
-  // there, and the route would answer 403 anyway.
+  // Settings is where accounts and entities are written: an operator has no
+  // business there, and the routes would answer 403 anyway.
   document.querySelector('.nav[data-view="users"]').hidden = context.role !== 'admin';
   startHealthProbe();
   // A sign-in lands on Supervision; a reload (F5) stays where it was.

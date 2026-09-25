@@ -114,11 +114,11 @@ SAMPLE_ROW = {
     "target": "test", "detail": {}, "n": 0,
     "last_sample": "2026-08-31T23:59:00+00:00", "not_completed": 2,
     "received_at": "2026-08-01T11:00:01+00:00", "gw_host": "gw0", "raw": {},
-    # Call log since P16: the endpoint read from its User-Agent, and the
+    # Call log: the endpoint read from its User-Agent, and the
     # frames per second the drawer draws, both written back by the handler.
     "peer_user_agent": "TANDBERG/529 (ce11.40.1.1) Cisco-RoomKitMini",
     "terminal": "Cisco-RoomKitMini", "frame_rates": [],
-    # Entities (P22): the probe reads whether the rule's entity is active.
+    # Entities: the probe reads whether the rule's entity is active.
     "unit_active": True,
     }
 
@@ -389,7 +389,7 @@ def test_unknown_identifiers_answer_404(client):
     excluding a route from the sweep is easy to do and easy to forget.
     """
     client.recorder.rows = []
-    for path in ("/api/reporting/calls/999999", "/api/reporting/calls/999999/media"):
+    for path in ("/api/reporting/calls/999999", "/api/reporting/calls/999999/raw"):
         response = client.get(path)
         assert response.status_code == 404, (
             f"{path} answered {response.status_code}: an unknown id is a 404")

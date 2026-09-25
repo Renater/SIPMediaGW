@@ -232,7 +232,3 @@ def deleteUser(name: str, request: Request, user: str = Depends(requireAdmin)):
     log.warning("user %s deleted by %s", name, user)
     return {"status": "success"}
 
-
-@router.get("/users/audit")
-def readAudit(user: str = Depends(requireAdmin)):
-    return users.listAudit()

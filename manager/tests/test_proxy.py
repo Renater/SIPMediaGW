@@ -1,10 +1,10 @@
 """
-P12b — the Manager behind a reverse proxy on another machine.
+The Manager behind a reverse proxy on another machine.
 
-S-08: X-Forwarded-For is believed only when the request comes from a proxy
-      declared in FORWARDED_ALLOW_IPS. The port stays open on the LAN for the
-      gateways' pushes, and any host there could otherwise forge the header
-      and walk around the sign-in throttle.
+X-Forwarded-For is believed only when the request comes from a proxy
+declared in FORWARDED_ALLOW_IPS. The port stays open on the LAN for the
+gateways' pushes, and any host there could otherwise forge the header
+and walk around the sign-in throttle.
 The "Control" link points at the proxyAPI's public address, not the
 internal one the back reads from.
 Every path the front calls stays published by the Traefik rule in deploy/.

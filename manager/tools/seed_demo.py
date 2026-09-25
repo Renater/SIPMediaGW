@@ -101,9 +101,7 @@ def buildCalls(start, end, rng):
                                             seconds=rng.randint(0, 59))
                 # Durations: mostly half-hour and hour meetings, a tail of long
                 # ones, and the short sessions that never joined.
-                reason, joined, _ = weighted([(e, e[2]) for e in ENDINGS], rng)[0:3] \
-                    if False else (lambda e: (e[0], e[1], e[2]))(
-                        rng.choices(ENDINGS, weights=[e[2] for e in ENDINGS])[0])
+                reason, joined, _ = rng.choices(ENDINGS, weights=[e[2] for e in ENDINGS])[0]
                 if joined:
                     # Real traffic averages a little over an hour: half-hour
                     # stand-ups exist but the bulk are hour-long meetings, with a

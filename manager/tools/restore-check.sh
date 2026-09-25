@@ -22,7 +22,7 @@ BACKUP_DIR="${BACKUP_DIR:-/var/backups/gw_manager}"
 TARGET="${RESTORE_DB:-gw_manager_restore}"
 # The reporting views: a restore that brings the tables back but not what the
 # console reads is not a restore.
-VIEWS="monthly_service daily_peak_concurrency pool_profile monthly_pool_hours pool_pressure hourly_concurrency monthly_pool_cost close_reasons suspect_sources"
+VIEWS="monthly_service pool_profile monthly_pool_hours pool_pressure hourly_concurrency close_reasons suspect_sources"
 
 case "$TARGET" in
     "$PG_DB") echo "refusing: $TARGET is the live database" >&2; exit 2 ;;
@@ -118,7 +118,7 @@ if [ -f "$counts" ]; then
     done < "$counts"
 else
     echo "(no $counts: compared with the live database, restored must not exceed it)"
-    for table in calls call_media_stats pool_samples manager_users vm_rates; do
+    for table in calls call_media_stats pool_samples manager_users org_units; do
         live=$(value "$PG_DB" "SELECT count(*) FROM $table")
         # A table the dump did not bring back is a mismatch to report, not a
         # reason for `set -e` to stop the check without a word.

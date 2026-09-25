@@ -108,3 +108,13 @@ def sqlWith(text: str, **fragments: "str | sql.Composable") -> sql.Composed:
     """
     return sql.SQL(text).format(**{name: sql.SQL(fragment) if isinstance(fragment, str) else fragment
                                    for name, fragment in fragments.items()})
+
+
+def likePattern(text: str) -> str:
+    """
+    What a search box typed, as an ILIKE pattern that matches it anywhere.
+    `%` and `_` are wildcards: unescaped, "50%" matched every call. Escaped,
+    they match themselves (the default escape is `\\`).
+    """
+    escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"

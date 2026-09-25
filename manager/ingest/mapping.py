@@ -4,6 +4,13 @@ Map a logParse.py call-history payload to database rows.
 Kept free of any database dependency so it can be unit-tested against real
 payloads captured from a gateway. The previous collector built the video
 statistics and then dropped them; here the mapping is covered by tests.
+
+The payload's shape follows SIPMediaGW's pull requests, cited by number:
+  #99   the proxyAPI derives each gateway's state (read by proxyapi.py);
+  #101  periodic media samples (mediaStats.samples) — its first version also
+        repeated the video summary once per sample, which is cleaned here;
+  #102  peer, encoders and media direction;
+  #105  gateway, baresip and Chromium versions.
 """
 
 import math

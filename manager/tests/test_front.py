@@ -784,7 +784,7 @@ def test_stylesheets_are_balanced():
 def test_no_undeclared_class():
     """
     The mirror of the orphan check. `.tag` (the verdict column) and `.link`
-    (remove a rate) were applied by the modules and declared in no stylesheet:
+    (a text button) were applied by the modules and declared in no stylesheet:
     the verdict rendered as bare text, and nothing said so. Every class the
     front applies has a rule — except the ones that are only hooks for JS or
     are meant to inherit (listed).

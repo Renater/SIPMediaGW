@@ -1,4 +1,4 @@
--- Manager — call history schema (P2 reporting)
+-- Manager — call history schema
 -- Target: the PostgreSQL instance shared with Homer (TimescaleDB image; plain
 -- PG 15 SQL, no extension required). Dedicated database and role: bootstrap.sql.
 --
@@ -173,9 +173,9 @@ CREATE TRIGGER calls_outcome_trg BEFORE INSERT ON calls
     FOR EACH ROW EXECUTE FUNCTION calls_set_outcome();
 
 -- Reporting views ------------------------------------------------------------
--- monthly_service and daily_peak_concurrency are defined in
--- schema_reporting_lot0.sql, which owns them; earlier copies here were
--- overwritten on every run and, between the two, briefly absent.
+-- monthly_service is defined in schema_reporting_lot0.sql, which owns it; an
+-- earlier copy here was overwritten on every run and, between the two,
+-- briefly absent.
 
 -- Sources producing abnormal volume: a probe or a looping endpoint stands out
 -- here instead of inflating a monthly total (cf. 3 914 sessions from a single

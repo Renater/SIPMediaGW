@@ -1,10 +1,9 @@
 # Order in which the schema files must be applied.
 #
-# Alphabetical order is not dependency order: schema_rates.sql defines a view
-# over monthly_pool_hours, which schema_reporting_lot1.sql creates — and "rates"
-# sorts before "reporting". Running `for f in db/*.sql` therefore fails, and
-# fails halfway, leaving the schema in whatever state the transaction rolled
-# back to.
+# Alphabetical order is not dependency order: schema_reporting_lot1.sql reads
+# functions that schema_reporting_lot0.sql defines, and schema_org_units.sql
+# adds a column to calls that schema.sql creates. The order is written down
+# here rather than inferred, and tools/migrate.sh reads this file.
 #
 # A test checks that every .sql file appears here, so a new one cannot be added
 # without saying where it goes.
@@ -16,13 +15,11 @@ schema_reporting_lot0.sql
 schema_reporting_lot1.sql
 schema_reporting_lot2.sql
 schema_reasons.sql
-schema_rates.sql
 schema_users.sql
 
 # Not part of the schema, and deliberately not applied by the loop above:
 #   bootstrap.sql                        roles and database, run once by hand
-#   migrate_concurrency_all_sessions.sql one-off migration, already applied
 #   drop_gateway_hours.sql               one-off removal, run once per deployment
 #   drop_dead_objects.sql                one-off removal, run once per deployment
-#   schema_settings.sql                  superseded by vm_rates; kept for reference only
+#   drop_rates.sql                       one-off removal, run once per deployment
 #   org_units.sample.sql                 example rules, never for production

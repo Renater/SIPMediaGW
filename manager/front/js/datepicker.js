@@ -1,5 +1,5 @@
-/* Calendar popover shared by the call log (a range over two months) and the
-   rate form (one date).
+/* Calendar popover of the call log and the audit log: a range of days over
+   two months, a first day then a last.
 
    Days are integers YYYYMMDD in local time. Comparing two days is comparing two
    numbers, and no arithmetic on milliseconds can slip an hour across a change
@@ -56,9 +56,8 @@ const CHEVRON = {
 
 /**
  * panel: the empty element that becomes the popover (hidden until opened).
- * mode: 'range' (two months, a first then a last day) or 'single'.
  * max: the last day that can be picked, or null.
- * onApply: called with { start, end } (range) or { start } (single).
+ * onApply: called with { start, end }.
  */
 /* The two date fields of a window open the calendar on their end of it; a
    second click on the field that opened it closes it. `getRange` returns the
@@ -72,15 +71,14 @@ export function openFromFields(calendar, getRange, fields) {
   }
 }
 
-export function createCalendar({ panel, mode, max = null, onApply }) {
-  const range = mode === 'range';
+export function createCalendar({ panel, max = null, onApply }) {
   let state = null;          // null while closed
   let opener = null;
   let wantFocus = false;
 
   const limit = key => max != null && key > max;
-  const blocked = key => limit(key) || (range && state.picking === 'end' && key < state.start);
-  const visible = () => (range ? [state.view, state.view + 1] : [state.view]);
+  const blocked = key => limit(key) || (state.picking === 'end' && key < state.start);
+  const visible = () => [state.view, state.view + 1];
 
   /* Keep `key` on screen: the left month moves only as far as needed. */
   function reveal(key) {
@@ -90,21 +88,20 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
   }
 
   /* The right-hand month never goes past the one holding `max`. */
-  const lastView = () => (max == null ? Infinity : monthOf(max) - (range ? 1 : 0));
+  const lastView = () => (max == null ? Infinity : monthOf(max) - 1);
 
   function hint() {
-    if (!range) return t().calPickDate;
     return state.picking === 'start' ? t().calPickStart : t().calPickEnd;
   }
 
   function dayCell(key, month) {
     if (monthOf(key) !== month) return '<td></td>';
     const d = dateOf(key);
-    const edge = key === state.start || (range && key === state.end);
+    const edge = key === state.start || key === state.end;
     const disabled = blocked(key);
     let label = longDate(key);
-    if (range && key === state.start) label += `, ${t().calStartMark}`;
-    if (range && key === state.end) label += `, ${t().calEndMark}`;
+    if (key === state.start) label += `, ${t().calStartMark}`;
+    if (key === state.end) label += `, ${t().calEndMark}`;
     if (disabled) label += `, ${t().calUnavailable}`;
     return `<td><button type="button" class="cal-day" data-day="${key}" tabindex="${key === state.focus ? 0 : -1}"`
       + ` aria-label="${esc(label)}" aria-pressed="${edge}"${disabled ? ' aria-disabled="true"' : ''}`
@@ -131,12 +128,6 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
   }
 
   function footer() {
-    if (!range) {
-      return `<button type="button" class="link" data-action="first">${esc(t().calFirstOfMonth)}</button>
-        <button type="button" class="link" data-action="today">${esc(t().calToday)}</button>
-        <span class="grow"></span>
-        <button type="button" data-action="cancel">${esc(t().close)}</button>`;
-    }
     const days = Math.round((dateOf(state.end) - dateOf(state.start)) / 86400000) + 1;
     return `<p class="cal-summary">${esc(t().calSummary(shortDate(state.start), shortDate(state.end), days))}</p>
       <button type="button" data-action="cancel">${esc(t().calCancel)}</button>
@@ -146,7 +137,6 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
   /* The band between the first and last day, drawn on the cells so that a
      hover can move it without rebuilding the grid. */
   function paint(hover = null) {
-    if (!range) return;
     const end = hover != null && state.picking === 'end' ? Math.max(hover, state.start) : state.end;
     panel.classList.toggle('previewing', hover != null && state.picking === 'end');
     for (const button of panel.querySelectorAll('.cal-day')) {
@@ -173,7 +163,7 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
         <button type="button" class="cal-nav" data-nav="1" aria-label="${esc(t().calNextMonth)}"${atEnd ? ' disabled' : ''}>${CHEVRON.next}</button>
       </div>
       <div class="cal-foot">${footer()}</div>`;
-    panel.setAttribute('aria-label', range ? t().calDialogRange : t().calDialogDate);
+    panel.setAttribute('aria-label', t().calDialogRange);
     paint();
     if (wantFocus) {
       wantFocus = false;
@@ -184,11 +174,6 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
 
   function pick(key) {
     if (blocked(key)) return;
-    if (!range) {
-      close(true);
-      onApply({ start: key });
-      return;
-    }
     if (state.picking === 'start') {
       // The end follows the start: kept when it is still after it.
       state.start = key;
@@ -233,8 +218,6 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
       close(true);
       onApply(chosen);
     }
-    if (name === 'today') pick(todayKey());
-    if (name === 'first') pick(firstOf(state.view));
   }
 
   const MOVES = {
@@ -266,7 +249,7 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
     // events (a mouseover when its content changes under the pointer).
     if (!state) return;
     const day = event.target.closest('[data-day]');
-    if (!range || state.picking !== 'end') return;
+    if (state.picking !== 'end') return;
     paint(day && !blocked(Number(day.dataset.day)) ? Number(day.dataset.day) : null);
   }
 
@@ -282,7 +265,7 @@ export function createCalendar({ panel, mode, max = null, onApply }) {
   }
 
   function open({ start, end = start, picking = 'start', from }) {
-    const focus = range && picking === 'end' ? end : start;
+    const focus = picking === 'end' ? end : start;
     state = { start, end, picking, focus, view: 0 };
     state.view = monthOf(start);
     // Two months: the start on the left, unless that would put a month past

@@ -1,4 +1,4 @@
--- Gateway Manager — reporting, lot 1: capacity
+-- Manager — reporting: capacity (pool profile, pressure, VM-hours)
 --
 -- Apply after schema_pool.sql. Additive: no existing view changes.
 --
@@ -32,10 +32,8 @@
 
 -- The columns of these views changed name and order when the cost basis moved
 -- from containers to VMs. CREATE OR REPLACE cannot rename or reorder columns,
--- so they are dropped first. monthly_pool_cost (schema_rates.sql) reads
--- monthly_pool_hours, and PostgreSQL will not drop a view another one reads:
--- it goes first, and schema_rates.sql, applied after this file, recreates it.
-DROP VIEW IF EXISTS monthly_pool_cost;
+-- so they are dropped first. PostgreSQL will not drop a view another one
+-- reads: a reader of these views must be dropped before them.
 DROP VIEW IF EXISTS pool_profile;
 DROP VIEW IF EXISTS monthly_pool_hours;
 DROP VIEW IF EXISTS pool_pressure;
@@ -45,7 +43,7 @@ DROP VIEW IF EXISTS pool_pressure;
 -- three hour-by-day-type views read this and aggregate on both at once with
 -- GROUPING SETS, so a working-days percentile is computed over every
 -- working-day sample rather than averaged from five weekday percentiles.
--- OR REPLACE, never dropped: hourly_concurrency (lot2) reads it too.
+-- OR REPLACE, never dropped: hourly_concurrency (schema_reporting_lot2.sql) reads it too.
 CREATE OR REPLACE VIEW pool_sample_days AS
 SELECT ts,
        date_trunc('month', ts)                                     AS month,

@@ -110,7 +110,8 @@ def test_audit_names_the_actor_and_never_a_secret(admin):
                                    "role": "operator", "password": "initial-secret-1"})
     admin.post(f"/api/users/{name}/password", json={"password": "reset-by-admin-1"})
     assert admin.delete(f"/api/users/{name}").status_code == 200
-    lines = [line for line in admin.get("/api/users/audit").json() if line["target"] == name]
+    lines = [line for line in admin.get("/api/audit", params={"types": "user", "q": name}).json()["lines"]
+             if line["target"] == name]
     assert [line["action"] for line in lines] == ["delete", "password.reset", "create"], "the audit outlives the account"
     assert all(line["actor"] == f"{MARKER}-admin{DOMAIN}" for line in lines)
     assert "initial-secret-1" not in str(lines) and "reset-by-admin-1" not in str(lines)

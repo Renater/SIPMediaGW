@@ -1,4 +1,4 @@
--- Gateway Manager — reporting, lot 0: transverse groundwork
+-- Manager — reporting: groundwork (recompute functions, the scope of user calls, monthly view)
 --
 -- Apply after schema.sql and schema_org_units.sql, as gw_manager on gw_manager.
 -- Everything here is additive: existing views keep their names, and the two
@@ -37,7 +37,7 @@ COMMENT ON COLUMN recompute_log.rows_moved IS
 -- The rules are the trigger's rules, deliberately duplicated rather than
 -- factored out: a BEFORE INSERT trigger works on NEW, a bulk UPDATE on a set.
 -- Keeping them side by side in the same file is what makes a divergence
--- visible; test_outcomes.sql below checks they agree.
+-- visible; tests/test_outcome_rules.py checks they agree.
 
 CREATE OR REPLACE FUNCTION recompute_outcomes(p_note TEXT DEFAULT NULL)
 RETURNS TABLE (rows_seen BIGINT, rows_moved BIGINT) LANGUAGE plpgsql AS $$
@@ -145,18 +145,3 @@ FROM calls
 WHERE outcome = 'completed' AND call_start IS NOT NULL AND is_user_call(main_app)
 GROUP BY 1;
 
--- Peak concurrent user calls per day. Every established session counts, IVR
--- included: a caller sitting on the IVR holds a gateway like a caller in a
--- conference. Service sessions are excluded — they would inflate the figure
--- with gateways nobody is waiting on.
-CREATE OR REPLACE VIEW daily_peak_concurrency AS
-WITH ev AS (
-    SELECT call_start AS t,  1 AS d FROM calls
-     WHERE established AND call_start IS NOT NULL AND call_end IS NOT NULL AND is_user_call(main_app)
-    UNION ALL
-    SELECT call_end   AS t, -1 AS d FROM calls
-     WHERE established AND call_start IS NOT NULL AND call_end IS NOT NULL AND is_user_call(main_app)
-),
-run AS (SELECT t, SUM(d) OVER (ORDER BY t, d ROWS UNBOUNDED PRECEDING) AS concurrent FROM ev)
--- t::date follows the session time zone, set by the application.
-SELECT t::date AS day, MAX(concurrent) AS peak_concurrent FROM run GROUP BY 1;

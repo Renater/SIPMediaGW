@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS org_units (
     active          BOOLEAN NOT NULL DEFAULT true
 );
 
--- Matching rules, on the CALLING endpoint only (since P23), two fields:
+-- Matching rules, on the CALLING endpoint only, two fields:
 --   uri    -> the caller's SIP URI, user@domain, without its scheme
 --   alias  -> the caller's display name (source_name)
 -- peer_display_name is the called side: it never classifies the caller.
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS org_units (
 -- start with "test") and case-insensitive (ABC = aBc). 'regex' is still
 -- read but the console does not write it.
 --
--- Order (since P22): the rules are read top to bottom, like an Expressway
+-- Order: the rules are read top to bottom, like an Expressway
 -- transform list, and the LAST one that matches decides. A rule assigns an
 -- entity and changes nothing else, so this is the matching rule with the
 -- highest position. priority is no longer read.
@@ -51,7 +51,7 @@ ALTER TABLE org_unit_rules ADD COLUMN IF NOT EXISTS position INTEGER;
 ALTER TABLE org_unit_rules ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
 ALTER TABLE org_unit_rules ADD COLUMN IF NOT EXISTS updated_by TEXT;
 
--- P23: three fields became two. A number was a prefix of the URI's user
+-- Rules v2: three fields became two. A number was a prefix of the URI's user
 -- part, so a prefix of the URI; a name is the alias; a domain rule becomes a
 -- suffix of the URI behind its "@" (a domain prefix meant that domain).
 ALTER TABLE org_unit_rules DROP CONSTRAINT IF EXISTS org_unit_rules_field_check;
@@ -62,7 +62,7 @@ UPDATE org_unit_rules SET field = 'uri', match_type = 'suffix', pattern = '@' ||
 UPDATE org_unit_rules SET field = 'uri' WHERE field = 'domain';
 ALTER TABLE org_unit_rules ADD CONSTRAINT org_unit_rules_field_check CHECK (field IN ('uri', 'alias'));
 
--- Rules from before P22 have no position. Their effective order was "first
+-- Rules v1 have no position. Their effective order was "first
 -- match wins": lowest priority, prefix before regex, longest pattern. The
 -- reverse of that order, read "last match wins", decides the same way.
 UPDATE org_unit_rules r SET position = o.position
@@ -104,7 +104,7 @@ CREATE TRIGGER org_unit_rules_validate_trg BEFORE INSERT OR UPDATE ON org_unit_r
 ALTER TABLE calls ADD COLUMN IF NOT EXISTS org_unit TEXT REFERENCES org_units(code);
 CREATE INDEX IF NOT EXISTS calls_org_unit_idx ON calls (org_unit);
 
--- Signatures changed with P23 (three caller fields became two).
+-- Signatures of rules v1 (three caller fields; v2 has two).
 DROP FUNCTION IF EXISTS resolve_org_unit(TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS org_unit_value(TEXT, TEXT, TEXT, TEXT);
 

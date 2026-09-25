@@ -8,11 +8,10 @@ against it.
 """
 
 
-from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from api.periods import nextMonth, previousMonth, resolvePeriod, window
+from api.periods import resolvePeriod, window
 from auth import requireUser
 from db import fetch
 
@@ -24,26 +23,6 @@ router = APIRouter(dependencies=[Depends(requireUser)])
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 DAY_TYPES = ("default",) + WEEKDAYS
 
-
-def previousPeriod(since, until):
-    """
-    The period to compare with, ending where this one starts. A calendar
-    month compares with the calendar month before it: "the same number of
-    days earlier" gave 2 Aug - 1 Sep for September, and the comparison came
-    back empty whenever the month before was the longer one.
-    """
-    if since.day == 1 and until == nextMonth(since):
-        return previousMonth(since), since
-    return since - (until - since), since
-
-
-def periodLabel(since, until):
-    """A month as YYYY-MM, a year as YYYY, anything else as its first and last day."""
-    if since.day == 1 and until == nextMonth(since):
-        return since.isoformat()[:7]
-    if (since.month, since.day) == (1, 1) and until == since.replace(year=since.year + 1):
-        return str(since.year)
-    return f"{since.isoformat()} – {(until - timedelta(days=1)).isoformat()}"
 
 @router.get("/reporting/concurrency/hourly")
 def concurrencyHourly(period: str = Query(None), dayType: str = Query("default")):
@@ -67,10 +46,9 @@ def concurrencyHourly(period: str = Query(None), dayType: str = Query("default")
 
 
 @router.get("/reporting/pool-profile")
-def poolProfile(period: str = Query(None), compare: bool = Query(True)):
+def poolProfile(period: str = Query(None)):
     """
-    Gateway occupancy by hour and day type, for the period and, on request, the
-    one before it.
+    Gateway occupancy by hour and day type, for the period.
 
     The profile is read per period rather than over the whole history: averaged
     across a year it flattens, and what justifies changing the floor for a slot
@@ -84,18 +62,7 @@ def poolProfile(period: str = Query(None), compare: bool = Query(True)):
           FROM pool_profile_between(%s, %s)
          ORDER BY day_type, hour
     """, (since, until))
-
-    previous, previousLabel = [], None
-    if compare:
-        previous = fetch("""
-            SELECT day_type, hour, provisioned_avg, busy_avg, busy_peak, spare_avg
-              FROM pool_profile_between(%s, %s)
-             ORDER BY day_type, hour
-        """, previousPeriod(since, until))
-        # Named, so the chart can say which period the dotted lines are.
-        previousLabel = periodLabel(*previousPeriod(since, until))
-
-    return {"label": label, "profile": rows, "previous": previous, "previous_label": previousLabel}
+    return {"label": label, "profile": rows}
 
 
 @router.get("/reporting/pool-hours")

@@ -157,10 +157,9 @@ def test_delete_keeps_the_audit_and_ends_the_session(admin, alice, store):
     assert signIn(TestClient(application.app), ALICE, "alice-secret-1234").status_code == 401
     assert store.log[-1][:3] == ("admin", "delete", ALICE)
     assert admin.delete(f"/api/users/{ALICE}").status_code == 404
-    lines = [line for line in admin.get("/api/users/audit").json() if line["target"] == ALICE]
-    assert lines, "the audit lost the deleted account"
+    assert [line for line in store.log if line[2] == ALICE], "the audit lost the deleted account"
 
 
 def test_audit_is_readable_by_admins_only(admin, alice):
-    assert admin.get("/api/users/audit").status_code == 200
-    assert alice.get("/api/users/audit").status_code == 403
+    assert admin.get("/api/audit").status_code == 200
+    assert alice.get("/api/audit").status_code == 403

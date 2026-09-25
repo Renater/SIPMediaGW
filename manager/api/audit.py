@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.periods import aware, parseInstant
 from auth import requireAdmin
-from db import fetch
+from db import fetch, likePattern
 
 router = APIRouter()
 
@@ -40,9 +40,7 @@ def readAudit(types: str = Query("user,entity", max_length=40),
     since = parseInstant(start) or aware(dt.datetime.combine(date.today() - dt.timedelta(days=29), dt.time.min))
     if until < since:
         raise HTTPException(status_code=400, detail="end is before start")
-    # `%` and `_` typed in the box match themselves, as in the call log.
-    escaped = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    pattern = f"%{escaped}%"
+    pattern = likePattern(q.strip())
     rows = fetch("""
         WITH lines AS (
             SELECT 'user' AS type, id, at, actor, action, target, detail FROM user_audit WHERE %s

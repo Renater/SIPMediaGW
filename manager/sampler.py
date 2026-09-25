@@ -14,8 +14,8 @@ import datetime as dt
 import logging
 import os
 
-from api.park import fetchStatuses
 from db import DatabaseUnavailable, connection
+from proxyapi import fetchStatuses
 
 log = logging.getLogger("manager.sampler")
 
