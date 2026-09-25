@@ -1,0 +1,11 @@
+/* Paper. Linked last, with media="print", so that these rules come after
+   every screen rule: a media query adds no specificity, and in the layout sheet
+   this block lost to every later rule with the same selector (the drawer printed). */
+.side, .topbar, .view > header button, .filters, .switch, .toolbar,
+.drawer, .scrim, .toast, .banner, .subtabs { display: none; }
+.shell { display: block; }
+.panel, figure { break-inside: avoid; }
+/* Browsers drop backgrounds on paper by default: the big tiles would print
+   white figures on white. */
+.tile.big { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.scroll { overflow: visible; }

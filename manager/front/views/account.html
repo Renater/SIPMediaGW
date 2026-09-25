@@ -1,0 +1,33 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="accountTitle">My account</h1>
+      <div class="sub" id="accountSub"></div>
+    </div>
+  </header>
+
+  <div class="panel padded" id="accountPasswordPanel">
+    <h2 data-i18n="pwdTitle">Change my password</h2>
+    <p class="note" id="pwdRule"></p>
+    <form class="stack" id="accountForm" autocomplete="off">
+      <input type="text" id="accountUser" autocomplete="username" aria-label="username" readonly hidden>
+      <label class="field stacked"><span data-i18n="pwdCurrent">Current password</span>
+        <input type="password" id="accountCurrent" autocomplete="current-password" required>
+      </label>
+      <label class="field stacked"><span data-i18n="pwdNew">New password</span>
+        <input type="password" id="accountNext" autocomplete="new-password" required>
+      </label>
+      <label class="field stacked"><span data-i18n="pwdConfirm">New password, once more</span>
+        <input type="password" id="accountConfirm" autocomplete="new-password" required>
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="primary" id="accountSave" data-i18n="pwdSave">Change password</button>
+        <span class="note" id="accountError" role="alert"></span>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel padded" id="accountSsoPanel" hidden>
+    <p class="note" data-i18n="pwdSso">This account is managed by ProConnect: its password is changed there, not here.</p>
+  </div>
+</section>

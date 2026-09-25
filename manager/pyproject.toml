@@ -1,0 +1,32 @@
+# Tool configuration only: the application is not packaged.
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["front", "db"]
+
+[tool.ruff.lint]
+# What is always a bug: pyflakes (unused imports and names, undefined names,
+# redefinitions), syntax errors, and the pycodestyle warnings. Style rules (E,
+# I, UP...) are a ratchet for later: enable one family, fix, commit.
+select = ["F", "E9", "W"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["app.py", "auth.py", "users.py", "db.py", "homer.py", "sampler.py", "sources.py",
+         "requestid.py", "origin.py", "api", "ingest"]
+ignore_missing_imports = true
+# Permissive start: nothing has to be annotated, but what is annotated is
+# checked. The flags below are the ratchet — turn them on per module, in a
+# [[tool.mypy.overrides]] block, as each one gets its annotations.
+check_untyped_defs = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+# disallow_untyped_defs = true
+# disallow_incomplete_defs = true
+
+[tool.vulture]
+# Fixtures requested for what they set up (a signed-in store, a recorder behind
+# every route), never read: an argument pytest needs, not dead code.
+ignore_names = ["accounts", "store"]

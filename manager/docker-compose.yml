@@ -1,0 +1,31 @@
+# Manager
+# The image carries pinned dependencies (see Dockerfile); the source is mounted
+# on top so front and Python edits are picked up without a rebuild.
+services:
+  manager:
+    build: .
+    image: manager:local
+    container_name: manager
+    env_file:
+      - .env
+    environment:
+      # Reporting periods are local, not UTC: "today" ends at local midnight.
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - .:/app
+    # MANAGER_RELOAD=--reload (in .env) restarts uvicorn on .py changes.
+    command: sh -c "uvicorn app:app --host 0.0.0.0 --port 8200 $${MANAGER_RELOAD:-}"
+    ports:
+      - "8200:8200"
+    restart: unless-stopped
+    # `restart` reacts to the process exiting, and to nothing else: Docker never
+    # restarts a container for being unhealthy. This probe REPORTS — in
+    # `docker compose ps` and to whatever monitors the host — and it checks the
+    # database too, so a console that loads but cannot report shows unhealthy.
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8200/health', timeout=4).status == 200 else 1)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 20s

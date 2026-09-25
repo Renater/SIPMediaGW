@@ -1,0 +1,58 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="settingsTitle">Settings</h1>
+      <div class="sub" data-i18n="auditSub">Who changed what, and when</div>
+    </div>
+  </header>
+
+  <div class="subtabs">
+    <button data-subview="users" data-i18n="subUsers">Users</button>
+    <button data-subview="orgunits" data-i18n="subOrgUnits">Entities</button>
+    <button data-subview="audit" class="on" data-i18n="subAudit">Audit log</button>
+  </div>
+
+  <div class="filters range-filter">
+    <label class="field"><span data-i18n="callsRange">Range</span>
+      <select id="auditPreset"></select>
+    </label>
+    <div class="field">
+      <span id="auditFromLabel" data-i18n="callsFrom">From</span>
+      <button type="button" class="date-field" id="auditFrom" aria-haspopup="dialog" aria-expanded="false" aria-controls="auditCalendar" aria-labelledby="auditFromLabel auditFromValue"><span id="auditFromValue"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+    </div>
+    <div class="field">
+      <span id="auditToLabel" data-i18n="callsTo">to</span>
+      <button type="button" class="date-field" id="auditTo" aria-haspopup="dialog" aria-expanded="false" aria-controls="auditCalendar" aria-labelledby="auditToLabel auditToValue"><span id="auditToValue"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+    </div>
+    <div class="dropdown" id="auditTypeFilter">
+      <button id="auditTypeButton" type="button"></button>
+      <div class="dropdown-panel" id="auditTypePanel" hidden>
+        <div class="dropdown-actions">
+          <button type="button" class="link-all" data-pick="all"><span aria-hidden="true">+</span> <span data-i18n="unitsAll">All</span></button>
+          <button type="button" class="link-none" data-pick="none"><span aria-hidden="true">−</span> <span data-i18n="unitsNone">None</span></button>
+        </div>
+        <div id="auditTypeList"></div>
+      </div>
+    </div>
+    <div class="calendar" id="auditCalendar" role="dialog" hidden></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <label class="sr-only" for="auditSearch" data-i18n="auditSearchLabel">Search a person</label>
+      <input type="search" id="auditSearch" autocomplete="off">
+      <span class="shown" id="auditShown"></span>
+      <div class="pager">
+        <button id="auditPrev">‹</button>
+        <span id="auditPage"></span>
+        <button id="auditNext">›</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table class="plain">
+        <thead><tr id="auditHead"></tr></thead>
+        <tbody id="auditRows"></tbody>
+      </table>
+    </div>
+  </div>
+</section>

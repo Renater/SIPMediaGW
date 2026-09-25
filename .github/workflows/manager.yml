@@ -1,0 +1,41 @@
+name: Manager CI
+
+# The Manager has its own dependencies and tests (manager/tests): the gateway's
+# job neither installs the one nor runs the other. This job runs only when
+# something under manager/ changes.
+on:
+  push:
+    paths: ["manager/**", ".github/workflows/manager.yml"]
+  pull_request:
+    paths: ["manager/**", ".github/workflows/manager.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: manager
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Node parses each front-end module (node --check): without it those
+      # checks skip.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check .
+
+      # The committed .env is the defaults of .env.example, with no secret.
+      - name: Shipped .env is the example
+        run: diff .env .env.example
+
+      # Without DATABASE_URL_TEST the database tests skip.
+      - run: pytest -q -p no:cacheprovider
