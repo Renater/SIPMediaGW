@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Brings the calls already stored in line with the ingestion (P15, P16), from
-their raw payload.
+One-off: brings the calls stored before the ingestion learned to read the
+media samples and the peer fields in line with it, from their raw payload.
 
     docker compose exec manager python tools/backfill_calls.py           # dry run
     docker compose exec manager python tools/backfill_calls.py --apply
@@ -39,7 +39,8 @@ from ingest.mapping import (                     # noqa: E402
     isRepeated, looksCumulative, mediaDetails, mediaRows,
 )
 
-# The first gateway image of the #101 branch ran on the lab from this date.
+# Pushes before this date came from a gateway without SIPMediaGW #101: their
+# media samples cannot be recovered.
 ARTIFACT_SINCE = "2026-09-15"
 
 DETAIL_COLUMNS = (
@@ -85,7 +86,7 @@ def notEstablished(cur):
          WHERE call_id IS NOT NULL AND call_start IS NULL
         RETURNING id""")
     marked = [row[0] for row in cur.fetchall()]
-    cur.execute("SELECT rows_moved FROM recompute_outcomes('P15: calls not established')")
+    cur.execute("SELECT rows_moved FROM recompute_outcomes('backfill: calls not established')")
     moved = cur.fetchone()[0]
     return marked, replays, moved
 

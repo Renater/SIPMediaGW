@@ -1,5 +1,5 @@
 """
-P26, from the review of 24/09, played on the routes: writes from another
+Played on the routes: writes from another
 origin of the same site, sessions that never ended, account changes kept
 without their audit line, and pushes whose shape answered 500.
 """

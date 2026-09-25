@@ -1,5 +1,5 @@
 """
-P29, before the code goes to GitHub: the licence of the upstream repository,
+Before the code goes to GitHub: the licence of the upstream repository,
 no lab identifier outside the tests, every variable the code reads documented,
 and the service's name and logo set by the deployment.
 """

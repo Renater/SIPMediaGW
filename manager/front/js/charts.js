@@ -10,7 +10,7 @@ import { platformIcon, attachIconFallback } from './platforms.js';
    emerald, caramel, macaroon). */
 const PALETTE = ['#000091', '#465f9d', '#68a532', '#c8aa39', '#e4794a',
                  '#a558a0', '#00a95f', '#c08c65', '#e18b76'];
-const UNASSIGNED = new Set(['(unassigned)', '(none)', '(inconnue)']);
+const UNASSIGNED = new Set(['(unassigned)', '(none)']);
 
 export const themeColor = name =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -132,22 +132,18 @@ export function histogram(months, trend, metric, cumulative, label = '') {
 }
 
 
-export function hourlyLines(rows, series, previous = [], label = '', previousLabel = '') {
+export function hourlyLines(rows, series, label = '') {
   const width = 1040, height = 280, padLeft = 46, padRight = 16, padTop = 16, padBottom = 34;
   if (!rows.length) return `<div class="msg">${esc(t().noData)}</div>`;
 
   const hours = Array.from({ length: 24 }, (_, h) => h);
   const byHour = new Map(rows.map(row => [Number(row.hour), row]));
-  const prevByHour = new Map(previous.map(row => [Number(row.hour), row]));
   const value = (map, hour, key) => {
     const row = map.get(hour);
     return row ? Number(row[key]) || 0 : 0;
   };
 
-  // Both periods set the scale: computed on the current one alone, a busier
-  // previous month was drawn past the top of the chart, or out of it.
-  const peak = Math.max(1, ...series.flatMap(s => hours.flatMap(h =>
-    [value(byHour, h, s.key), value(prevByHour, h, s.key)])));
+  const peak = Math.max(1, ...series.flatMap(s => hours.map(h => value(byHour, h, s.key))));
   const plotWidth = width - padLeft - padRight, plotHeight = height - padTop - padBottom;
   const x = hour => padLeft + (hour / 23) * plotWidth;
   const y = v => padTop + plotHeight - (v / peak) * plotHeight;
@@ -159,15 +155,6 @@ export function hourlyLines(rows, series, previous = [], label = '', previousLab
   const hourLabels = hours.filter(h => h % 3 === 0).map(h =>
     `<text x="${x(h).toFixed(1)}" y="${height - padBottom + 16}" text-anchor="middle" font-size="11" fill="${axis}">${h}h</text>`
   ).join('');
-
-  // The previous period, when asked for: same colours, fainter and dotted —
-  // the dots carry the difference where the colour does not (grey scale, a
-  // screenshot). There to show movement; the legend and a tooltip name it.
-  const ghostName = s => `${s.label} · ${previousLabel || t().capPreviousPeriod}`;
-  const ghosts = previous.length ? series.map(s =>
-    `<polyline fill="none" stroke="${safeColor(s.color)}" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.45"
-               points="${hours.map(h => `${x(h).toFixed(1)},${y(value(prevByHour, h, s.key)).toFixed(1)}`).join(' ')}"><title>${esc(ghostName(s))}</title></polyline>`
-  ).join('') : '';
 
   const lines = series.map(s =>
     `<polyline fill="none" stroke="${safeColor(s.color)}" stroke-width="2.5" stroke-linejoin="round"
@@ -192,16 +179,15 @@ export function hourlyLines(rows, series, previous = [], label = '', previousLab
 
   // The legend is drawn inside the SVG, not beside it: it must survive the
   // screenshot.
-  const step = previous.length ? 230 : 190;
-  const entry = (i, color, text, ghost) =>
+  const step = 190;
+  const entry = (i, color, text) =>
     `<line x1="${padLeft + i * step}" x2="${padLeft + i * step + 22}" y1="${height - 6}" y2="${height - 6}"
-           stroke="${safeColor(color)}" stroke-width="${ghost ? 1.5 : 2.5}"${ghost ? ' stroke-dasharray="5 4" opacity="0.45"' : ''}/>
+           stroke="${safeColor(color)}" stroke-width="2.5"/>
      <text x="${padLeft + i * step + 30}" y="${height - 2}" font-size="12" fill="${axis}">${esc(text)}</text>`;
-  const legend = series.map((s, i) => entry(i, s.color, s.label, false)).join('')
-    + (previous.length ? series.map((s, i) => entry(series.length + i, s.color, ghostName(s), true)).join('') : '');
+  const legend = series.map((s, i) => entry(i, s.color, s.label)).join('');
 
   return `<svg viewBox="0 0 ${width} ${height + 10}" width="100%" role="img" aria-label="${esc(label)}"
-               data-series="${seriesData}">${ticks}${hourLabels}${ghosts}${guide}${lines}${legend}${bands}</svg>`;
+               data-series="${seriesData}">${ticks}${hourLabels}${guide}${lines}${legend}${bands}</svg>`;
 }
 
 /* Values over the seconds of one call: the frames per second of the drawer.

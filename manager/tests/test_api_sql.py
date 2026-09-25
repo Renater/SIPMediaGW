@@ -29,9 +29,9 @@ def applyOrder():
     """
     The schema files in the order they must be applied.
 
-    Alphabetical order is not dependency order — `schema_rates.sql` reads a view
-    that `schema_reporting_lot1.sql` creates — so the order is written down
-    rather than inferred, and the loop that deploys reads the same file.
+    Alphabetical order is not dependency order — `schema_reporting_lot1.sql`
+    reads functions that `schema_reporting_lot0.sql` defines — so the order is
+    written down rather than inferred, and the loop that deploys reads it.
     """
     listing = (DB / "apply_order.txt").read_text().splitlines()
     return [line.strip() for line in listing
@@ -98,9 +98,10 @@ def viewDefinitions():
 
 def test_a_dropped_view_takes_its_readers_first():
     """
-    PostgreSQL refuses to drop a view another view reads. schema_reporting_lot1
-    dropped monthly_pool_hours, which monthly_pool_cost reads: fine on an empty
-    database, fatal on the deployed one — the only place a replay matters.
+    PostgreSQL refuses to drop a view another view reads. A schema file once
+    dropped monthly_pool_hours while a later file's view still read it: fine on
+    an empty database, fatal on the deployed one — the only place a replay
+    matters.
     Every DROP VIEW without CASCADE must come after the drops of its readers.
     """
     views = viewDefinitions()

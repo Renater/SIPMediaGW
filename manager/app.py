@@ -43,7 +43,7 @@ logging.basicConfig(
 for _handler in logging.getLogger().handlers:
     requestid.install(_handler)
 # httpx announces every request to the proxyAPI at INFO: one per poll per open
-# tab, one per sampler tick. park.py logs the failures itself; the successes
+# tab, one per sampler tick. The sampler logs the failures itself; the successes
 # are noise that buries the lines worth reading.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 log = logging.getLogger("manager")
@@ -135,7 +135,7 @@ def brandUrl(name: str) -> str:
     return f"/brand/{name}" if name else ""
 
 
-if "MANAGER_BRANDING" in os.environ:          # P29's, replaced by the three above
+if "MANAGER_BRANDING" in os.environ:          # replaced by the three above
     log.warning("MANAGER_BRANDING is no longer read: MANAGER_BRAND_NAME, _TAGLINE and _LOGO "
                 "set the name and the logo; remove it from .env")
 

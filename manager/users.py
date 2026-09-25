@@ -159,17 +159,3 @@ def deleteUser(username: str, audit=None) -> bool:
     rows = _write("DELETE FROM manager_users WHERE username = %s RETURNING id", (username.lower(),), audit)
     return bool(rows)
 
-
-def audit(actor: str, action: str, target: str, detail=None):
-    """
-    Who did what to which account. Never a password, never a hash: the
-    detail carries names, roles and flags only.
-    """
-    execute(AUDIT_INSERT, (actor, action, target, json.dumps(detail or {})))
-
-
-def listAudit(limit: int = 100):
-    return fetch("""
-        SELECT at, actor, action, target, detail
-          FROM user_audit ORDER BY at DESC LIMIT %s
-    """, (limit,))

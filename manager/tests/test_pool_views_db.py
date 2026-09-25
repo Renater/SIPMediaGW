@@ -50,7 +50,7 @@ def rows():
 
 def test_the_period_functions_give_the_view_figures():
     """
-    P13: the routes read <view>_between(since, until). Over one month it must
+    The routes read <view>_between(since, until). Over one month it must
     give exactly what the whole-history view gives for that month.
     """
     import psycopg
@@ -95,7 +95,7 @@ def test_working_days_are_computed_over_every_sample(rows):
 
 def test_a_period_over_several_months_gives_one_row_per_slot():
     """
-    Review of 24/09: grouped by month as well, a year gave twelve rows per hour
+    Grouped by month as well, a year gave twelve rows per hour
     and the Capacity chart kept one of them at random. Over any period, one row
     per day type and hour, computed over every sample of the period.
     """

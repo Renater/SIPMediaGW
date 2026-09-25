@@ -1,5 +1,5 @@
 """
-P27, from the review of 24/09: Usage and Quality count user calls only, all
+Usage and Quality count user calls only, all
 of them — the tiles counted recording and streaming sessions while the monthly
 chart and the close reasons did not — and the peak follows the units ticked.
 """
@@ -36,7 +36,6 @@ def test_the_peak_follows_the_units_and_reads_the_period_only(client):
     peak = client.recorder.queriesMentioning("UNBOUNDED PRECEDING")
     assert peak, "the peak is no longer swept over the period"
     query, params = next((q, p) for q, p in client.recorder.calls if q == peak[-1])
-    assert "daily_peak_concurrency" not in query, "the whole-table view knows nothing of units"
     assert "call_end > %s AND call_start < %s" in query
     assert params.count(["SALES"]) == 2, "both halves of the sweep carry the units"
 

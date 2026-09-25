@@ -246,7 +246,7 @@ th:nth-last-child(-n+2) .hint::after { left: auto; right: -4px; transform: none;
    table reads as part of the same block rather than a new one. */
 .panel h3 { margin: 18px 0 8px; font-size: 14px; font-weight: 700; color: var(--text); }
 
-/* Date fields and their calendar (call log window, rate date). The field reads
+/* Date fields and their calendar (call log and audit log windows). The field reads
    like the selects beside it; the popover stacks over the table (20) and under
    the drawer (30). States come from attributes the component sets, not from
    classes: aria-pressed (first or last day), aria-disabled, data-today, and
@@ -267,8 +267,7 @@ th:nth-last-child(-n+2) .hint::after { left: auto; right: -4px; transform: none;
 .cal-nav { flex: none; width: 34px; height: 34px; margin-top: 2px; padding: 0; border-color: var(--border);
   border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .cal-month { min-width: 0; }
-/* Inside a .panel the calendar would inherit its h3 margins. (The one-month
-   calendar and the panel that let it overflow went with the VM rate form.) */
+/* Inside a .panel the calendar would inherit its h3 margins. */
 .calendar .cal-title { margin: 0; font-size: 15px; font-weight: 700; line-height: 38px; }
 .cal-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .cal-grid th { padding: 4px 0; background: transparent; border: none; font-size: 12px; font-weight: 400;

@@ -1,4 +1,4 @@
--- Gateway Manager — reporting, lot 2 (partial): concurrency
+-- Manager — reporting: hourly concurrency
 --
 -- Apply after schema_pool.sql. Additive.
 --
@@ -28,8 +28,8 @@ DROP VIEW IF EXISTS hourly_concurrency;
 -- configuration is per day type and per time slot.
 --
 -- The peak here is the highest sample of the slot. A burst shorter than the
--- sampling interval can escape it; daily_peak_concurrency, built from call
--- events, does not — the summary reads it for that reason.
+-- sampling interval can escape it; the peak of the Usage summary, swept over
+-- the call events (api/usage.py), does not.
 -- The period is a parameter so that samples are filtered BEFORE they are
 -- aggregated: filtered after, on the view, every page read the whole
 -- history (3.9 s for a month once a year of samples is stored).

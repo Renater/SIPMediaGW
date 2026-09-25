@@ -113,7 +113,7 @@ def resolvePeriod(period: str | None, today: date | None = None):
 
 # Recording and streaming sessions hold a gateway but carry no caller: they
 # count in Capacity (the pool) and never in Usage or Quality, which count
-# what users did. is_user_call() is the one definition (schema, lot 0).
+# what users did. is_user_call() is the one definition (db/schema_reporting_lot0.sql).
 USER_CALLS = " AND is_user_call(main_app)"
 
 

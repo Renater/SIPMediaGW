@@ -1,5 +1,5 @@
 """
-P18: actions look like interact's, signing out is asked first, a table cell
+Actions look like interact's, signing out is asked first, a table cell
 stays a table cell, and the Journal's lists tick several values.
 """
 

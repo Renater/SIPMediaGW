@@ -161,7 +161,7 @@ export function mount() {
   mounted = true;
   offset = 0;
   calendar = createCalendar({
-    panel: $('auditCalendar'), mode: 'range', max: todayKey(),
+    panel: $('auditCalendar'), max: todayKey(),
     onApply: ({ start, end }) => setRange(start, end, 'custom'),
   });
   const [start, end] = PRESETS.last_30();

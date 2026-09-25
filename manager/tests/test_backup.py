@@ -33,7 +33,7 @@ case "$1" in
   pg_dump) [ "${FAKE_FAIL:-}" = dump ] && { echo "pg_dump: error: no such database" >&2; exit 3; }
            printf 'PGDMP fake archive' ;;
   pg_restore) cat > /dev/null
-           if [ "${FAKE_TOC:-}" = nocalls ]; then echo "1; 0 1 TABLE DATA public vm_rates gw_manager"
+           if [ "${FAKE_TOC:-}" = nocalls ]; then echo "1; 0 1 TABLE DATA public recompute_log gw_manager"
            else echo "1; 0 1 TABLE DATA public calls gw_manager"; fi
            if [ "$2" != -l ] && [ "${FAKE_RESTORE:-}" = mixed ]; then
              printf '%s\n' \

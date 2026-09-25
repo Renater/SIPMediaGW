@@ -17,8 +17,8 @@
 # against them. `last-success` is touched on success: its age is what a
 # monitor should watch (find "$BACKUP_DIR/last-success" -mmin -1500).
 #
-# The database carries the TimescaleDB extension (kept on purpose, for the
-# in-call media series to come). pg_dump handles it; restoring needs the
+# The database carries the TimescaleDB extension (the instance is shared with
+# Homer; no hypertable here). pg_dump handles it; restoring needs the
 # same extension version and timescaledb_pre/post_restore(), which
 # tools/restore-check.sh does and the README spells out.
 set -eu
@@ -33,7 +33,7 @@ KEEP_INTRADAY_HOURS="${KEEP_INTRADAY_HOURS:-48}"
 KEEP_NIGHTLY_DAYS="${KEEP_NIGHTLY_DAYS:-30}"
 MARK="# gw_manager-backup"
 # Tables counted next to each dump. Their data must come back on restore.
-TABLES="calls call_media_stats pool_samples manager_users user_audit vm_rates org_units org_unit_rules recompute_log"
+TABLES="calls call_media_stats pool_samples manager_users user_audit org_units org_unit_rules org_unit_audit recompute_log"
 
 # Every PostgreSQL client runs inside the database container. PG_EXEC
 # replaces that prefix: the tests point it at a stand-in.

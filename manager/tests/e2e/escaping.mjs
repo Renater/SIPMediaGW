@@ -8,8 +8,8 @@
  *
  * Exit status 1 when anything was injected. Not part of ./tools/test.sh: the
  * test image carries Node for `node --check`, not a browser.
- * Review of 24/09/2026: 0 injected over the 9 views, the drawer, the charts'
- * tooltips and the dialogs.
+ * Last run: 0 injected over the 9 views, the drawer, the charts' tooltips
+ * and the dialogs.
  */
 /* global process */   // a Node script, not a page of the console
 import { chromium } from 'playwright';

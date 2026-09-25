@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from api.periods import aware, parseInstant
 from auth import requireUser
-from db import fetch, sqlWith
+from db import fetch, likePattern, sqlWith
 from homer import callLink
 from ingest.mapping import frameRates
 
@@ -137,9 +137,7 @@ def searchCalls(start: str = Query(None), end: str = Query(None),
         """, (int(number.group(1)),)))
         return {"total": len(rows), "limit": limit, "offset": 0, **window, "calls": rows}
 
-    # `%` and `_` are ILIKE wildcards: typed in the search box, "50%" matched
-    # every call. Escaped, they match themselves (the default escape is `\`).
-    escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = likePattern(q)
     filters, params = exactFilters(reason, outcomes, videos)
     rows = fetch(sqlWith("""
         SELECT id, call_id, call_start, call_end, duration_s, occupancy_s, outcome,
@@ -152,7 +150,7 @@ def searchCalls(start: str = Query(None), end: str = Query(None),
            AND (%s = '' OR {search}){filters}
          ORDER BY call_start DESC NULLS LAST
          LIMIT %s OFFSET %s
-    """, search=SEARCH_CLAUSE, filters=filters), [since, until, q] + [f"%{escaped}%"] * len(SEARCHED) + params + [limit, offset])
+    """, search=SEARCH_CLAUSE, filters=filters), [since, until, q] + [pattern] * len(SEARCHED) + params + [limit, offset])
     total = rows[0]["total"] if rows else 0
     return {"total": total, "limit": limit, "offset": offset, **window, "calls": listed(rows)}
 
@@ -192,19 +190,6 @@ def callDetail(callPk: int):
          ORDER BY media, stream_index, direction
     """, (callPk,))
     return call
-
-
-@router.get("/reporting/calls/{callPk}/media")
-def callMedia(callPk: int):
-    rows = fetch("""
-        SELECT media, stream_index, direction, packets, lost_packets,
-               jitter_ms, avg_bitrate_kbps, errors, packet_reports
-          FROM call_media_stats WHERE call_pk = %s
-         ORDER BY media, stream_index, direction
-    """, (callPk,))
-    if not rows:
-        raise HTTPException(status_code=404, detail="No media statistics")
-    return rows
 
 
 @router.get("/reporting/calls/{callPk}/raw")

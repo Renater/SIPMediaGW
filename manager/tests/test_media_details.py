@@ -46,7 +46,8 @@ def test_an_old_payload_leaves_every_new_column_empty():
 
 def test_an_old_payload_without_samples_keeps_every_video_entry():
     """Without samples, nothing says the entries are repeats: all are kept, as
-    before P15 (the backfill handles the 15/09 calls from their counters)."""
+    before the samples were read (tools/backfill_calls.py handles those calls
+    from their counters)."""
     payload = load("payload_before_media.json")
     assert len(payload["call"]["mediaStats"]["video"]) == 12
     assert {row["stream_index"] for row in videoRows(payload)} == set(range(12))
@@ -200,7 +201,7 @@ def test_streams_that_restart_are_not_repeats():
     assert not looksCumulative(video[:3])          # odd: not pairs
 
 
-# ------------------------------------------------------------- P16 refinements
+# ------------------------------------------------------- what is not measured
 
 def test_nothing_measured_is_unknown_even_when_both_ways():
     """Call 3263: one sample, no rate. sendrecv says what was negotiated, not

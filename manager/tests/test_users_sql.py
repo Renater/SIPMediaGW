@@ -1,5 +1,5 @@
 """
-users.py composes its queries with psycopg.sql (P28): no account query is
+users.py composes its queries with psycopg.sql: no account query is
 assembled from strings any more. Rendered here without a database, so a
 mistake in the composition fails in the suite rather than at the first sign-in.
 """

@@ -13,7 +13,7 @@ select = ["F", "E9", "W"]
 
 [tool.mypy]
 python_version = "3.12"
-files = ["app.py", "auth.py", "users.py", "db.py", "homer.py", "sampler.py", "sources.py",
+files = ["app.py", "auth.py", "users.py", "db.py", "homer.py", "sampler.py", "sources.py", "proxyapi.py",
          "requestid.py", "origin.py", "api", "ingest"]
 ignore_missing_imports = true
 # Permissive start: nothing has to be annotated, but what is annotated is

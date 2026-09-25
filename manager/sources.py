@@ -1,10 +1,8 @@
 """
-API source registry (P1: proxyAPI only).
-
-The front never sees these URLs or tokens: the back resolves every
-external call through this table. Adding RTCStats or the reporting
-database later means adding an entry here and a route module, nothing
-else changes.
+The external HTTP APIs the back end calls: the proxyAPI, and nothing else
+for now. The front never sees these URLs or tokens; every call to one of
+them goes through proxyapi.py, which reads its entry here. The reporting
+database is not one of them: db.py holds it.
 """
 
 import os

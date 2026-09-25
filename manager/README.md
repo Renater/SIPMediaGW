@@ -91,11 +91,11 @@ Production).
 | `POST /auth/login` · `POST /auth/logout` · `GET /api/me` | anyone | session: sign in (JSON only), sign out (ends every session of the account), who am I |
 | `POST /api/account/password` | signed in | one's own password |
 | `GET /api/gateways` | signed in | live pool, states derived server-side |
-| `GET /api/reporting/summary` · `monthly` · `platforms` · `org-units` · `concurrency` | signed in | Usage: headline figures, monthly series, platforms, units, daily peaks |
+| `GET /api/reporting/summary` · `monthly` · `platforms` · `org-units` | signed in | Usage: headline figures, monthly series, platforms, units |
 | `GET /api/reporting/outcomes` · `video-states` · `ivr-reasons` · `recomputes` | signed in | Quality: outcomes, picture received, close reasons, recomputation log |
 | `GET /api/reporting/pool-profile` · `pool-pressure` · `pool-hours` · `pool-period-hours` · `concurrency/hourly` | signed in | Capacity: hourly profile, tight slots, VM-hours, sizing |
-| `GET /api/reporting/calls` · `calls/{id}` · `calls/{id}/media` · `calls/{id}/raw` | signed in | Journal: calls over a window, one call, its media statistics, the payload as pushed |
-| `GET/POST /api/users` · `PUT/DELETE /api/users/{name}` · `POST /api/users/{name}/password` · `GET /api/users/audit` | admin | accounts |
+| `GET /api/reporting/calls` · `calls/{id}` · `calls/{id}/raw` | signed in | Journal: calls over a window, one call with its media statistics, the payload as pushed |
+| `GET/POST /api/users` · `PUT/DELETE /api/users/{name}` · `POST /api/users/{name}/password` | admin | accounts |
 | `GET/POST /api/org-units` · `PUT /api/org-units/{code}` · `POST/PUT/DELETE /api/org-unit-rules[/{id}]` · `PUT /api/org-unit-rules-order` · `POST /api/org-unit-rules/test` · `POST /api/org-units/recompute` | admin | units and the rules that classify callers |
 | `GET /api/audit` | admin | audit trail: accounts and units, filtered and paginated |
 | `POST /ingest/calls` | gateways | end-of-call intake (own bearer token, no session) |
@@ -108,11 +108,12 @@ Production).
     users.py            the account table and its audit, one transaction per change
     db.py               PostgreSQL pool, session time zone, errors logged and neutralised
     sampler.py          background task: pool occupancy sample every POOL_SAMPLE_INTERVAL seconds
+    proxyapi.py         the pool as the proxyAPI reports it (admin token server-side); read by park.py and the sampler
     homer.py            Homer deep links (exact by Call-ID, by room, by endpoint); HOMER_FLAVOR selects the URL shape
     sources.py          registry of external APIs (proxyAPI only for now)
     requestid.py        a request id on every log line and response
     api/
-      park.py             live pool relay, operational state derived server-side
+      park.py             supervision: the pool for the browser (summary, Homer links)
       periods.py          periods, windows, the scope of Usage and Quality (user calls, units)
       usage.py            summary, monthly series, platforms, units
       quality.py          outcomes, video states, close reasons, recompute log
@@ -212,7 +213,11 @@ ends `MANAGER_SESSION_HOURS` (10) after sign-in, however busy — the cookie is
 re-issued on every response, and the park view polls.
 
 Every account change from the console is written together with its line in
-`user_audit`, in one transaction: a refused request writes nothing.
+`user_audit`, in one transaction: a refused request writes nothing. Two
+mechanisms, one rule — the change and its audit line never separate: account
+routes write both from Python inside one transaction (`users._write`), entity
+routes write both in one SQL statement (a CTE in `api/org_units.py`). A new
+audited object takes one or the other; `GET /api/audit` reads both tables.
 
 Writes (POST, PUT, PATCH, DELETE) are refused with 403 when the browser says
 they come from another origin (`Sec-Fetch-Site`, `Origin`): interact and Homer
@@ -246,6 +251,12 @@ dependencies. Build the test image first: `./tools/test.sh` does.
 `db/org_units.sample.sql` shows how calls are attached to organisational units;
 the real rules belong to the deployment, not to this repository.
 
+The files in `db/apply_order.txt` are replayable: `IF NOT EXISTS`, `OR
+REPLACE`, `ADD COLUMN IF NOT EXISTS`, no `BEGIN`; `migrate.sh` runs them all
+in one transaction, on a fresh database and on a deployed one alike. The
+`drop_*.sql` files are one-off removals listed at the foot of `apply_order.txt`:
+run each once, by hand, on a database that predates it.
+
 ## What is counted where
 
 Usage and Quality count **user calls**: recording and streaming sessions
@@ -256,6 +267,12 @@ The Journal lists every session; its exact filters (outcome, video, close
 reason — the links from Quality) keep to user calls, so a Quality figure and
 the list it opens agree. The concurrency peak of the summary is swept over the
 period's calls, units included.
+
+A period is a set of local days in the reporting time zone (`TZ`): the Journal
+and the audit log send the days and hours typed in their filters without a
+zone, and the back end reads them in that zone. A browser set to another zone
+sees the same window as the operator next to the server, not one shifted to
+its own clock.
 
 ## Reading the capacity views
 
@@ -430,8 +447,8 @@ change of PostgreSQL or TimescaleDB image, and before a go-live.
 
 ### TimescaleDB
 
-The database carries the TimescaleDB extension, unused today and kept on
-purpose for the in-call media series. Two consequences:
+The database carries the TimescaleDB extension because the instance is
+shared with Homer; no table here is a hypertable. Two consequences:
 
 - a dump restores only on an instance with **the same TimescaleDB version**
   (`SELECT extversion FROM pg_extension WHERE extname = 'timescaledb'`);

@@ -447,7 +447,7 @@ export function mount() {
     ? normalise({ start: link.start, end: Math.min(link.end, todayKey()), from: 0, to: 23 })
     : presetRange('today');
   calendar = createCalendar({
-    panel: $('callCalendar'), mode: 'range', max: todayKey(),
+    panel: $('callCalendar'), max: todayKey(),
     onApply: ({ start, end }) => setRange({ ...range, start, end }, 'custom'),
   });
   applyLanguage();

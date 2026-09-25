@@ -37,9 +37,9 @@ if [ "$dry" = 1 ]; then
 fi
 
 # One transaction for the whole run: a failure in the fifth file leaves the
-# database exactly as it was before the first. Applied file by file, lot1's
-# DROP VIEW monthly_pool_cost stayed dropped until schema_rates.sql — and an
-# error in between left /reporting/pool-cost answering 503.
+# database exactly as it was before the first. Applied file by file, a view
+# dropped by one file and recreated by a later one stays missing when an
+# error lands in between, and the console answers 503 until someone notices.
 for f in $files; do echo "applying db/$f"; done
 for f in $files; do cat "db/$f"; echo; done \
     | docker exec -i "$PG_CONTAINER" psql -q -v ON_ERROR_STOP=1 --single-transaction \

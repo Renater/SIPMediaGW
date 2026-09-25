@@ -1,5 +1,5 @@
 """
-P16: the Journal shows the endpoint and the picture received; the Quality
+The Journal shows the endpoint and the picture received; the Quality
 view opens the Journal on the calls behind a count.
 
 Route tests run on the recorder of test_api_routes (no database): they check
@@ -146,7 +146,7 @@ def test_a_call_never_established_is_a_failure_whatever_its_reason():
     assert "row.is_failure || row.outcome === 'not_established'" in quality
 
 
-# ------------------------------------------------------------------ P17
+# ------------------------------------------------- finding a call by its number
 
 def test_a_call_number_finds_the_call_whatever_the_window(client):  # noqa: F811
     """"#3197" is what the drawer shows: one call, found without its date."""

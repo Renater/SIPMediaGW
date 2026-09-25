@@ -16,8 +16,7 @@ from tests.test_api_routes import Recorder, SAMPLE_ROW, routeModules
 
 
 ALICE = "alice@sample.org"
-# Any signed-in user reads this; only an admin creates an account. The VM
-# rate routes played both parts until the cost was decommissioned (P19).
+# Any signed-in user reads this; only an admin creates an account.
 READ = "/api/reporting/recomputes"
 BOB = {"username": "bob@sample.org", "first_name": "Bob", "last_name": "Martin",
        "role": "operator", "source": "local", "password": "bob-test-test-test"}   # a test value, never a real password
@@ -48,7 +47,8 @@ class MemoryUsers:
     def _audit(self, audit):
         """The audit line that users.py writes in the write's own transaction."""
         if audit:
-            self.audit(*audit)
+            actor, action, target, detail = audit
+            self.log.append((actor, action, target, detail or {}))
 
     def createUser(self, username, role, source, passwordHash, createdBy, mustChange=True, externalId=None,
                    firstName=None, lastName=None, audit=None):
@@ -118,11 +118,6 @@ class MemoryUsers:
             self._audit(audit)
         return gone
 
-    def audit(self, actor, action, target, detail=None):
-        self.log.append((actor, action, target, detail or {}))
-
-    def listAudit(self, limit=100):
-        return [{"actor": a, "action": b, "target": c, "detail": d} for a, b, c, d in self.log[-limit:]]
 
 
 @pytest.fixture()
@@ -131,7 +126,7 @@ def store(monkeypatch):
     memory = MemoryUsers()
     for name in ("getUser", "listUsers", "countUsers", "countActiveAdmins", "createUser",
                  "setPassword", "updateAccount", "bumpEpoch",
-                 "touchLogin", "deleteUser", "audit", "listAudit"):
+                 "touchLogin", "deleteUser"):
         monkeypatch.setattr(users, name, getattr(memory, name))
     memory.createUser("admin", "admin", "local", auth.hashPassword("root-secret-1234"), "test", mustChange=False)
     memory.createUser(ALICE, "operator", "local", auth.hashPassword("alice-secret-1234"), "test",
