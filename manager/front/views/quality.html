@@ -1,0 +1,52 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="qualityTitle">Reporting</h1>
+      <div class="sub" id="qPeriod">—</div>
+    </div>
+    <div class="grow"></div>
+  </header>
+
+  <div class="subtabs">
+    <button data-subview="report" data-i18n="subUsage">Usage &amp; adoption</button>
+    <button data-subview="quality" class="on" data-i18n="subQuality">Quality</button>
+    <button data-subview="capacity" data-i18n="subCapacity">Capacity</button>
+  </div>
+
+  <div class="filters">
+    <div class="periods" id="qPeriods">
+      <button data-period="month"></button>
+      <button data-period="last_month"></button>
+      <button data-period="year"></button>
+    </div>
+    <label class="field" id="qMonthField"><span data-i18n="monthField">Month</span>
+      <select id="qMonth"><option value="">—</option></select>
+    </label>
+  </div>
+
+  <div class="panel padded">
+    <h2 data-i18n="outcomesTitle">Session outcomes</h2>
+    <table class="plain">
+      <thead><tr id="qOutcomesHead"></tr></thead>
+      <tbody id="qOutcomes"></tbody>
+    </table>
+  </div>
+
+  <div class="panel padded">
+    <h2 data-i18n="qVideoTitle">Conference video</h2>
+    <table class="plain">
+      <thead><tr id="qVideoHead"></tr></thead>
+      <tbody id="qVideo"></tbody>
+    </table>
+  </div>
+
+  <div class="panel padded">
+    <h2 data-i18n="qReasonsTitle">How calls ended</h2>
+    <div class="scroll">
+      <table class="plain">
+        <thead><tr id="qReasonsHead"></tr></thead>
+        <tbody id="qReasons"></tbody>
+      </table>
+    </div>
+  </div>
+</section>

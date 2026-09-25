@@ -1,0 +1,62 @@
+/* Design tokens, reset and typography.
+   Same visual language as the interact companion page: DSFR palette and
+   softly rounded surfaces. */
+:root {
+  --blue: #000091; --blue-hover: #1212ff;
+  --blue-975: #f5f5fe; --blue-950: #ececfe; --blue-925: #e3e3fd; --blue-850: #cacafb;
+  --bg: #fff; --bg-alt: #f6f6f6; --bg-raised: #fff;
+  --border: #ddd; --text: #161616; --mention: #666;
+  --success: #18753c; --success-bg: #b8fec9;
+  --warning: #b34000; --warning-bg: #ffe9e6;
+  --error: #ce0500;   --error-bg: #ffe9e9;
+  --info: #0063cb;    --info-bg: #e8edff;
+  --focus: #0a76f6;
+  --radius: 6px;
+  --grid: #eee; --axis: #666; --bar: #000091; --trend: #e4794a; --neutral: #cecece;
+  /* Text on a --blue surface; the residual slice of a donut; the two shadow
+     strengths. Declared here so no stylesheet or module carries a literal. */
+  --on-blue: #fff; --other: #8a9bc4;
+  /* A day that cannot be picked (DSFR disabled grey). */
+  --disabled: #929292;
+  --shadow: rgba(0, 0, 0, .12); --shadow-strong: rgba(0, 0, 0, .14);
+}
+
+* { box-sizing: border-box; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  /* Arial, not Marianne: the DSFR face is not served by this application (it
+     ships as font files under its own licence, none is bundled here), and a
+     stack that names it only pretends. Add an @font-face and put it back. */
+  font-family: Arial, system-ui, sans-serif; font-size: 14px; line-height: 1.5;
+}
+[hidden] { display: none !important; }
+.grow { flex: 1; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Grouped buttons clip their overflow to round the group's corners, which
+   cut the ring off; drawn inside, it survives the clip. */
+.periods button:focus-visible, .switch button:focus-visible, .lang button:focus-visible,
+.subtabs button:focus-visible { outline-offset: -2px; }
+/* Present for assistive technology, invisible on screen: the label of a
+   field whose placeholder already says what it is. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+h1 { font-size: 21px; font-weight: 700; }
+h2 { font-size: 16px; font-weight: 700; }
+.sub { font-size: 13px; color: var(--mention); }
+.dim, .note { color: var(--mention); }
+.note { margin-top: 12px; font-size: 13px; }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+
+button, select, .btn {
+  border: 1px solid var(--blue); border-radius: var(--radius); background: transparent;
+  color: var(--blue); padding: 7px 14px; font: inherit; font-size: 13px;
+  cursor: pointer; text-decoration: none;
+}
+button:hover, .btn:hover { background: var(--blue-950); }
+button:disabled { opacity: .5; cursor: default; }
+select { border-color: var(--border); color: var(--text); background: var(--bg-alt); }
+
+svg { display: block; }
+svg text { font-family: inherit; }

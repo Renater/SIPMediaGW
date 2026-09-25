@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIP Media Gateway Manager</title>
+<link rel="icon" id="favicon" href="data:,">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/layout.css">
+<link rel="stylesheet" href="/static/css/components.css">
+<link rel="stylesheet" href="/static/css/print.css" media="print">
+</head>
+<body>
+
+<!-- Sign-in: the single door into every section -->
+<section class="login" id="loginView" hidden>
+  <div class="card" id="loginCard">
+    <div class="brand">
+      <img class="brand-logo" data-brand="logo" alt="" hidden>
+      <div class="brand-text">
+        <div class="brand-name" data-brand="name">SIP Media Gateway Manager</div>
+        <div class="brand-tagline" data-brand="tagline" hidden></div>
+      </div>
+    </div>
+    <h1 data-i18n="loginTitle">Sign in</h1>
+    <p data-i18n="loginSub">Operations access only.</p>
+    <form id="loginForm">
+      <label class="sr-only" for="username" data-i18n="usernamePlaceholder">Username</label>
+      <input type="text" id="username" name="username" autocomplete="username"
+             autocapitalize="none" spellcheck="false" required>
+      <label class="sr-only" for="password" data-i18n="passwordPlaceholder">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+      <button type="submit" id="loginButton" data-i18n="loginButton">Sign in</button>
+    </form>
+    <div class="error" id="loginError" role="alert"></div>
+  </div>
+  <!-- Shown instead of the form when the account must change its password
+       before anything else: first sign-in, or a reset by an administrator. -->
+  <div class="card" id="passwordCard" hidden>
+    <h1 data-i18n="pwdRequiredTitle">New password</h1>
+    <p id="pwdRequiredRule"></p>
+    <form id="passwordForm" autocomplete="off">
+      <!-- Whose password this is, for the browser's password manager: without
+           it, the new password may be saved against no account, or the wrong one. -->
+      <input type="text" id="pwdUser" autocomplete="username" aria-label="username" readonly hidden>
+      <label class="sr-only" for="pwdCurrent" data-i18n="pwdCurrent">Current password</label>
+      <input type="password" id="pwdCurrent" autocomplete="current-password" required>
+      <label class="sr-only" for="pwdNext" data-i18n="pwdNew">New password</label>
+      <input type="password" id="pwdNext" autocomplete="new-password" required>
+      <label class="sr-only" for="pwdConfirm" data-i18n="pwdConfirm">New password, once more</label>
+      <input type="password" id="pwdConfirm" autocomplete="new-password" required>
+      <button type="submit" id="pwdButton" data-i18n="pwdSave">Change password</button>
+    </form>
+    <div class="error" id="pwdError" role="alert"></div>
+    <button type="button" class="link" id="pwdBack" data-i18n="logout">Sign out</button>
+  </div>
+</section>
+
+<!-- Application shell: everything below is filled by the view modules -->
+<div id="app" hidden>
+  <div class="topbar">
+    <div class="brand">
+      <img class="brand-logo" data-brand="logo" alt="" hidden>
+      <div class="brand-text">
+        <div class="brand-name" data-brand="name">SIP Media Gateway Manager</div>
+        <div class="brand-tagline" data-brand="tagline" hidden></div>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <div class="lang" id="lang">
+      <button data-lang="fr">FR</button><button data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <!-- Shown while /health answers anything but 200, with a text set by
+       main.js: the database is down, or the Manager itself is. -->
+  <div class="banner" id="dbBanner" role="status" hidden></div>
+
+  <div class="shell">
+    <nav class="side" id="nav" aria-label="Sections">
+      <button class="nav" data-view="supervision"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5-6 4 12 2.5-6H21"/></svg> <span data-i18n="navSupervision">Supervision</span></button>
+      <button class="nav" data-view="report"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6.5 20v-6"/><path d="M12 20V6"/><path d="M17.5 20v-9"/></svg> <span data-i18n="navReport">Reporting</span></button>
+      <button class="nav" data-view="calls"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h.01M4.5 12h.01M4.5 17h.01"/><path d="M9 7h11M9 12h11M9 17h11"/></svg> <span data-i18n="navCalls">Call log</span></button>
+      <button class="nav" data-view="users"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg> <span data-i18n="navSettings">Settings</span></button>
+      <div class="grow"></div>
+      <button class="nav quiet" data-view="account"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg> <span data-i18n="navAccount">My account</span></button>
+      <button class="nav quiet" id="logout"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8"/><path d="M17 15l3-3-3-3"/><path d="M20 12h-9"/></svg> <span data-i18n="logout">Sign out</span></button>
+    </nav>
+    <main id="view"></main>
+  </div>
+
+  <!-- Signing out ends the session: asked first, like hanging up in interact. -->
+  <dialog class="modal narrow" id="logoutDialog" aria-labelledby="logoutTitle">
+    <form method="dialog" id="logoutForm">
+      <header><h2 id="logoutTitle" data-i18n="confirmTitle">Confirmation</h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <p class="confirm-text" data-i18n="logoutQuestion">Do you want to sign out?</p>
+      <footer>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="primary" value="logout" id="logoutConfirm" data-i18n="logout">Sign out</button>
+      </footer>
+    </form>
+  </dialog>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

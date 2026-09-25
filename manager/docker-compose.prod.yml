@@ -1,0 +1,45 @@
+# Production — a complete file, not an override:
+#
+#     docker compose -f docker-compose.prod.yml up -d
+#
+# docker-compose.yml mounts the source over the image and honours
+# MANAGER_RELOAD, which is right on a developer's machine and wrong on a
+# server: the image is what was reviewed and tested, the working directory is
+# not. Removing a volume through an override needs Compose 2.24 (`!reset`);
+# duplicating fifteen lines costs less than a version requirement on the one
+# file that has to work everywhere.
+services:
+  manager:
+    image: manager:local
+    build: .
+    container_name: manager
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      # Refuses to start without MANAGER_SESSION_SECRET and MANAGER_COOKIE_SECURE=1.
+      MANAGER_ENV: production
+      # The throttle keys on X-Forwarded-For; only right behind a reverse proxy.
+      TRUST_PROXY: "1"
+    # --proxy-headers lets uvicorn trust the proxy's scheme and address —
+    # from FORWARDED_ALLOW_IPS only: the address the proxy's connections come
+    # from as the container sees them (README, Production, to check it).
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8200",
+              "--proxy-headers", "--forwarded-allow-ips", "${FORWARDED_ALLOW_IPS:-127.0.0.1}"]
+    # MANAGER_BIND: the host address the port is published on. The loopback
+    # (default) when the reverse proxy runs on this host; the LAN address when
+    # it runs elsewhere or the gateways push to this port directly — then a
+    # firewall keeps 8200 to the proxy and the gateways.
+    ports:
+      - "${MANAGER_BIND:-127.0.0.1}:8200:8200"
+    # The deployment's logo (MANAGER_BRAND_LOGO): not in the image, kept on the host.
+    volumes:
+      - ./brand:/app/brand:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8200/health', timeout=4).status == 200 else 1)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 20s

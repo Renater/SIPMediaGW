@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest==9.0.3
+# FastAPI's TestClient needs httpx, which requirements.txt already pins.
+# Static checks, run by tools/lint.sh in the test image.
+ruff==0.12.7
+mypy==1.17.1
+pip-audit==2.9.0

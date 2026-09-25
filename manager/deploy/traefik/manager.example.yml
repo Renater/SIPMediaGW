@@ -1,0 +1,62 @@
+# Traefik (file provider) in front of a SIPMediaGW deployment — an example.
+# Copy to Traefik's dynamic configuration directory and replace:
+#   example.org   the public domain (one certificate: example.org + *.example.org)
+#   192.0.2.10    the host running the proxyAPI, the Manager and Homer
+#   HOMER_PORT    Homer's port on that host
+#
+# What is NOT published, and why:
+#   proxyAPI /admin, /register, /unregister: the Manager reads /admin/statuses
+#     and the gateways register directly on the local network.
+#   Manager /ingest: the gateways push directly on the local network
+#     (LOG_PUSH_URL=http://192.0.2.10:8200/ingest/calls), with their token.
+#   (Manager /health stays published: the page polls it every 30 s for its
+#   "Manager unreachable" banner. tests/test_proxy.py checks that every path
+#   the front calls is published, and /ingest is not.)
+http:
+  middlewares:
+    # HSTS: the browser will not come back to this name over HTTP. No
+    # includeSubDomains: it would bind every other name of the domain.
+    hsts:
+      headers:
+        stsSeconds: 31536000
+    # The Manager takes small JSON bodies only; /ingest is not published.
+    small-bodies:
+      buffering:
+        maxRequestBodyBytes: 1048576
+
+  routers:
+    pairing:
+      entryPoints: [websecure]
+      rule: "Host(`visio.example.org`) && !PathPrefix(`/admin`) && !Path(`/register`) && !Path(`/unregister`)"
+      service: proxyapi
+      middlewares: [hsts]
+      tls:
+        certResolver: le
+        domains:
+          - main: "example.org"
+            sans: ["*.example.org"]
+    manager:
+      entryPoints: [websecure]
+      rule: "Host(`manager.example.org`) && !PathPrefix(`/ingest`)"
+      service: manager
+      middlewares: [hsts, small-bodies]
+      tls:
+        certResolver: le
+        domains:
+          - main: "example.org"
+            sans: ["*.example.org"]
+    homer:
+      entryPoints: [websecure]
+      rule: "Host(`troubleshoot.example.org`)"
+      service: homer
+      middlewares: [hsts]
+      tls:
+        certResolver: le
+        domains:
+          - main: "example.org"
+            sans: ["*.example.org"]
+
+  services:
+    proxyapi: { loadBalancer: { servers: [ { url: "http://192.0.2.10:80" } ] } }
+    manager:  { loadBalancer: { servers: [ { url: "http://192.0.2.10:8200" } ] } }
+    homer:    { loadBalancer: { servers: [ { url: "http://192.0.2.10:HOMER_PORT" } ] } }

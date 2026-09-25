@@ -1,0 +1,24 @@
+# Image for running the suite: Python for the tests, Node for the syntax check.
+#
+# The front-end checks parse each module with node --check, which is the only
+# thing that catches a template literal cut in half — counting braces does not.
+# Without Node those fourteen checks skip, and the one failure that silenced the
+# whole interface would go unnoticed.
+#
+#   docker build -q -t gw-manager-tests -f tools/Dockerfile.test .
+#   docker run --rm -v "$PWD:/repo:ro" -w /repo gw-manager-tests
+#
+# Rebuild only when the requirements change; the layer below is cached.
+
+FROM python:3.12-slim
+
+RUN apt-get -qq update \
+ && apt-get -qq install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt requirements-dev.txt /tmp/
+RUN pip install --no-cache-dir -q -r /tmp/requirements-dev.txt
+
+# No arguments runs everything; pass some to narrow it down, as in
+#   docker run --rm -v "$PWD:/repo:ro" -w /repo gw-manager-tests tests/test_front.py -v
+ENTRYPOINT ["pytest", "-q", "-p", "no:cacheprovider"]

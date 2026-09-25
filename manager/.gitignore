@@ -1,0 +1,42 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Secrets. .env is tracked with the defaults and no secret, like the gateway's:
+# tools/init-env.sh fills the secrets in and marks it skip-worktree, so a filled
+# .env never shows in git status. Every other .env.* stays out.
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+acme.json
+.htpasswd
+
+# Data and leftovers: dumps, logs, lot and review archives.
+*.dump
+*.counts
+*.sql.gz
+*.log
+*.zip
+*.tar.gz
+*.tgz
+*.bak
+*.orig
+*.rej
+
+# Internal review notes of the lab, kept out of the published repository.
+REVIEW.md
+
+# brand/: SIPMediaGW's logo and icon are part of the repository; the files a
+# deployment adds beside them are not (brand/README.md).
+brand/*
+!brand/README.md
+!brand/logo.svg
+!brand/favicon.svg

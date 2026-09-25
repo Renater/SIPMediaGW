@@ -1,0 +1,61 @@
+/* Page structure: sign-in, top bar, side navigation, view area. */
+
+/* The service's name and logo, as the deployment sets them (MANAGER_BRAND_*),
+   the way interact takes its own from its brand file. */
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-logo { height: 34px; width: auto; max-width: 160px; object-fit: contain; flex: none; }
+.brand-text { min-width: 0; }
+.brand-name { font-size: 15px; font-weight: 700; }
+.brand-tagline { font-size: 12px; color: var(--mention); }
+
+.login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg-alt); }
+.login .card { width: min(380px, calc(100vw - 32px)); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius); padding: 30px; }
+.login .brand { margin-bottom: 22px; }
+.login h1 { font-size: 19px; margin-bottom: 6px; }
+.login p { font-size: 13px; color: var(--mention); margin-bottom: 20px; }
+.login input { width: 100%; padding: 10px 12px; border: none; border-bottom: 2px solid var(--mention); border-radius: var(--radius) var(--radius) 0 0; background: var(--bg-alt); color: var(--text); font: inherit; margin-bottom: 16px; }
+.login button { width: 100%; padding: 11px; border: none; border-radius: var(--radius); background: var(--blue); color: var(--on-blue); font-weight: 700; }
+.login button:hover { background: var(--blue-hover); }
+.login .error { min-height: 20px; margin-top: 12px; font-size: 13px; color: var(--error); }
+
+/* The top bar and the menu stay put while the view scrolls: on a long
+   call log, "My account" and "Sign out" sat at the foot of the page.
+   The bar has a fixed height so the menu knows where to start; the scrim and
+   the drawer (29, 30) still cover both. */
+:root { --topbar-h: 57px; }
+.topbar { display: flex; align-items: center; gap: 14px; height: var(--topbar-h); padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg-raised);
+  position: sticky; top: 0; z-index: 25; }
+.lang { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.lang button { border: none; border-radius: 0; background: transparent; color: var(--mention); padding: 4px 12px; font-size: 12.5px; font-weight: 700; }
+.lang button.on { background: var(--blue-925); color: var(--blue); }
+
+.shell { display: flex; min-height: calc(100vh - var(--topbar-h)); }
+/* Always the height of the window under the bar, whatever the view's length;
+   it scrolls on its own only if the window is shorter than the menu. */
+.side { width: 226px; flex: none; border-right: 1px solid var(--border); background: var(--bg-raised); display: flex; flex-direction: column; padding: 14px 0;
+  position: sticky; top: var(--topbar-h); align-self: flex-start;
+  height: calc(100dvh - var(--topbar-h)); overflow-y: auto; }
+.nav { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: none; border-left: 3px solid transparent; border-radius: 0; background: transparent; color: var(--text); padding: 11px 18px; font-size: 14px; }
+.nav:hover { background: var(--bg-alt); }
+.nav.on { border-left-color: var(--blue); background: var(--blue-975); color: var(--blue); font-weight: 700; }
+.nav.quiet { color: var(--mention); font-size: 13px; }
+/* Drawn rather than borrowed from a font: the geometric glyphs used before
+   differed only by the direction of their hatching, which is invisible at menu
+   size. These are stroked in currentColor, so they follow the item's state
+   without a second rule. */
+.nav .ico { width: 19px; height: 19px; flex: none; opacity: .75; }
+.nav:hover .ico, .nav.on .ico { opacity: 1; }
+
+main { flex: 1; min-width: 0; padding: 24px 30px 40px; }
+.view > header { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+
+/* Half a laptop screen or a tablet: the menu keeps its icons, the two donuts
+   stack, the gutters tighten. Nothing is hidden that the desktop shows. */
+@media (max-width: 900px) {
+  .side { width: 58px; }
+  .nav { padding: 11px 0 11px 16px; justify-content: flex-start; }
+  .nav span { display: none; }
+  main { padding: 16px 16px 32px; }
+  .donuts { grid-template-columns: 1fr; }
+  .topbar { padding: 0 16px; }
+}

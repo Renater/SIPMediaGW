@@ -1,0 +1,35 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="supervisionTitle">Supervision</h1>
+      <div class="sub" data-i18n="supervisionSub">Live supervision of registered gateways</div>
+    </div>
+    <div class="grow"></div>
+  </header>
+
+  <div class="tiles small">
+    <div class="tile"><b id="nTotal">–</b><span data-tile="total"></span></div>
+    <div class="tile free"><b id="nFree">–</b><span data-tile="free"></span></div>
+    <div class="tile idle"><b id="nIdle">–</b><span data-tile="idle"></span></div>
+    <div class="tile ivr"><b id="nIvr">–</b><span data-tile="ivr"></span></div>
+    <div class="tile call"><b id="nCall">–</b><span data-tile="call"></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <label class="sr-only" for="search" data-i18n="search">Search by ID, endpoint, meeting, code, gateway…</label>
+      <input type="search" id="search" autocomplete="off">
+      <span class="shown" id="shown"></span>
+      <div class="refresh">
+        <button id="refresh" data-i18n="refresh">Refresh</button>
+        <span id="countdown"></span>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr id="parkHead"></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</section>

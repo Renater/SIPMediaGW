@@ -1,0 +1,77 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="callsTitle">Call log</h1>
+      <div class="sub" data-i18n="callsSub">Search by endpoint, meeting, code or gateway</div>
+    </div>
+    <div class="grow"></div>
+  </header>
+
+  <div class="filters range-filter">
+    <label class="field"><span data-i18n="callsRange">Range</span>
+      <select id="callPreset"></select>
+    </label>
+    <div class="field">
+      <span id="callFromLabel" data-i18n="callsFrom">From</span>
+      <button type="button" class="date-field" id="callFrom" aria-haspopup="dialog" aria-expanded="false" aria-controls="callCalendar" aria-labelledby="callFromLabel callFromValue"><span id="callFromValue"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+      <label class="sr-only" for="callFromHour" data-i18n="callsFromHour">Start hour</label>
+      <select id="callFromHour"></select>
+    </div>
+    <div class="field">
+      <span id="callToLabel" data-i18n="callsTo">to</span>
+      <button type="button" class="date-field" id="callTo" aria-haspopup="dialog" aria-expanded="false" aria-controls="callCalendar" aria-labelledby="callToLabel callToValue"><span id="callToValue"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+      <label class="sr-only" for="callToHour" data-i18n="callsToHour">End hour (included)</label>
+      <select id="callToHour"></select>
+    </div>
+    <div class="dropdown" id="callOutcomeFilter">
+      <button id="callOutcomeButton" type="button"></button>
+      <div class="dropdown-panel" id="callOutcomePanel" hidden>
+        <div class="dropdown-actions">
+          <button type="button" class="link-all" data-pick="all"><span aria-hidden="true">+</span> <span data-i18n="unitsAll">All</span></button>
+          <button type="button" class="link-none" data-pick="none"><span aria-hidden="true">−</span> <span data-i18n="unitsNone">None</span></button>
+        </div>
+        <div id="callOutcomeList"></div>
+      </div>
+    </div>
+    <div class="dropdown" id="callVideoFilter">
+      <button id="callVideoButton" type="button"></button>
+      <div class="dropdown-panel" id="callVideoPanel" hidden>
+        <div class="dropdown-actions">
+          <button type="button" class="link-all" data-pick="all"><span aria-hidden="true">+</span> <span data-i18n="unitsAll">All</span></button>
+          <button type="button" class="link-none" data-pick="none"><span aria-hidden="true">−</span> <span data-i18n="unitsNone">None</span></button>
+        </div>
+        <div id="callVideoList"></div>
+      </div>
+    </div>
+    <div class="calendar" id="callCalendar" role="dialog" hidden></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <label class="sr-only" for="callSearch" data-i18n="callsSearch">Endpoint, meeting, SIP URI, unit, Call-ID, #number…</label>
+      <input type="search" id="callSearch" autocomplete="off">
+      <span class="filter-chip" id="callFilter" hidden><span id="callFilterText"></span><button type="button" id="callFilterClear">✕</button></span>
+      <span class="shown" id="callShown"></span>
+      <div class="pager">
+        <button id="callPrev">‹</button>
+        <span id="callPage"></span>
+        <button id="callNext">›</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table><thead><tr id="callHead"></tr></thead><tbody id="callRows"></tbody></table>
+    </div>
+  </div>
+</section>
+
+<aside class="drawer" id="callDrawer" role="dialog" aria-modal="true" aria-labelledby="callDetailTitle" hidden>
+  <header>
+    <h2 id="callDetailTitle"><span data-i18n="callDetail">Call detail</span> <span class="dim" id="callNumber"></span></h2>
+    <div class="grow"></div>
+    <a class="btn" id="callRaw" data-i18n="callRawDownload" hidden>JSON</a>
+    <a class="btn" id="callTrace" target="_blank" rel="noopener" hidden></a>
+    <button id="callClose">✕</button>
+  </header>
+  <div class="drawer-body" id="callDrawerBody"></div>
+</aside>
+<div class="scrim" id="callScrim" hidden></div>

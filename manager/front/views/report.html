@@ -1,0 +1,70 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="reportTitle">Reporting</h1>
+      <div class="sub" id="period">—</div>
+    </div>
+    <div class="grow"></div>
+  </header>
+
+  <div class="subtabs">
+    <button data-subview="report" class="on" data-i18n="subUsage">Usage &amp; adoption</button>
+    <button data-subview="quality" data-i18n="subQuality">Quality</button>
+    <button data-subview="capacity" data-i18n="subCapacity">Capacity</button>
+  </div>
+
+  <div class="filters">
+    <div class="periods" id="periods">
+      <button data-period="today"></button>
+      <button data-period="week"></button>
+      <button data-period="last_week"></button>
+      <button data-period="month"></button>
+      <button data-period="last_month"></button>
+      <button data-period="year"></button>
+    </div>
+    <label class="field" id="monthField"><span data-i18n="monthField">Month</span>
+      <select id="month"><option value="">—</option></select>
+    </label>
+    <div class="dropdown" id="unitFilter">
+      <button id="unitButton" type="button"></button>
+      <div class="dropdown-panel" id="unitPanel" hidden>
+        <div class="dropdown-actions">
+          <button type="button" class="link-all" data-units="all"><span aria-hidden="true">+</span> <span data-i18n="unitsAll">All</span></button>
+          <button type="button" class="link-none" data-units="none"><span aria-hidden="true">−</span> <span data-i18n="unitsNone">None</span></button>
+        </div>
+        <label class="sr-only" for="unitSearch" data-i18n="unitsSearch">Search…</label>
+        <input type="search" id="unitSearch" autocomplete="off">
+        <div id="unitList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile big"><b id="tCalls">–</b><span data-tile="0"></span></div>
+    <div class="tile big"><b id="tHours">–</b><span data-tile="1"></span></div>
+    <div class="tile big"><b id="tPeak">–</b><span data-tile="2"></span></div>
+  </div>
+
+  <div class="donuts">
+    <figure>
+      <figcaption data-i18n="byUnit">Breakdown by unit</figcaption>
+      <div class="chart"><div class="legend" id="lgUnits"></div><div id="dnUnits"></div></div>
+    </figure>
+    <figure>
+      <figcaption data-i18n="byPlatform">Breakdown by platform</figcaption>
+      <div class="chart"><div class="legend" id="lgPlatforms"></div><div id="dnPlatforms"></div></div>
+    </figure>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 id="histTitle"></h2>
+      <div class="switch">
+        <button data-metric="hours"></button>
+        <button data-metric="calls"></button>
+      </div>
+    </div>
+    <div id="histogram"></div>
+  </div>
+
+</section>

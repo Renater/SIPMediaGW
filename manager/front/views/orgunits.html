@@ -1,0 +1,129 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="settingsTitle">Settings</h1>
+      <div class="sub" data-i18n="ouSub">Entities and the rules that classify endpoints</div>
+    </div>
+  </header>
+
+  <div class="subtabs">
+    <button data-subview="users" data-i18n="subUsers">Users</button>
+    <button data-subview="orgunits" class="on" data-i18n="subOrgUnits">Entities</button>
+    <button data-subview="audit" data-i18n="subAudit">Audit log</button>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 data-i18n="ouUnitsTitle">Entities</h2>
+      <div class="grow"></div>
+      <button id="ouUnitAdd" class="primary" data-i18n="ouUnitAdd">Add an entity</button>
+    </div>
+    <p class="note" id="ouMsg" role="status"></p>
+    <table class="plain">
+      <thead><tr id="ouUnitsHead"></tr></thead>
+      <tbody id="ouUnits"></tbody>
+    </table>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 data-i18n="ouRulesTitle">Rules</h2>
+      <div class="grow"></div>
+      <button id="ouRuleAdd" class="primary" data-i18n="ouRuleAdd">Add a rule</button>
+    </div>
+    <p class="note" data-i18n="ouOrderRule">Read top to bottom: the last rule that matches wins.</p>
+    <div class="scroll">
+      <table class="plain">
+        <thead><tr id="ouRulesHead"></tr></thead>
+        <tbody id="ouRules"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel padded">
+    <h2 data-i18n="ouTestTitle">Try</h2>
+    <form class="filters" id="ouTestForm" autocomplete="off">
+      <label class="field"><span data-i18n="ouFieldUri">SIP URI</span>
+        <input type="text" id="ouTestUri" autocomplete="off" spellcheck="false" autocapitalize="none"></label>
+      <label class="field"><span data-i18n="ouFieldAlias">Display name</span>
+        <input type="text" id="ouTestAlias" autocomplete="off" spellcheck="false"></label>
+      <button type="submit" class="primary" data-i18n="ouTest">Try</button>
+    </form>
+    <p id="ouTestResult" role="status"></p>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 data-i18n="ouHistoryTitle">Call history</h2>
+      <div class="grow"></div>
+      <button id="ouRecompute" class="primary" data-i18n="ouRecompute">Apply to history</button>
+    </div>
+    <p id="ouUnassigned"></p>
+  </div>
+
+  <dialog class="modal narrow" id="ouUnitDialog" aria-labelledby="ouUnitTitle">
+    <form method="dialog" id="ouUnitForm" autocomplete="off">
+      <header><h2 id="ouUnitTitle"></h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <div class="stack">
+        <label class="field stacked"><span data-i18n="ouCode">Code</span>
+          <input type="text" id="ouUnitCode" autocomplete="off" spellcheck="false" autocapitalize="characters" required></label>
+        <label class="field stacked"><span data-i18n="ouLabel">Label</span>
+          <input type="text" id="ouUnitLabel" autocomplete="off" required></label>
+        <label class="field stacked"><span data-i18n="ouState">State</span>
+          <select id="ouUnitActive"></select></label>
+      </div>
+      <footer>
+        <span class="note err" id="ouUnitError" role="alert"></span>
+        <span class="grow"></span>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="primary" id="ouUnitSave" data-i18n="setSave">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="ouRuleDialog" aria-labelledby="ouRuleTitle">
+    <form method="dialog" id="ouRuleForm" autocomplete="off">
+      <header><h2 id="ouRuleTitle"></h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <div class="stack">
+        <div class="two">
+          <label class="field stacked"><span data-i18n="ouField">Caller field</span>
+            <select id="ouRuleField"></select></label>
+          <label class="field stacked"><span data-i18n="ouMatch">Match</span>
+            <select id="ouRuleMatch"></select></label>
+        </div>
+        <label class="field stacked"><span data-i18n="ouPattern">Value (case-insensitive)</span>
+          <input type="text" id="ouRulePattern" autocomplete="off" spellcheck="false" autocapitalize="none" required></label>
+        <div class="two">
+          <label class="field stacked"><span data-i18n="ouUnit">Entity</span>
+            <select id="ouRuleUnit"></select></label>
+          <label class="field stacked"><span data-i18n="ouState">State</span>
+            <select id="ouRuleActive"></select></label>
+        </div>
+        <label class="field stacked"><span data-i18n="ouDescription">Description</span>
+          <input type="text" id="ouRuleDescription" autocomplete="off" required></label>
+      </div>
+      <footer>
+        <span class="note err" id="ouRuleError" role="alert"></span>
+        <span class="grow"></span>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="primary" id="ouRuleSave" data-i18n="setSave">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="modal narrow" id="ouConfirmDialog" aria-labelledby="ouConfirmTitle">
+    <form method="dialog" id="ouConfirmForm">
+      <header><h2 id="ouConfirmTitle" data-i18n="confirmTitle">Confirmation</h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <p class="confirm-text" id="ouConfirmText"></p>
+      <footer>
+        <span class="note err" id="ouConfirmError" role="alert"></span>
+        <span class="grow"></span>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="primary" id="ouConfirmButton"></button>
+      </footer>
+    </form>
+  </dialog>
+</section>

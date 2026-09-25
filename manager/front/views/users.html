@@ -1,0 +1,108 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="settingsTitle">Settings</h1>
+      <div class="sub" data-i18n="settingsSub">Accounts and access rights</div>
+    </div>
+  </header>
+
+  <div class="subtabs">
+    <button data-subview="users" class="on" data-i18n="subUsers">Users</button>
+    <button data-subview="orgunits" data-i18n="subOrgUnits">Entities</button>
+    <button data-subview="audit" data-i18n="subAudit">Audit log</button>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 data-i18n="usersTitle">Users</h2>
+      <button id="userAdd" class="primary" data-i18n="userAdd">Add</button>
+    </div>
+    <p class="note" id="userMsg" role="status"></p>
+    <div class="scroll">
+      <table class="plain">
+        <thead><tr id="usersHead"></tr></thead>
+        <tbody id="users"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create: a native dialog — focus trap, Escape and the backdrop come with it. -->
+  <dialog class="modal" id="userCreateDialog" aria-labelledby="userCreateTitle">
+    <form method="dialog" id="userCreateForm" autocomplete="off">
+      <header><h2 id="userCreateTitle" data-i18n="userCreateTitle">Add an account</h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <div class="stack">
+        <label class="field stacked"><span data-i18n="userEmail">Username (e-mail address)</span>
+          <input type="email" id="newUserName" autocomplete="off" autocapitalize="none" spellcheck="false" required></label>
+        <div class="two">
+          <label class="field stacked"><span data-i18n="userFirstName">First name</span>
+            <input type="text" id="newUserFirst" autocomplete="off" required></label>
+          <label class="field stacked"><span data-i18n="userLastName">Last name</span>
+            <input type="text" id="newUserLast" autocomplete="off" required></label>
+        </div>
+        <div class="two">
+          <label class="field stacked"><span data-i18n="userRole">Role</span>
+            <select id="newUserRole"></select></label>
+          <label class="field stacked"><span data-i18n="userSource">Source</span>
+            <select id="newUserSource"></select></label>
+        </div>
+        <label class="field stacked"><span data-i18n="userPassword">Initial password</span>
+          <input type="password" id="newUserPassword" autocomplete="new-password" required></label>
+        <p class="note" id="userCreateRule"></p>
+      </div>
+      <footer>
+        <span class="note err" id="userCreateError" role="alert"></span>
+        <span class="grow"></span>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="primary" id="userCreateButton" data-i18n="userCreate">Create</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Edit: role, name, enabled, and a password reset. -->
+  <dialog class="modal" id="userEditDialog" aria-labelledby="userEditTitle">
+    <form method="dialog" id="userEditForm" autocomplete="off">
+      <header><h2 id="userEditTitle"></h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <div class="stack">
+        <div class="two">
+          <label class="field stacked"><span data-i18n="userFirstName">First name</span>
+            <input type="text" id="editUserFirst" autocomplete="off"></label>
+          <label class="field stacked"><span data-i18n="userLastName">Last name</span>
+            <input type="text" id="editUserLast" autocomplete="off"></label>
+        </div>
+        <div class="two">
+          <label class="field stacked"><span data-i18n="userRole">Role</span>
+            <select id="editUserRole"></select></label>
+          <label class="field stacked"><span data-i18n="userState">State</span>
+            <select id="editUserEnabled"></select></label>
+        </div>
+        <p class="note" id="editUserHint"></p>
+        <label class="field stacked" id="editUserResetField"><span data-i18n="userResetLabel">Reset the password (leave empty to keep it)</span>
+          <input type="password" id="editUserPassword" autocomplete="new-password"></label>
+      </div>
+      <footer>
+        <span class="note err" id="userEditError" role="alert"></span>
+        <span class="grow"></span>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="primary" id="userEditButton" data-i18n="setSave">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Delete: a confirmation naming the account. -->
+  <dialog class="modal narrow" id="userDeleteDialog" aria-labelledby="userDeleteTitle">
+    <form method="dialog" id="userDeleteForm">
+      <header><h2 id="userDeleteTitle" data-i18n="userDeleteTitle">Delete the account</h2>
+        <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+      <p id="userDeleteText"></p>
+      <p class="note" data-i18n="userDeleteNote">The audit log keeps its actions.</p>
+      <footer>
+        <span class="note err" id="userDeleteError" role="alert"></span>
+        <span class="grow"></span>
+        <button type="button" class="secondary" data-close data-i18n="calCancel">Cancel</button>
+        <button type="submit" class="danger" id="userDeleteButton" data-i18n="userDelete">Delete</button>
+      </footer>
+    </form>
+  </dialog>
+</section>

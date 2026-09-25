@@ -1,0 +1,361 @@
+/* Reusable pieces: tiles, panels, tables, badges, charts, toast. */
+
+.tiles { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.tile { background: var(--bg-raised); border: 1px solid var(--border); border-top: 3px solid var(--blue); border-radius: var(--radius); padding: 12px 18px; min-width: 148px; }
+.tile b { display: block; font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile span { font-size: 13px; color: var(--mention); }
+.tile.free { border-top-color: var(--mention); }
+.tile.idle { border-top-color: var(--success); }
+.tile.ivr  { border-top-color: var(--warning); }
+.tile.call { border-top-color: var(--info); }
+/* One row whatever the count: three tiles on most pages, four on Capacity.
+   auto-fit keeps them equal and lets them wrap only when the screen is too
+   narrow to hold them, rather than at a fixed count. */
+.tiles:not(.small) { display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+.tile.big { background: var(--blue); border: none; border-radius: var(--radius); padding: 22px 24px; color: var(--on-blue); }
+.tile.big b { font-size: 44px; line-height: 1.1; }
+.tile.big span { color: var(--blue-850); font-size: 14px; }
+
+.panel { background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; }
+.panel.padded { padding: 20px 22px; }
+.panel h2 { flex: 1; }
+/* Eight day buttons beside a title: the switch wraps under it when short of room. */
+.panel-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.scroll { overflow: auto; }
+
+.toolbar { display: flex; align-items: center; gap: 16px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+.toolbar input[type="search"] { flex: 0 1 420px; padding: 8px 11px; border: none; border-bottom: 2px solid var(--mention); border-radius: var(--radius) var(--radius) 0 0; background: var(--bg-raised); color: var(--text); font: inherit; }
+.toolbar .shown { flex: 1; font-size: 13px; color: var(--mention); }
+/* Journal opened from the Quality view: the exact filter it carries. */
+.toolbar .filter-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 420px; padding: 3px 4px 3px 11px;
+  border-radius: 99px; background: var(--info-bg); color: var(--info); font-size: 12px; font-weight: 700; }
+.toolbar .filter-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toolbar .filter-chip button { border: none; background: transparent; color: inherit; cursor: pointer; padding: 0 6px; font: inherit; }
+/* Fixed width, not a minimum: the block must not resize when the countdown
+   goes from empty to text, nor from 10 to 9. */
+.toolbar .refresh { display: flex; flex-direction: column; align-items: center; gap: 3px;
+  width: 11em; flex: none; margin-left: auto; }
+/* Height fixed, not merely reserved: an empty span and one holding text
+   must occupy exactly the same box, or the toolbar shifts when the first
+   countdown arrives. */
+.toolbar #countdown { display: block; height: 16px; line-height: 16px; font-size: 12px;
+  color: var(--mention); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font-size: 13px; font-weight: 700; background: var(--bg-alt); padding: 11px 14px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--bg-alt); }
+table.plain td { white-space: normal; }
+td.num { text-align: right; }
+/* Centred columns: the header and its values share the same alignment, which
+   .num does not give (it styles td only, leaving the header hard left). */
+th.center, td.center { text-align: center; }
+
+.id { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+.copy { cursor: copy; border-bottom: 1px dashed transparent; }
+.copy:hover { border-bottom-color: var(--blue); color: var(--blue); }
+.copy::after { content: "⧉"; margin-left: 5px; font-size: 12px; color: var(--mention); opacity: 0; }
+.copy:hover::after { opacity: 1; }
+.type { display: inline-block; padding: 2px 9px; border-radius: 99px; background: var(--bg-alt); border: 1px solid var(--border); color: var(--mention); font-size: 11.5px; font-weight: 700; text-transform: uppercase; }
+.pill { display: inline-block; padding: 3px 11px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.pill.free  { background: var(--bg-alt);     color: var(--mention); }
+.pill.idle  { background: var(--success-bg); color: var(--success); }
+.pill.ivr   { background: var(--warning-bg); color: var(--warning); }
+.pill.call  { background: var(--info-bg);    color: var(--info); }
+.pill.other { background: var(--error-bg);   color: var(--error); }
+/* Verdict of a close reason (Quality): the same shape as a state pill, one
+   tone per verdict. Was applied by the module and declared nowhere. */
+.tag { display: inline-block; padding: 3px 11px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.tag.good { background: var(--success-bg); color: var(--success); }
+.tag.warn { background: var(--warning-bg); color: var(--warning); }
+.tag.bad  { background: var(--error-bg);   color: var(--error); }
+.platform { display: inline-flex; align-items: center; gap: 8px; }
+.platform img { width: 20px; height: 20px; object-fit: contain; }
+.msg { padding: 24px; text-align: center; color: var(--mention); white-space: normal; }
+.msg.err { color: var(--error); }
+
+.filters { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.periods, .switch { display: inline-flex; border: 1px solid var(--blue); border-radius: var(--radius); overflow: hidden; }
+.periods button, .switch button { border: none; border-right: 1px solid var(--blue); border-radius: 0; }
+.periods button:last-child, .switch button:last-child { border-right: none; }
+.periods button.on, .switch button.on { background: var(--blue); color: var(--on-blue); }
+.field { font-size: 13px; color: var(--mention); display: flex; align-items: center; gap: 8px; }
+
+.donuts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+figure { background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; }
+figcaption { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 14px; }
+/* Legend and donut read as one object, so they sit together rather than at
+   opposite ends of the panel. The legend keeps its natural width — the widest
+   of its rows — and every row then fills that width, which lines the values up
+   in a column instead of leaving them ragged. */
+.chart { display: flex; align-items: center; justify-content: center; gap: 28px; }
+.chart > div:last-child { flex: none; }
+.legend { flex: none; max-width: 22em; font-size: 13px; }
+.legend div { display: flex; align-items: center; gap: 9px; padding: 4px 0; }
+.legend i { width: 12px; height: 12px; border-radius: 2px; flex: none; }
+/* Sized for a legend read at a glance, not for a table row. */
+.legend img { width: 24px; height: 24px; object-fit: contain; flex: none; }
+.legend .name { flex: 1; min-width: 6em; }
+.legend .pct { color: var(--mention); font-variant-numeric: tabular-nums;
+  text-align: right; white-space: nowrap; }
+
+.banner { padding: 10px 24px; background: var(--warning-bg); color: var(--warning); border-bottom: 1px solid var(--warning); font-size: 14px; font-weight: 500; }
+/* Toast, in the shape of a small DSFR alert: white surface, thin frame and a
+   left band in the tone of the message carrying its pictogram. Bottom right,
+   above the drawer (30) and its scrim (29) — the copy buttons are in the
+   drawer, and a centred toast underneath it could not be read. */
+.toast { position: fixed; right: 24px; bottom: 24px; z-index: 40; overflow: hidden;
+  max-width: min(420px, calc(100vw - 48px)); padding: 10px 16px 10px 52px;
+  background: var(--bg-raised); color: var(--text); border: 1px solid var(--success);
+  border-radius: var(--radius); box-shadow: 0 6px 18px var(--shadow-strong);
+  font-size: 14px; overflow-wrap: anywhere; }
+.toast::before { content: "\2713"; position: absolute; left: 0; top: 0; bottom: 0; width: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--success); color: var(--bg-raised); font-weight: 700; }
+.toast.err { border-color: var(--error); }
+.toast.err::before { content: "!"; background: var(--error); }
+
+/* A button that reads as a link: the secondary action in a table row, where
+   a bordered button would compete with the row itself. */
+button.link { border: none; background: transparent; padding: 2px 4px; color: var(--blue);
+  text-decoration: underline; text-underline-offset: 3px; }
+button.link:hover { background: transparent; color: var(--blue-hover); }
+
+/* Pager: fixed-width page indicator so the arrows never move. */
+.pager { display: flex; align-items: center; gap: 6px; }
+.pager button { padding: 4px 11px; line-height: 1.2; }
+.pager span { font-size: 13px; color: var(--mention); min-width: 9em; text-align: center;
+  font-variant-numeric: tabular-nums; }
+
+/* Detail drawer: slides over the table, keeps the list in place behind it. */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 92vw);
+  background: var(--bg-raised); border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px var(--shadow); z-index: 30; display: flex; flex-direction: column; }
+.drawer > header { display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+  border-bottom: 1px solid var(--border); }
+.drawer > header h2 { font-size: 16px; font-weight: 700; }
+.drawer-body { overflow: auto; padding: 18px 20px 28px; }
+.scrim { position: fixed; inset: 0; background: var(--shadow-strong); z-index: 29; }
+
+.detail { width: 100%; margin-bottom: 18px; }
+.detail th { width: 40%; text-align: left; background: transparent; border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 400; color: var(--mention); padding: 7px 0; white-space: normal; }
+.detail td { border-bottom: 1px solid var(--border); padding: 7px 0; white-space: normal;
+  word-break: break-word; }
+.drawer h3 { font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
+.drawer details { margin-top: 14px; }
+.drawer summary { cursor: pointer; font-size: 13px; color: var(--blue); }
+.drawer pre { margin-top: 10px; padding: 12px; background: var(--bg-alt); border-radius: var(--radius);
+  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
+  white-space: pre-wrap; word-break: break-word; max-height: 40vh; overflow: auto; }
+tbody tr.selectable { cursor: pointer; }
+
+/* The buttons sit in a box inside the cell. A cell turned into a flex box
+   stops being a table cell: the row painted its hover colour everywhere but
+   there, and an idle gateway (no button) showed a white square instead. */
+td.actions > div { display: flex; gap: 6px; }
+
+/* Media statistics: six narrow columns, unlike .detail which is a two-column
+   key/value list. Figures are right-aligned and never wrap; the labels may. */
+.drawer table.media { width: 100%; margin-bottom: 18px; }
+.drawer table.media th { background: transparent; border-bottom: 1px solid var(--border);
+  padding: 6px 8px 6px 0; font-size: 12px; font-weight: 700; color: var(--mention);
+  white-space: normal; text-align: right; }
+.drawer table.media th:first-child, .drawer table.media th:nth-child(2) { text-align: left; }
+.drawer table.media td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--border);
+  white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.drawer table.media td:first-child, .drawer table.media td:nth-child(2) { text-align: left; }
+.drawer table.media tr:last-child td { border-bottom: none; }
+
+/* Sub-tabs: a second level of navigation inside one menu entry. Underlined
+   rather than filled, so they read as a level below the left menu instead of
+   competing with it. */
+.subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border);
+  margin-bottom: 18px; }
+.subtabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0;
+  background: transparent; color: var(--mention); padding: 9px 16px;
+  font-size: 14px; margin-bottom: -1px; }
+.subtabs button:hover { color: var(--blue); background: transparent; }
+.subtabs button.on { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+
+/* Unit filter: a dropdown of checkboxes. Multi-select needs a panel rather than
+   a <select multiple>, which hides the selection behind a scroll and needs a
+   modifier key to extend it — neither survives a monthly routine. */
+.dropdown { position: relative; }
+.dropdown > button { min-width: 11em; text-align: left; }
+.dropdown-panel { position: absolute; top: calc(100% + 4px); left: 0; z-index: 20;
+  min-width: 14em; max-height: 20em; overflow: auto; padding: 8px;
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 6px 18px var(--shadow); }
+.dropdown-actions { display: flex; gap: 6px; padding-bottom: 8px; margin-bottom: 6px;
+  border-bottom: 1px solid var(--border); }
+.dropdown-panel label { display: flex; align-items: center; gap: 8px; padding: 5px 4px;
+  font-size: 13px; cursor: pointer; border-radius: 4px; }
+.dropdown-panel label:hover { background: var(--bg-alt); }
+
+/* Filter actions: add and remove, coloured so the destructive one is not
+   mistaken for the other at a glance. */
+/* Add and remove, as actions rather than buttons: a bordered button beside a
+   list of checkboxes reads as a third choice in the list. The sign carries the
+   direction, the colour only confirms it — a colour alone does not survive a
+   photocopy, and the plus is the interface's own blue rather than a green that
+   appears nowhere else. */
+.dropdown-actions button { border: none; background: transparent; padding: 2px 6px;
+  font-size: 13px; font-weight: 500; }
+.dropdown-actions button span[aria-hidden] { font-size: 15px; font-weight: 700;
+  margin-right: 2px; }
+.dropdown-actions .link-all { color: var(--blue); }
+.dropdown-actions .link-none { color: var(--error); }
+.dropdown-actions button:hover { background: var(--bg-alt); }
+.dropdown-panel input[type="search"] { width: 100%; margin-bottom: 8px; padding: 6px 9px;
+  border: none; border-bottom: 2px solid var(--mention); border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--bg-alt); color: var(--text); font: inherit; font-size: 13px; }
+
+/* A header carrying an explanation.
+
+   The native title attribute gives a black single-line strip that the pointer
+   can land inside, and it cannot be styled. This one wraps, matches the rest of
+   the interface, and is transparent to the pointer — hovering the mark shows it,
+   nothing can be clicked or selected in it.
+
+   What a reader must not miss stays in the header text itself: a tooltip does
+   not survive a screenshot, and these tables are read as images. */
+th .hint { position: relative; display: inline-block; width: 15px; height: 15px;
+  line-height: 15px; border-radius: 50%; background: var(--mention);
+  color: var(--bg-raised); font-size: 10px; font-weight: 700; text-align: center;
+  cursor: help; vertical-align: middle; margin-left: 4px; user-select: none; }
+th .hint::after { content: attr(data-hint); position: absolute; top: calc(100% + 8px);
+  left: 50%; transform: translateX(-50%); z-index: 30;
+  width: max-content; max-width: 280px; padding: 9px 12px;
+  background: var(--bg-raised); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 6px 18px var(--shadow-strong);
+  font-size: 12px; font-weight: 400; line-height: 1.45; text-align: left;
+  white-space: normal; text-transform: none; letter-spacing: normal;
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .12s; }
+th .hint:hover::after, th .hint:focus::after { opacity: 1; visibility: visible; }
+/* A centred tooltip overflows at either end of the table, and an overflowing
+   tooltip is worse than none: it is cut by the panel. The headers at each edge
+   anchor it to their own side instead. */
+th:nth-child(-n+2) .hint::after { left: -4px; right: auto; transform: none; }
+th:nth-last-child(-n+2) .hint::after { left: auto; right: -4px; transform: none; }
+.tile-detail { display: block; margin-top: 2px; font-size: 12px; opacity: .8; }
+
+/* A heading inside a panel, under a chart: smaller than the panel's own, so the
+   table reads as part of the same block rather than a new one. */
+.panel h3 { margin: 18px 0 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* Date fields and their calendar (call log window, rate date). The field reads
+   like the selects beside it; the popover stacks over the table (20) and under
+   the drawer (30). States come from attributes the component sets, not from
+   classes: aria-pressed (first or last day), aria-disabled, data-today, and
+   data-band on the cell for the band between the two days. */
+.date-field { display: inline-flex; align-items: center; gap: 10px; border-color: var(--border);
+  background: var(--bg-alt); color: var(--text); font-variant-numeric: tabular-nums; }
+.date-field[aria-expanded="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.date-field svg, .cal-nav svg { width: 16px; height: 16px; fill: none; stroke: var(--blue);
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.range-filter { position: relative; }
+.calendar { position: absolute; top: calc(100% + 8px); left: 0; z-index: 20; width: 700px;
+  max-width: calc(100vw - 48px); padding: 16px 16px 12px; background: var(--bg-raised);
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 6px 18px var(--shadow-strong);
+  color: var(--text); }
+.cal-hint { font-size: 13px; color: var(--mention); margin-bottom: 8px; }
+.cal-body { display: flex; align-items: flex-start; gap: 8px; }
+.cal-months { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.cal-nav { flex: none; width: 34px; height: 34px; margin-top: 2px; padding: 0; border-color: var(--border);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.cal-month { min-width: 0; }
+/* Inside a .panel the calendar would inherit its h3 margins. (The one-month
+   calendar and the panel that let it overflow went with the VM rate form.) */
+.calendar .cal-title { margin: 0; font-size: 15px; font-weight: 700; line-height: 38px; }
+.cal-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.cal-grid th { padding: 4px 0; background: transparent; border: none; font-size: 12px; font-weight: 400;
+  color: var(--mention); text-align: center; }
+.cal-grid td { padding: 1px 0; border: none; text-align: center; }
+.cal-grid td[data-band="mid"] { background: var(--blue-950); }
+.cal-grid td[data-band="start"] { background: linear-gradient(to right, transparent 50%, var(--blue-950) 50%); }
+.cal-grid td[data-band="end"] { background: linear-gradient(to left, transparent 50%, var(--blue-950) 50%); }
+.calendar.previewing .cal-grid td[data-band="mid"] { background: var(--blue-975); }
+.calendar.previewing .cal-grid td[data-band="start"] { background: linear-gradient(to right, transparent 50%, var(--blue-975) 50%); }
+.calendar.previewing .cal-grid td[data-band="end"] { background: linear-gradient(to left, transparent 50%, var(--blue-975) 50%); }
+.cal-day { width: 36px; height: 36px; padding: 0; border: none; border-radius: var(--radius);
+  background: transparent; color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
+.cal-day:hover { background: transparent; box-shadow: inset 0 0 0 1px var(--blue); }
+.cal-day[data-today] { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.cal-day[aria-pressed="true"] { background: var(--blue); color: var(--on-blue); font-weight: 700; }
+.cal-day[aria-disabled="true"] { color: var(--disabled); cursor: not-allowed; box-shadow: none; }
+.cal-foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 12px;
+  border-top: 1px solid var(--border); }
+.cal-summary { flex: 1; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cal-apply { background: var(--blue); color: var(--on-blue); font-weight: 700; }
+.cal-apply:hover { background: var(--blue-hover); }
+@media (max-width: 760px) {
+  .cal-months { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Account forms: the sign-in card's second face, the "my account" panel and
+   the users panel of Settings. */
+.login .card .link { width: auto; margin-top: 10px; background: transparent; color: var(--blue); font-weight: 400; }
+.login .card .link:hover { background: transparent; color: var(--blue-hover); }
+.stack { display: flex; flex-direction: column; gap: 14px; max-width: 420px; }
+.field.stacked { flex-direction: column; align-items: stretch; gap: 4px; }
+.field.stacked input { padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-alt); color: var(--text); font: inherit; }
+.form-actions { display: flex; align-items: center; gap: 12px; }
+.filters input[type="text"], .filters input[type="password"] { padding: 7px 11px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-alt); color: var(--text); font: inherit; font-size: 13px; }
+tr[data-enabled="false"] td { color: var(--mention); }
+
+/* Dialogs (users): native <dialog>, styled as a panel over a dimmed page. */
+/* margin: auto puts the dialog back in the middle: the global reset
+   (`* { margin: 0 }` in the base sheet) had pinned it to the top-left corner. */
+dialog.modal { margin: auto; width: min(560px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-raised); color: var(--text);
+  box-shadow: 0 6px 18px var(--shadow-strong); }
+dialog.modal.narrow { width: min(440px, calc(100vw - 32px)); }
+dialog.modal::backdrop { background: var(--shadow-strong); }
+dialog.modal > form { display: flex; flex-direction: column; }
+/* The title bar is the interface's blue, as in interact's confirmations. */
+dialog.modal > form > header { display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+  background: var(--blue); color: var(--on-blue); border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid var(--border); }
+dialog.modal > form > header h2 { flex: 1; font-size: 16px; font-weight: 700; }
+dialog.modal .close { border: none; background: transparent; padding: 4px 8px; font-size: 16px; color: var(--on-blue); }
+dialog.modal .close:hover { background: transparent; opacity: .8; }
+dialog.modal .confirm-text { padding: 22px 20px 4px; font-size: 15px; }
+dialog.modal > form > .stack, dialog.modal > form > p { padding: 18px 20px 0; max-width: none; }
+dialog.modal > form > footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 18px 20px 16px; }
+dialog.modal .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+dialog.modal select { width: 100%; padding: 8px 11px; }
+.note.err { color: var(--error); }
+/* Action buttons, as in interact and pairing: the one that does it filled,
+   the one that backs out outlined, both a size above the small controls
+   (periods, pager, lists) so that the action reads as the action. */
+button.primary, button.secondary, button.danger {
+  padding: 9px 18px; font-size: 14px; font-weight: 700; border-radius: 4px; }
+button.primary { background: var(--blue); border-color: var(--blue); color: var(--on-blue); }
+button.primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+button.secondary { background: var(--bg-raised); border-color: var(--blue); color: var(--blue); }
+button.secondary:hover { background: var(--blue-950); }
+button.danger { background: var(--bg-raised); border-color: var(--error); color: var(--error); }
+button.danger:hover { background: var(--error-bg); }
+/* Icon-only buttons in a table row: the name is in aria-label, the picture is
+   a stroke in the current colour. */
+button.icon { padding: 5px 7px; border-color: transparent; }
+button.icon svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+button.icon:hover { border-color: var(--blue); }
+
+/* Hover box of the hourly charts: attachHover(), in the charts module. */
+.chart-host { position: relative; }
+.hover-band { cursor: crosshair; }
+.hover-guide { pointer-events: none; }
+.chart-tip { position: absolute; z-index: 20; pointer-events: none; min-width: 150px;
+  padding: 8px 11px; background: var(--bg-raised); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 6px 18px var(--shadow-strong); font-size: 12px; line-height: 1.5; }
+.chart-tip b { display: block; margin-bottom: 2px; }
+.chart-tip i { display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle; }
+.chart-tip small { display: block; margin-top: 3px; color: var(--mention); }

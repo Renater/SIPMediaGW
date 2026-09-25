@@ -1,0 +1,87 @@
+<section class="view">
+  <header>
+    <div>
+      <h1 data-i18n="capacityTitle">Reporting</h1>
+      <div class="sub" id="capPeriod">—</div>
+    </div>
+    <div class="grow"></div>
+  </header>
+
+  <div class="subtabs">
+    <button data-subview="report" data-i18n="subUsage">Usage &amp; adoption</button>
+    <button data-subview="quality" data-i18n="subQuality">Quality</button>
+    <button data-subview="capacity" class="on" data-i18n="subCapacity">Capacity</button>
+  </div>
+
+  <div class="filters">
+    <div class="periods" id="capPeriods">
+      <button data-period="month"></button>
+      <button data-period="last_month"></button>
+      <button data-period="year"></button>
+    </div>
+    <label class="field" id="capMonthField"><span data-i18n="monthField">Month</span>
+      <select id="capMonth"><option value="">—</option></select>
+    </label>
+  </div>
+
+  <div class="tiles">
+    <div class="tile big"><b id="cProvisioned">–</b><span data-tile="0"></span></div>
+    <div class="tile big"><b id="cBusy">–</b><span data-tile="1"></span></div>
+    <div class="tile big"><b id="cUtil">–</b><span data-tile="2"></span></div>
+    <div class="tile big"><b id="cVmHours">–</b><span data-tile="3"></span><span class="tile-detail" id="cVmHoursDetail"></span></div>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 id="capProfileTitle"></h2>
+      <div class="switch" id="capDayType">
+        <button data-daytype="default"></button>
+        <button data-daytype="monday"></button>
+        <button data-daytype="tuesday"></button>
+        <button data-daytype="wednesday"></button>
+        <button data-daytype="thursday"></button>
+        <button data-daytype="friday"></button>
+        <button data-daytype="saturday"></button>
+        <button data-daytype="sunday"></button>
+      </div>
+    </div>
+    <div id="capProfile"></div>
+  </div>
+
+  <div class="panel padded">
+    <div class="panel-head">
+      <h2 data-i18n="capSizingTitle">How many calls at once, hour by hour</h2>
+      <div class="switch" id="capSizingDayType">
+        <button data-daytype="default"></button>
+        <button data-daytype="monday"></button>
+        <button data-daytype="tuesday"></button>
+        <button data-daytype="wednesday"></button>
+        <button data-daytype="thursday"></button>
+        <button data-daytype="friday"></button>
+        <button data-daytype="saturday"></button>
+        <button data-daytype="sunday"></button>
+      </div>
+    </div>
+    <div id="capSizingChart"></div>
+    <h3 data-i18n="capSizingTableTitle">Detail by slot</h3>
+    <div class="scroll">
+      <table class="plain">
+        <thead><tr id="capSizingHead"></tr></thead>
+        <tbody id="capSizing"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel padded">
+    <h2 data-i18n="capPressureTitle">Tight slots</h2>
+    <table class="plain">
+      <thead><tr id="capPressureHead"></tr></thead>
+      <tbody id="capPressure"></tbody>
+    </table>
+  </div>
+
+  <div class="panel padded">
+    <h2 data-i18n="capHoursTitle">Hours paid and hours served, month by month</h2>
+    <div id="capHours"></div>
+  </div>
+</section>
