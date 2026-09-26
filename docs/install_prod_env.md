@@ -136,5 +136,33 @@ On the SIPMediaGW Server, run the following tasks:
 
 
 
+## Supervision and reporting (optional)
+
+The Manager (`manager/`) reads the pool from the proxyAPI and receives the call
+history each gateway pushes at the end of a call. It can run beside the
+proxyAPI and Homer or on its own machine, and needs:
+
+| On | Setting | Value |
+|---|---|---|
+| proxyAPI (`deploy/proxyAPI/.env`) | `PROXY_ADMIN_TOKEN` | a secret; the Manager sends it as a bearer |
+| Manager (`manager/.env`) | `PROXYAPI_ADMIN_TOKEN` | the same value |
+| Manager (`manager/.env`) | `INGEST_TOKEN` | a secret (`tools/init-env.sh` generates it) |
+| every gateway (`.env`) | `LOG_PUSH_TOKEN` | the same value as `INGEST_TOKEN` |
+| every gateway (`.env`) | `LOG_PUSH_URL` | `http://<manager>:8200/ingest/calls` |
+| Manager (`manager/.env`) | `DATABASE_URL` | the PostgreSQL of Homer, database `gw_manager` (`manager/db/bootstrap.sql`) |
+| Manager (`manager/.env`) | `MANAGER_BIND` | with `docker-compose.prod.yml`, the address port 8200 is published on: the default `127.0.0.1` is reachable from the same host only, so gateways that push directly need the Manager's LAN address |
+
+Then follow [`manager/README.md`](../manager/README.md) (Quick start, then
+Production for the reverse proxy and the address the port is published on).
+
+Two things fail without a message:
+
+- a push the Manager cannot receive (wrong URL or token, port not reachable)
+  is not queued: the call is simply missing from the reports. Check the
+  Manager's log for `POST /ingest/calls ... 200` after a first test call;
+- a container reads its `.env` when it is created: after changing a token,
+  recreate it (`docker compose up -d --force-recreate`), a restart keeps the
+  old value.
+
 ## Testing
 To test the service, refer to [the testing section](./testing.md).
