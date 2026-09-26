@@ -1,0 +1,14 @@
+start_gw:Sep 24 08:20:31
+main_app:baresip
+gw_start:{"raw": "Sep 24 08:20:33", "timestamp": "2026-09-24T08:20:33Z", "url": "https://visio.sample.org/wqpmzrtkcx"}
+encoder:{"media": "audio", "value": "opus 48000Hz 2ch"}
+encoder:{"media": "video", "value": "H264 packetization-mode=0 (2000000 bit/s, 30.00 fps)"}
+call_start:{"timestamp": "2026-09-24T08:20:48Z", "callId": "1fb3a50b017ee6be6caed888b6cf2729", "sourceURI": "room12@sip.sample.org", "peerDisplayName": "12-3.wqpmzrtkcxRoom 12", "peerUserAgent": "TANDBERG/529 (ce11.40.1.1) Cisco-RoomKitMini", "mediaDir": {"audio": "sendrecv", "video": "sendrecv"}}
+browsing:{"value": "visio"}
+room:{"value": "wqpmzrtkcx"}
+dtmf:{"timestamp": "2026-09-24T08:20:52.120Z", "input": "3"}
+media_sample:{"seconds": 10.0, "video": {"main": {"source": "x11grab", "rxFrames": 300}, "slides": {"source": "fakevideo"}}}
+stats_value:{"media": "audio", "streamIndex": null, "field": "packets", "tx": 1900, "rx": 1880}
+stats_value:{"media": "video", "streamIndex": 0, "field": "packets", "tx": 4200, "rx": 3900}
+call_closed:{"callId": "1fb3a50b017ee6be6caed888b6cf2729", "peerDisplayName": "12-3.wqpmzrtkcxRoom 12", "closeReason": "Connection reset by peer [104]", "lastEventType": "CALL_CLOSED", "sourceURI": "room12@sip.sample.org", "destinationURI": "3.wqpmzrtkcx@visio.sample.org"}
+call_end:{"raw": "Sep 24 08:21:26", "timestamp": "2026-09-24T08:21:26Z"}
