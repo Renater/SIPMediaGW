@@ -13,11 +13,10 @@ Prerequisites
 - Python packages: mysql-connector-python, python-dateutil
 - Network access to the Kamailio database
 - A Redis server for Media scaler
-- A CSP object implementing:
-  - instType (dict of instance sizes)
-  - createInstance(type, name_prefix)
-  - destroyInstances(list_of_ips)
-  - enumerateInstances()
+- A CSP object implementing ManageInstance (`src/manageInstance.py`):
+  - configureInstance, enumerateInstances, createInstance, destroyInstances
+  - Optional overrides: createInstancesParallel, reconcile, close
+- Providers: Outscale (`CSP_NAME=outscale`) or OpenStack (`CSP_NAME=openstackProvider`)
 
 Location
 - Source: deploy/scaler/Scaler.py
@@ -77,6 +76,17 @@ Recommended improvements
 - Handle empty instType (cpuRange) in upScale.
 - Refactor SQL queries to avoid fragile concatenation and improve clarity.
 - Add unit tests for capacity calculation and scaling decisions.
+
+OpenStack provider
+- Package: `src/providers/openstackProvider/` (provider, networking, volumes, errors).
+- Copy `config/sipmediagw.json.example` to `sipmediagw.json` (gitignored) and fill credentials.
+- Set `CSP_NAME=openstackProvider`, `CSP_CONFIG_FILE=sipmediagw.json`, `CSP_PROFILE` to a key under `profile`.
+- `initData["gw_name_prefix"]` (from `scaler.json`) is required: only servers named
+  `<provider name>.<gw_name_prefix>...` are managed (fail-closed if missing).
+- `createInstance` waits for a public IP (manual `?up`). Batch create is available on
+  the provider as `createInstancesParallel`; `reconcile()` attaches missing floating
+  IPs and drops `ERROR` / stuck `BUILD` servers. The default `scale()` path still
+  calls `createInstance` one by one.
 
 Contact
 - Refer to the repo owner or infra team for implementation-specific questions.
