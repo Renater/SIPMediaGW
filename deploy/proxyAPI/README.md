@@ -151,17 +151,12 @@ A background task polls each gateway at `/gateway/status` and:
 
 ---
 
-## Admin console
+## Supervision
 
-`GET /admin/` serves a read-only console (`admin.html`, with `admin.css` and
-`admin.js` under `/admin/static/`, connector icons from `icons/` under `/admin/icons/`)
-listing the registered gateways with a
-derived state — *free slot* (`started`: container stopped, allocatable by
-`/start`), *waiting for a call* (`working`, no call fields) or *in conference*
-(call fields set) — plus room, platform, peer, call duration and pairing code,
-refreshed every 10 s. Open it in a browser: the 401 challenge triggers the
-native prompt (any user name, `PROXY_ADMIN_TOKEN` as password). The page is
-served with a strict `Content-Security-Policy` (no inline code).
+The console that used to be served on `/admin/` is gone: the Manager
+(`manager/`) reads `/admin/statuses` and shows the pool, with the call history
+and the reports beside it. `/admin/statuses` stays, with the same admin token
+(Bearer, or Basic with the token as password).
 
 ## Authorization examples
 
