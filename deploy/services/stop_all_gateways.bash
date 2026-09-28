@@ -5,8 +5,12 @@ while docker inspect gw$i > /dev/null 2>&1;
 do
     GW_NAME=$(docker inspect gw$i |grep "GW_NAME="| tr -d '"', | cut -d= -f2)
     GW_PROXY=$(docker inspect gw$i |grep "GW_PROXY="| tr -d '"', | cut -d= -f2)
+    # The token the container registered with (PROXY_TOKEN in .env), read
+    # from it like the other values: a deployment that changed the default
+    # left every gateway registered after a stop.
+    PROXY_TOKEN=$(docker inspect gw$i |grep "PROXY_TOKEN="| tr -d '"', | cut -d= -f2)
     echo "Unregistering gateway $GW_NAME from Proxy API"
-    curl -s -X POST "$GW_PROXY/unregister" -H "Content-Type: application/json"  -H "Authorization: Bearer 1234" -d "{\"gw_id\":\"$GW_NAME\"}";
+    curl -s -X POST "$GW_PROXY/unregister" -H "Content-Type: application/json"  -H "Authorization: Bearer ${PROXY_TOKEN:-1234}" -d "{\"gw_id\":\"$GW_NAME\"}";
     if docker inspect gw$i | grep -q '"Running": true'; then
         echo "Container gw$i is running"
         docker stop gw$i >/dev/null 2>&1;
