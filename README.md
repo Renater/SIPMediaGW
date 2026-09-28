@@ -25,6 +25,17 @@ The room connector is compatible with all video devices supporting the SIP proto
 - [Kamailio](./deploy/.env_kamailio)
 - [Coturn](./deploy/.env_turn)
 - SIPCAPTURE: [HOMER](./deploy/.env_homer), [HEP](./deploy/.env_hep)
+- [proxyAPI](./deploy/proxyAPI/.env): registers the gateways and relays their commands
+
+### Supervision and reporting
+The [Manager](./manager/README.md) is an optional operations console: the live
+state of the pool through the [proxyAPI](./deploy/proxyAPI/README.md)
+(`PROXY_ADMIN_TOKEN`), the history of every call pushed by each gateway at its
+end (`LOG_PUSH_URL` and `LOG_PUSH_TOKEN` in [`.env`](./.env)), usage, quality
+and capacity reports over that history. It keeps its own database on the
+PostgreSQL that Homer uses (`deploy/docker-compose.yml`) and runs in its own
+container: see [its Quick start](./manager/README.md#quick-start), and the
+settings to align in [the production guide](./docs/install_prod_env.md#supervision-and-reporting-optional).
 
 ### Testing 
 Once the services are up and running, you can join a conference from your preferred SIP softphone.
