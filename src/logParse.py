@@ -367,6 +367,11 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
                 continue
             if isFinal:
                 haveFinalCallClosed = True
+                # Tables printed before the call closed belong to readings,
+                # including one cut short by the hang-up; the video block of
+                # the call itself comes after.
+                if mediaSamples:
+                    media.videoStreams.clear()
 
             callId = recordData.get("callId") or callId
             peerDisplay = (recordData.get("peerDisplayName") or peerDisplay).strip()
@@ -385,6 +390,8 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
                 dtmfEvents.append({"timestamp": ts, "input": inp})
 
         elif recordType == "media_sample":
+            # The reading's own tables came just before it in the log.
+            media.videoStreams.clear()
             mediaSamples.append({
                 "seconds": recordData.get("seconds"),
                 "video": recordData.get("video") or {},
@@ -452,9 +459,17 @@ def buildPayloadFromLines(lines: List[str], postUrl: str) -> Dict[str, Any]:
         totalMs = sec * 1000
         totalRaw = f"{sec // 3600:02d}:{(sec % 3600) // 60:02d}:{sec % 60:02d}"
 
+    videoStreams = [media.videoStreams[i] for i in sorted(media.videoStreams)]
+    if mediaSamples:
+        # The log parser numbers the video tables with a counter that each
+        # reading advanced; the streams kept are the call's own, main then
+        # content, numbered 0 and 1 as on a call without readings.
+        videoStreams = [dict(stream, streamIndex=position)
+                        for position, stream in enumerate(videoStreams)]
+
     mediaStats = {
         "audio": {"tx": media.audioTx, "rx": media.audioRx},
-        "video": [media.videoStreams[i] for i in sorted(media.videoStreams)] if media.videoStreams else [],
+        "video": videoStreams,
         # The same figures over time, one reading every MEDIA_STATS_INTERVAL
         # seconds: totals say how the call went, these say when it went wrong.
         "samples": mediaSamples,
