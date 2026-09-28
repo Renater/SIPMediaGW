@@ -16,8 +16,16 @@ services:
       default:
         aliases:
           - "${ROOM}"
+    # chromedriver drives the call's browser: only HTTPLauncher, on this
+    # host, talks to it. Published on every interface it let any machine
+    # that reached the port run JavaScript in the conference.
     ports:
-      - 951${ID}:9515
+      - 127.0.0.1:951${ID}:9515
+    # PID 1 of the container is event_handler.py (exec in entrypoint.sh),
+    # which never reaps the orphans it inherits: the processes a browser
+    # leaves behind stay as zombies and count against the pids limit until
+    # nothing in the container can fork. tini as PID 1 reaps them.
+    init: true
     tmpfs:
       - /tmp
     volumes:
