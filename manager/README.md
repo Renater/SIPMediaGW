@@ -72,6 +72,13 @@ so that a filled `.env` stays out of git. `PROXYAPI_ADMIN_TOKEN` is the
 proxyAPI's own `PROXY_ADMIN_TOKEN`: copy it by hand. The first sign-in uses the
 `admin` account and `MANAGER_DEFAULT_PASSWORD`: change it at once.
 
+`PROXYAPI_URL` and `DATABASE_URL` name their host as `host.docker.internal`:
+seen from the container, that is the machine the Manager runs on (compose maps
+the name), where the proxyAPI and PostgreSQL publish their ports on the lab.
+When either runs on another machine, write that machine's address instead.
+Never edit `.env` by hand before `init-env.sh` has run: until it marks the file
+skip-worktree, a filled `.env` is an ordinary modified file for git.
+
 On the gateway side, to feed the reporting database:
 
     LOG_PUSH_URL=http://<manager>:8200/ingest/calls     # lab: the port is published
@@ -263,6 +270,8 @@ Usage and Quality count **user calls**: recording and streaming sessions
 (`main_app`) hold a gateway but carry no caller, so they count in Capacity
 (the pool) and never in the usage tiles, charts, platforms, units, outcomes or
 video states — one rule, `is_user_call()`, read by every one of those figures.
+Recording and streaming containers push no history at all (no SIP call event
+on their side): they exist in Capacity only, through the proxyAPI.
 The Journal lists every session; its exact filters (outcome, video, close
 reason — the links from Quality) keep to user calls, so a Quality figure and
 the list it opens agree. The concurrency peak of the summary is swept over the
@@ -320,6 +329,12 @@ Out of scope: the scaler's planned floor (`unlockedMin`, `maxGw`, `loadMax`)
 lives in `deploy/scaler/config/scaler.json` and is not reachable from here.
 These views say what happened, not whether it matched the plan — that comparison
 waits for the scaler to expose an API.
+
+`provisioned` counts the states `free`, `idle`, `ivr` and `call` as the proxyAPI
+derives them. A gateway the proxy reports as `gone` (stopped, about to be
+polled once more) or `other` (`stopping`, or an unknown status) is not
+counted, although its VM may still exist for up to a few minutes: the VM-hours
+are a lower bound, by at most one polling interval per stop.
 
 ## Reclassifying history
 
@@ -388,10 +403,13 @@ every path the front calls against the rule).
 | `/ingest/calls` | every gateway (`LOG_PUSH_URL`) | **without it, call history silently stops** |
 | `/health` | monitoring, optional | 200 or 503 |
 
-A push refused by the proxy is retried by the gateway only at its next call
-end, and its history file keeps growing meanwhile: check `/ingest/calls`
-through the proxy with a bad token (expect 401 from the Manager, not 404 from
-the proxy) before pointing gateways at it.
+A push that fails is **lost**: the gateway tries once (`src/logParse.py`,
+`pushHistory`), logs the failure to its own stderr, and the next container
+starts with an empty history. A Manager that is down, or a route the proxy
+does not relay, means calls missing from the reporting with no trace on this
+side. Check `/ingest/calls` through the proxy with a bad token (expect 401
+from the Manager, not 404 from the proxy) before pointing gateways at it, and
+keep the Manager's downtime short. The gateway has no retry spool.
 
 ### Deploying a change
 
@@ -505,6 +523,57 @@ feeds every screen API answers whose text fields carry markup, and fails if
 any element is created from them (`npm install playwright`, then
 `node tests/e2e/escaping.mjs`). Every value the front writes into HTML goes
 through `esc()`; this is what shows it.
+
+A test database: `db/bootstrap.sql` with another name, then the schema:
+
+    sed 's/gw_manager/gw_manager_test/g' db/bootstrap.sql | docker exec -i postgres psql -U root -d postgres
+    PG_DB=gw_manager_test ./tools/migrate.sh
+    DATABASE_URL_TEST=postgresql://gw_manager_test:<password>@127.0.0.1:5432/gw_manager_test ./tools/test.sh
+
+Two contracts with the gateway side are pinned by fixtures: what a gateway
+pushes (`tests/fixtures/push.schema.json`, checked against the real pushes in
+`tests/fixtures/payload*.json` by `test_push_contract.py`; the gateway's suite
+checks its own output against the same file) and what the proxyAPI answers on
+`/admin/statuses` (`tests/fixtures/admin_statuses.json`, one gateway per state,
+read through a real HTTP client by `test_proxy_contract.py`). A key renamed on
+either side fails a suite before it empties a screen.
+
+## Procedures
+
+**A new route.** Write it in the `api/` module of its family (or a new module,
+added to `app.py` next to the others) — reads on a router that carries
+`requireUser`, writes with `requireAdmin` on each route and the actor's name as
+its last argument. Period, units and the user-call scope come from
+`api/periods.py` (`resolvePeriod`, `callScope`), never by hand. SQL fragments
+go through `db.sqlWith`, search boxes through `db.likePattern`. Return shapes:
+an object `{label, since, until, …}` for a period aggregate, `{total, limit,
+offset, start, end, …}` for a paginated list, a bare list for a breakdown.
+Then: the Routes table above; `SAMPLE_ROW` in `tests/test_api_routes.py` (every
+column the handler reads must be there, the sweep runs every GET); the paths
+`tests/test_proxy.py` expects the reverse proxy to relay.
+
+**A new table or view.** A replayable file in `db/` (`IF NOT EXISTS`, `OR
+REPLACE`, `ADD COLUMN IF NOT EXISTS`, no `BEGIN`), declared at its place in
+`db/apply_order.txt` — a test refuses an undeclared file. Then `TABLES` in
+`tools/backup.sh` (its rows must come back on restore) and, for a view the
+console reads, `VIEWS` in `tools/restore-check.sh`. Changing an existing table
+is an `ALTER … IF NOT EXISTS` appended to its file; renaming a view's columns
+needs a `DROP VIEW` first, after the drops of the views that read it (a test
+checks the order). A period aggregate follows `schema_reporting_lot1.sql`:
+`<name>_rows(p_since, p_until, p_by_month)`, `<name>_between()`, and the view.
+Removing an object: a `drop_*.sql` one-off, listed at the foot of
+`apply_order.txt`, run once by hand on each deployment.
+
+**A new page.** `front/views/<name>.html` and `front/js/views/<name>.js`
+exporting `mount(context)` and `unmount()` (state in module variables, DOM
+rebuilt from it; listeners on `document` removed in `unmount`, a test checks);
+an entry in `VIEWS` of `main.js`, and in its admin list if the page is admin
+only; a menu entry in `index.html`; every visible string as a key in **both**
+dictionaries of `i18n.js`, referenced by `data-i18n` or `t().key` (a test
+compares the two, another checks every key used exists); no `style=""`, every
+class declared in a stylesheet, every `$('id')` present in the template
+(three more tests). `colspan` must be a literal. Copy `quality.js`, the
+shortest view, rather than starting from nothing.
 
 ## Exporting the code for a review
 

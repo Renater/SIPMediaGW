@@ -26,8 +26,9 @@ def liveTraceUrl(gateway, now):
     since = None
     if started:
         try:
-            # The proxy writes a local time with no zone: made aware here, or
-            # the retention check in homer.py compares it with an aware one.
+            # UTC with a Z suffix from the gateway; aware() covers an older
+            # proxy that relayed a naive local time, so the retention check
+            # in homer.py never compares naive with aware.
             since = aware(dt.datetime.fromisoformat(started.replace("Z", "+00:00")))
         except ValueError:
             since = None

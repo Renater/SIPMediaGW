@@ -47,8 +47,8 @@ function render() {
 
   $('rows').innerHTML = shown.map(gateway => {
     const type = norm(gateway.type);
-    // Seconds, not a timestamp: the proxy writes a naive local time and only
-    // the server knows which clock it came from. What arrives here is already
+    // Seconds, not a timestamp: the server resolves call_started (UTC from
+    // the gateway) against its own clock. What arrives here is already
     // resolved, and the tick below carries it forward between refreshes.
     const since = gateway.call_seconds;
     // Only a gateway on a call has anything to pilot, whether it sits in the

@@ -15,6 +15,11 @@ services:
       - .:/app
     # MANAGER_RELOAD=--reload (in .env) restarts uvicorn on .py changes.
     command: sh -c "uvicorn app:app --host 0.0.0.0 --port 8200 $${MANAGER_RELOAD:-}"
+    # The defaults of .env.example name the host as host.docker.internal: from
+    # a bridge container, 127.0.0.1 is the container itself, not the machine
+    # where the proxyAPI and PostgreSQL publish their ports.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8200:8200"
     restart: unless-stopped

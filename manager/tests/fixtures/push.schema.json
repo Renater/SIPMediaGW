@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sipmediagw/manager/push.schema.json",
+  "title": "Call history pushed by a gateway at the end of a call",
+  "description": "What src/logParse.py sends to LOG_PUSH_URL and what manager/ingest reads. Both sides validate their fixtures against this file: a key renamed on one side fails the other side's suite. Keys not listed here are stored in `raw` and ignored.",
+  "type": "object",
+  "required": ["call"],
+  "properties": {
+    "call": {
+      "type": "object",
+      "required": ["mainApp", "browsing", "room", "callSession", "details"],
+      "properties": {
+        "mainApp": {"type": "string", "description": "baresip for a user call; recording, streaming for service sessions"},
+        "browsing": {"type": "string", "description": "the platform (visio, jitsi, webinaire...) or empty"},
+        "room": {"type": "string", "description": "the meeting identifier, or empty when the caller never joined"},
+        "callUrl": {"type": "string"},
+        "roomType": {"type": "string"},
+        "gwId": {"type": "string", "description": "the gateway's registration id; optional until the gateway sends it"},
+        "callSession": {
+          "type": "object",
+          "required": ["callStart", "callEnd"],
+          "properties": {
+            "callStart": {"$ref": "#/$defs/instant"},
+            "callEnd": {"$ref": "#/$defs/instant"},
+            "totalTime": {
+              "type": "object",
+              "properties": {
+                "seconds": {"type": "integer", "minimum": 0},
+                "milliseconds": {"type": "integer", "minimum": 0},
+                "raw": {"type": "string"}
+              }
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": ["callId"],
+          "properties": {
+            "callId": {"type": "string", "description": "baresip's call id; empty when the container stopped without a call"},
+            "closeReason": {"type": "string"},
+            "lastEventType": {"type": "string"},
+            "peerUserAgent": {"type": "string"},
+            "source": {
+              "type": "object",
+              "properties": {
+                "sourceURI": {"type": "string"}, "sourceName": {"type": "string"},
+                "sourceNumber": {"type": "string"}, "sourceDomain": {"type": "string"}
+              }
+            },
+            "destination": {
+              "type": "object",
+              "properties": {
+                "destinationURI": {"type": "string"}, "destinationRoomName": {"type": "string"},
+                "destinationDomain": {"type": "string"}, "destinationDomainIp": {"type": "string"},
+                "destinationGw": {"type": "string"}, "peerDisplayName": {"type": "string"}
+              }
+            },
+            "encoders": {
+              "type": "object",
+              "properties": {"audio": {"type": "string"}, "video": {"type": "array", "items": {"type": "string"}}}
+            },
+            "mediaDir": {"type": "object", "additionalProperties": {"type": "string"}}
+          }
+        },
+        "dtmfEvents": {"type": "array", "items": {"type": "object"}},
+        "mediaStats": {
+          "type": "object",
+          "properties": {
+            "audio": {"type": "object"},
+            "video": {"type": "array", "items": {"type": "object"}},
+            "samples": {
+              "type": "array",
+              "items": {"type": "object", "required": ["seconds"], "properties": {"seconds": {"type": "number"}}}
+            }
+          }
+        },
+        "gateway": {
+          "type": "object",
+          "properties": {
+            "gwVersion": {"type": "string"}, "baresipVersion": {"type": "string"},
+            "baresipPatch": {"type": "string"}, "chromiumVersion": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "instant": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "description": "UTC, ISO 8601 with a Z suffix, or empty when the event never happened",
+          "pattern": "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z)?$"
+        },
+        "raw": {"type": "string"}
+      }
+    }
+  }
+}

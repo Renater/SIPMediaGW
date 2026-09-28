@@ -30,6 +30,11 @@ services:
     # (default) when the reverse proxy runs on this host; the LAN address when
     # it runs elsewhere or the gateways push to this port directly — then a
     # firewall keeps 8200 to the proxy and the gateways.
+    # The defaults of .env.example name the host as host.docker.internal: from
+    # a bridge container, 127.0.0.1 is the container itself, not the machine
+    # where the proxyAPI and PostgreSQL publish their ports.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${MANAGER_BIND:-127.0.0.1}:8200:8200"
     # The deployment's logo (MANAGER_BRAND_LOGO): not in the image, kept on the host.

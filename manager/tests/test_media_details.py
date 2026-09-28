@@ -107,7 +107,8 @@ def test_a_presentation_is_measured_and_its_call_reduced():
 
 
 def test_a_fixed_gateway_payload_is_left_as_is():
-    """Once logParse is fixed: two entries whatever the number of samples."""
+    """A payload whose video list holds one entry per stream (what logParse
+    sends once its per-sample repeat is fixed, SIPMediaGW #114) is left as is."""
     payload = copy.deepcopy(load("payload_media.json"))
     stats = payload["call"]["mediaStats"]
     stats["video"] = stats["video"][-2:]
@@ -238,7 +239,8 @@ def test_a_repeat_missing_from_samples_is_still_a_repeat():
 
 
 def test_real_streams_after_the_fix_are_kept():
-    """Once logParse is fixed, 4 entries that restart are streams again."""
+    """Entries that restart their counters are real streams (what logParse sends
+    once its per-sample repeat is fixed, SIPMediaGW #114): all of them are kept."""
     video = [{"rx": {"packets": 500}}, {"rx": {"packets": 0}},
              {"rx": {"packets": 20}}, {"rx": {"packets": 0}}]
     stats = {"video": video, "samples": [{"seconds": 10}, {"seconds": 20}, {"seconds": 30}]}

@@ -31,9 +31,10 @@ def clean(value):
 def callSeconds(callStarted, now):
     """Seconds elapsed since call establishment, or None.
 
-    call_started is written by proxyAPI as a naive local ISO timestamp
-    (datetime.now().isoformat()); compare against naive local now and
-    refuse implausible values rather than display them.
+    call_started is the instant the gateway wrote at CALL_ESTABLISHED, in UTC
+    with a Z suffix (logParse.isoZ), relayed as is by the proxyAPI. Both forms
+    are accepted; a value in the future or unreadable gives None rather than
+    a wrong figure.
     """
     raw = clean(callStarted)
     if not raw:

@@ -16,8 +16,8 @@ def aware(value):
     """
     A datetime that can be compared with any other one.
 
-    Naive means local: that is what the proxy writes into call_started and
-    what an operator types into a date filter. Attached here, once, so that
+    Naive means local: that is what an operator types into a date filter
+    (call_started from the proxy is UTC, Z-suffixed). Attached here, once, so that
     no comparison downstream can raise "can't compare offset-naive and
     offset-aware datetimes" — which took the park view down as soon as Homer
     retention was configured.
