@@ -557,18 +557,32 @@ async def monitorOneGateway(gw_id: str, gw_ip: str):
 # Background task to monitor gateways
 async def monitorGateways(intervalSeconds: int = 30):
 
+    # No failure ends the loop. An exception used to raise out of the task,
+    # which lifespan does not restart: the entries then stopped moving while
+    # /admin/statuses kept answering 200 with a frozen pool, and nothing said so.
+    # A bad entry is skipped on its own, so it cannot hide the entries scanned
+    # after it; a failure of Redis itself skips the rest of the cycle.
     while True:
         print("Checking gateway states...")
-        for key in redisClient.scan_iter(match="gateway:*"):
-            gw_id = key.split(":")[-1]
-            value = redisClient.get(key)
-            if not value:
-                continue
+        try:
+            for key in redisClient.scan_iter(match="gateway:*"):
+                gw_id = key.split(":")[-1]
+                try:
+                    value = redisClient.get(key)
+                    if not value:
+                        continue
 
-            gw = gwLoad(value)
-            gw_ip = gw["gw_ip"]
+                    gw = gwLoad(value)
+                    gw_ip = gw.get("gw_ip")
+                    if not gw_ip:
+                        print(f"[monitorGateways] {key}: unreadable entry, skipped")
+                        continue
 
-            await _fetchAndStoreGatewayStatus(gw_id, gw_ip, gw)
+                    await _fetchAndStoreGatewayStatus(gw_id, gw_ip, gw)
+                except Exception as exc:
+                    print(f"[monitorGateways] {key}: {exc!r}, skipped")
+        except Exception as exc:
+            print(f"[monitorGateways] cycle failed: {exc!r}")
 
         await asyncio.sleep(intervalSeconds)
 
