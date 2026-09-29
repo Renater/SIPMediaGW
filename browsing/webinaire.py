@@ -67,7 +67,7 @@ class Webinaire(Browsing):
     def join(self):
         super().join()
         try:
-            WebDriverWait(self.driver, 10).until(EC.url_contains("sessionToken"))
+            WebDriverWait(self.driver, 10).until(EC.url_contains("html5client"))
         except:
             print("Cannot enter meeting", flush=True)
             return
