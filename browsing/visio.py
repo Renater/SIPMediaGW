@@ -47,7 +47,7 @@ class Visio (Browsing):
 
         def unpinSlide(maxRetries=2):
             try:
-                prevDualScreenOn = None
+                pinned = None
                 while self.driver:
                     try:
                         dualScreenOn = self.driver.execute_script(
@@ -57,28 +57,25 @@ class Visio (Browsing):
                         break
 
                     # Only run the pin/unpin logic when the dualScreenOn value changed
-                    if dualScreenOn != prevDualScreenOn:
+                    if pinned != True or dualScreenOn == pinned:
                         for attempt in range(maxRetries + 1):
                             try:
                                 videoElement = self.driver.find_element(By.CSS_SELECTOR, self.slideSelector)
                                 ActionChains(self.driver).move_to_element(videoElement).perform()
-                                togglePinSucceeded = setPinState(pinned=dualScreenOn)
-                                print("Pin/unpin slide action performed. Dual screen on: {}, Pin status: {}".format(dualScreenOn, togglePinSucceeded), flush=True)
-                                if togglePinSucceeded == True:
-                                    prevDualScreenOn = dualScreenOn
+                                result = setPinState(pinned=dualScreenOn)
+                                ok = result.get('ok', False)
+                                pinned = result.get('pinned')
+                                print(f"Pin/unpin action. dualScreenOn={dualScreenOn}, ok={ok}, pinned={pinned}", flush=True)
+                                if ok and pinned and not dualScreenOn:
                                     break
-
                             except NoSuchElementException:
                                 break
-
                             except StaleElementReferenceException:
                                 if attempt == maxRetries:
-                                    break  # next polling will catch the new element
-                                continue  # DOM changed between, let's retry with a fresh find_element
-
+                                    break
+                                continue
                             except (NoSuchWindowException, InvalidSessionIdException):
-                                break  # Browser window closed, exit the loop
-
+                                break
                             except Exception as e:
                                 print("Error in unpinSlide thread: {}".format(e), flush=True)
                     time.sleep(checkInterval)

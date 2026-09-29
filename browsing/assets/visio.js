@@ -109,26 +109,37 @@ class Visio extends UIHelper{
         },
     };
 
+    _visibleButtonsWithIcon(path) {
+    return [...document.querySelectorAll('button')]
+        .filter(b => b.offsetParent !== null)
+        .filter(b => b.querySelector(`svg.remixicon path[d^="${path}"]`));
+    }
+
     _togglePin(action) {
         const video = document.querySelector(this.slideSelector);
-        if (!video) return Promise.resolve(false);
+        if (!video) return Promise.resolve({ ok: false, pinned: null });
 
+        const oppositeAction = action === 'pin' ? 'unpin' : 'pin';
         const { path, announce } = this._PIN_ICONS[action];
+        const oppositePath = this._PIN_ICONS[oppositeAction].path;
 
-        const button = [...document.querySelectorAll('button')]
-            .filter(b => b.offsetParent !== null)
-            .find(b => b.querySelector(`svg.remixicon path[d^="${path}"]`));
+        const matches = this._visibleButtonsWithIcon(path);
+        const button = matches[0];
 
         if (!button) {
-            // wanted action icon of the requested action is not displayed :
-            // either the state is already the desired one, or the controls are not visible
-            console.log(`_togglePin(${action}): button not found, nothing to do`);
-            return Promise.resolve(false);
+            const alreadyThere = this._visibleButtonsWithIcon(oppositePath).length > 0;
+            return Promise.resolve(
+                alreadyThere
+                    ? { ok: true, pinned: action === 'pin' }
+                    : { ok: false, pinned: null }
+            );
         }
 
-        const confirmed = this._waitForAnnounce(announce, 2000);  // trigger before click
         button.click();
-        return confirmed;
+        return this._waitForAnnounce(announce, 2000).then(confirmed => ({
+            ok: confirmed,
+            pinned: this._visibleButtonsWithIcon(this._PIN_ICONS.unpin.path).length > 0,
+        }));
     }
 
     pinSlide() {
@@ -136,9 +147,8 @@ class Visio extends UIHelper{
         if (succeeded){
             document.getElementById("slide-streamer-force-style")?.remove();
         }
-        return this._togglePin('pin');
+        return succeeded;
     }
-
     unpinSlide() { return this._togglePin('unpin'); }
 
     _waitForAnnounce(needles, timeout = 2000) {
@@ -160,6 +170,7 @@ class Visio extends UIHelper{
             const timer = setTimeout(() => { obs.disconnect(); resolve(false); }, timeout);
         });
     }
+
     mediaState() {
         const el = document.getElementById('media-state');
         if (!el) {
