@@ -388,20 +388,12 @@ class DockerGateway:
         except Exception:
             print("Selenium Session Id not found")
 
-    # A script returning a slide image carries a few hundred kilobytes.
     SCRIPT_TIMEOUT_S = 15
 
     def executeInExistingChromeSession(self, gwId: str, script: str, *args):
         """
         Run a script in the browser session the gateway already drives, with
         one W3C request to its chromedriver.
-
-        This used to open a Selenium client (webdriver.Remote), which starts a
-        new session, hence a whole new headless Chrome inside the container,
-        at every call, then only closed its window: the processes it left
-        were never reaped. interact reads the connector state every 2 s, so a
-        call with the companion page open exhausted the container's pids in
-        about 20 minutes.
         """
         sessionId = self.getSeleniumSessionId(gwId)
         if not sessionId:
