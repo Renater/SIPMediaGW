@@ -17,7 +17,8 @@ services:
         aliases:
           - "${ROOM}"
     ports:
-      - 951${ID}:9515
+      - 127.0.0.1:951${ID}:9515
+    init: true
     tmpfs:
       - /tmp
     volumes:
