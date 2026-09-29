@@ -5,8 +5,6 @@ from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from typing import Optional, Dict, Any
 import os
 import subprocess
@@ -14,6 +12,7 @@ import json
 import argparse
 import uvicorn
 from functools import lru_cache
+import urllib.error
 import urllib.request
 
 app = FastAPI(title="SIP Media Gateway API", version="1.0.0")
@@ -389,29 +388,34 @@ class DockerGateway:
         except Exception:
             print("Selenium Session Id not found")
 
+    SCRIPT_TIMEOUT_S = 15
+
     def executeInExistingChromeSession(self, gwId: str, script: str, *args):
-        chromeOptions = Options()
-        chromeOptions.add_argument("--headless")
-        chromeOptions.add_argument("--no-sandbox")
-        chromeOptions.add_argument("--disable-dev-shm-usage")
-        seleniumSessionId = self.getSeleniumSessionId(gwId)
-        driver = webdriver.Remote(
-                    command_executor='http://localhost:951{}'.format(gwId),
-                    options=chromeOptions
-                )
-        sessionToClose = driver.session_id
-        driver.session_id = seleniumSessionId
+        """
+        Run a script in the browser session the gateway already drives, with
+        one W3C request to its chromedriver.
+        """
+        sessionId = self.getSeleniumSessionId(gwId)
+        if not sessionId:
+            raise RuntimeError("no browser session on this gateway")
+        request = urllib.request.Request(
+            'http://127.0.0.1:951{}/session/{}/execute/sync'.format(gwId, sessionId),
+            data=json.dumps({"script": script, "args": list(args)}).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
         try:
-            return driver.execute_script(script, *args)
-        finally:
+            with urllib.request.urlopen(request, timeout=self.SCRIPT_TIMEOUT_S) as resp:
+                return json.load(resp).get("value")
+        except urllib.error.HTTPError as exc:
+            # A W3C error answers {"value": {"error": ..., "message": ...}}:
+            # a script that throws, or a session that no longer exists.
             try:
-                driver.session_id = sessionToClose
-            except Exception:
-                pass
-            try:
-                driver.close()
-            except Exception:
-                pass
+                value = json.load(exc).get("value") or {}
+                message = value.get("message") or value.get("error") or str(exc)
+            except (ValueError, AttributeError):
+                message = str(exc)
+            raise RuntimeError("browser script failed: {}".format(message.splitlines()[0])) from None
 
     def sendCommand(self, gwUid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         gwData = DockerGateway.get_gw_info(gwUid)
