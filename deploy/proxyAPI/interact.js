@@ -589,6 +589,32 @@ function endOfCall() {
 
 let goneCount = 0;
 
+// The list of platforms is read once, when the page opens. A page opened as
+// soon as the QR code shows can ask a gateway that has not finished starting:
+// the answer is empty or an error, and the page used to stay blank for good,
+// until reloaded. Until a list arrives, the status poll asks again.
+// The poll waits for this answer, so it is given 3 s at most: a gateway that
+// never answers must not stop the page from seeing the end of the call.
+const IVR_CONFIG_TIMEOUT_MS = 3000;
+async function reloadIvrConfig() {
+  try {
+    const opts = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+      ? { signal: AbortSignal.timeout(IVR_CONFIG_TIMEOUT_MS) } : {};
+    const res = await fetch(apiUrl('/ivrConfig') + `?gw_id=${encodeURIComponent(gwId)}`, opts);
+    if (!res.ok) return false;
+    const data = await res.json();
+    const domains = data.webrtc_domains || {};
+    if (!Object.keys(domains).length) return false;
+    ivrMenus = data.menus || {};
+    webrtcDomains = domains;
+    roomNameInfo = data.room_name_info || {};
+    renderLangSwitch();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function checkGwStatus() {
   if (!gwId) return setTimeout(checkGwStatus, POLL_MS);
   try {
@@ -609,6 +635,10 @@ async function checkGwStatus() {
     }
     goneCount = 0;
     const statusData = await statusRes.json();
+    // Nothing to draw without the list: ask for it again, and once it is
+    // there, draw the screen the gateway is on (lastScreen reset so the
+    // comparison below does not skip it).
+    if (!Object.keys(webrtcDomains).length && await reloadIvrConfig()) lastScreen = null;
     // stopped: the container exited, the call is over. deleted: the VM is gone.
     // Either way there is nothing left to drive from here. The page used to
     // watch for "down", a value the proxy stopped writing when the states were
