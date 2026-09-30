@@ -32,8 +32,8 @@ const TEXTS = {
     cancel: 'Annuler',
     chatPlaceholder: 'Envoyer un message au chat\u2026',
     chatSend: 'Envoyer',
-    capture: 'Capturer l\u2019\u00e9cran partag\u00e9',
-    captureHint: 'Prend une image du contenu partag\u00e9 pendant la r\u00e9union.',
+    capture: 'Capturer',
+    captureHint: 'Prendre une image de l\u2019\u00e9cran partag\u00e9',
     captureNone: 'Aucun contenu partag\u00e9 \u00e0 capturer pour le moment.',
     captureFail: 'La capture a \u00e9chou\u00e9.',
     slideTitle: 'Capture de l\u2019\u00e9cran partag\u00e9',
@@ -67,8 +67,8 @@ const TEXTS = {
     cancel: 'Cancel',
     chatPlaceholder: 'Send a message to chat\u2026',
     chatSend: 'Send',
-    capture: 'Capture the shared screen',
-    captureHint: 'Takes a still of the content being shared in the meeting.',
+    capture: 'Capture',
+    captureHint: 'Take a still of the shared screen',
     captureNone: 'Nothing is being shared to capture right now.',
     captureFail: 'The capture failed.',
     slideTitle: 'Shared screen capture',
@@ -101,6 +101,7 @@ const $ = (id) => document.getElementById(id);
 const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zM5 18h14v2H5z"/></svg>';
 const ICON_EXPAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v2H6v5H4V4zm9 0h7v7h-2V6h-5V4zM4 13h2v5h5v2H4v-7zm14 0h2v7h-7v-2h5v-5z"/></svg>';
 const ICON_SHRINK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4V7h3V4h2zm6 0h2v3h3v2h-5V4zM4 15h5v5H7v-3H4v-2zm11 0h5v2h-3v3h-2v-5z"/></svg>';
+const ICON_CAPTURE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h6v2H5v4H3V3zm12 0h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 0h2v6h-6v-2h4v-4zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>';
 
 
@@ -222,7 +223,10 @@ function renderLangSwitch() {
   $('slide-close').dataset.tip = t.close;
 
   const ss = $('btn-slideShot');
-  if (ss) ss.textContent = t.capture;
+  if (ss) {
+    ss.innerHTML = ICON_CAPTURE + '<span></span>';
+    ss.lastChild.textContent = t.capture;
+  }
   const hint = $('slide-hint');
   if (hint) hint.textContent = t.captureHint;
 

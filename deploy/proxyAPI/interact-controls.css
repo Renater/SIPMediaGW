@@ -129,8 +129,23 @@ button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
 
 /* Slide capture */
 #slide-controls { margin-top: 1rem; flex-direction: column; gap: .5rem; }
-.controls-row { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
-#slide-hint { font-size: .75rem; color: var(--muted); flex: 1 1 10rem; }
+/* The capture: a tile, icon over word, its hint under it — room left beside
+   it for the other meeting services. */
+.capture { display: flex; flex-direction: column; align-items: center; gap: .35rem; width: 7.5rem; }
+.key.capture__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  width: 100%;
+  min-height: 3.2rem;
+  padding: .45rem .5rem;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.key.capture__btn svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.capture__hint { font-size: .7rem; line-height: 1.3; text-align: center; color: var(--muted); }
 #slide-gallery { display: flex; flex-wrap: wrap; gap: .4rem; }
 .slide-thumb {
   width: 4rem;

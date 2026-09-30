@@ -109,9 +109,11 @@
     <div class="ctrl-more" id="ctrl-more"></div>
 
     <div id="slide-controls">
-      <div class="controls-row">
-        <button id="btn-slideShot" type="button" class="key"></button>
-        <div id="slide-hint"></div>
+      <!-- A tile rather than a full-width row: the other meeting services
+           (stream, record, transcribe) are to sit beside it. -->
+      <div class="capture">
+        <button id="btn-slideShot" type="button" class="key capture__btn"></button>
+        <div id="slide-hint" class="capture__hint"></div>
       </div>
       <div id="slide-gallery" aria-live="polite"></div>
     </div>
