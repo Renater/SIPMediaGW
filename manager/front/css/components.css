@@ -155,11 +155,6 @@ button.link:hover { background: transparent; color: var(--blue-hover); }
 .detail td { border-bottom: 1px solid var(--border); padding: 7px 0; white-space: normal;
   word-break: break-word; }
 .drawer h3 { font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
-.drawer details { margin-top: 14px; }
-.drawer summary { cursor: pointer; font-size: 13px; color: var(--blue); }
-.drawer pre { margin-top: 10px; padding: 12px; background: var(--bg-alt); border-radius: var(--radius);
-  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
-  white-space: pre-wrap; word-break: break-word; max-height: 40vh; overflow: auto; }
 tbody tr.selectable { cursor: pointer; }
 
 /* The buttons sit in a box inside the cell. A cell turned into a flex box
@@ -340,6 +335,30 @@ dialog.modal > form > .stack, dialog.modal > form > p { padding: 18px 20px 0; ma
 dialog.modal > form > footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 18px 20px 16px; }
 dialog.modal .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 dialog.modal select { width: 100%; padding: 8px 11px; }
+dialog.modal.wide { width: min(980px, calc(100vw - 32px)); }
+dialog.modal .dim-light { font-weight: 400; opacity: .8; }
+
+/* The payload viewer (jsontree module): a tool row, then the tree, which
+   scrolls on its own so the tools stay in reach. */
+.json-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 20px;
+  border-bottom: 1px solid var(--border); }
+.json-tools input[type="search"] { flex: 1 1 160px; max-width: 280px; min-width: 0; padding: 7px 11px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-alt); color: var(--text); font: inherit; font-size: 13px; }
+.json-tools span.dim { font-size: 13px; }
+.json-tree { height: min(62vh, 640px); overflow: auto; padding: 10px 12px 16px 0; font-size: 12.5px; line-height: 1.6; }
+.jt-row { position: relative; white-space: pre-wrap; word-break: break-word; }
+.jt-toggle { position: absolute; margin-left: -20px; width: 18px; padding: 0; border: none; background: transparent;
+  color: var(--mention); font-size: 11px; line-height: inherit; }
+.jt-toggle:hover { background: transparent; color: var(--blue); }
+.jt-key { color: var(--blue); }
+.jt-index { color: var(--mention); }
+.jt-str { color: var(--success); }
+.jt-num { color: var(--code-number); }
+.jt-lit { color: var(--info); }
+.jt-punct { color: var(--mention); }
+.jt-sum { margin-left: 8px; color: var(--mention); font-style: italic; font-family: inherit; }
+.jt-hit { background: var(--highlight); color: inherit; border-radius: 2px; }
+.jt-more { padding: 1px 8px; font-size: 12px; }
 .note.err { color: var(--error); }
 /* Action buttons, as in interact and pairing: the one that does it filled,
    the one that backs out outlined, both a size above the small controls

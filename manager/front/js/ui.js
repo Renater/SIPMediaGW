@@ -105,27 +105,34 @@ export function closeDialogs(view) {
 }
 
 /* navigator.clipboard only exists in secure contexts (HTTPS / localhost);
-   plain-HTTP deployments fall back to the legacy execCommand path. */
-export async function copyText(text) {
+   plain-HTTP deployments fall back to the legacy execCommand path. True when
+   the text reached the clipboard. */
+export async function writeClipboard(text) {
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
-    } else {
-      const area = document.createElement('textarea');
-      area.value = text;
-      area.setAttribute('readonly', '');
-      area.style.position = 'fixed';
-      area.style.opacity = '0';
-      document.body.appendChild(area);
-      area.select();
-      const copied = document.execCommand('copy');
-      area.remove();
-      if (!copied) throw new Error('execCommand');
+      return true;
     }
-    toast(`${t().copied} : ${text}`);
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    // Inside an open modal dialog when there is one: outside it, the page is
+    // inert and the selection, hence the copy, fails.
+    (document.querySelector('dialog[open]') || document.body).appendChild(area);
+    area.select();
+    const copied = document.execCommand('copy');
+    area.remove();
+    return copied;
   } catch {
-    toast(t().copyFail, 'err');
+    return false;
   }
+}
+
+export async function copyText(text) {
+  if (await writeClipboard(text)) toast(`${t().copied} : ${text}`);
+  else toast(t().copyFail, 'err');
 }
 
 /* Delegated click-to-copy for any container holding .copy elements. */

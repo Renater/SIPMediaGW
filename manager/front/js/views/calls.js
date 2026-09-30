@@ -9,7 +9,8 @@
 import { get, errorMessage } from '../api.js';
 import { t, translate, onLanguageChange } from '../i18n.js';
 import { esc, nf, norm, dash, copyable } from '../format.js';
-import { enableCopy } from '../ui.js';
+import { closeDialogs, enableCopy, toast, wireDialogs, writeClipboard } from '../ui.js';
+import { createJsonTree } from '../jsontree.js';
 import { platformCell, attachIconFallback } from '../platforms.js';
 import { createCalendar, openFromFields, keyOf, isoOf, shortDate, todayKey } from '../datepicker.js';
 import { timeLines, attachHover, themeColor } from '../charts.js';
@@ -271,14 +272,19 @@ function mediaTable(media) {
 }
 
 let opener = null;   // the element that opened the drawer, to give focus back to
+let shownCall = null; // the call in the drawer: its payload feeds the JSON window
+let jsonTree = null;
+let searchTimer = null;
+let copiedTimer = null;
 
 function closeDrawer() {
   // Called from unmount(), so it must tolerate a template that is already
   // gone: a failure here would abort the navigation itself.
-  for (const id of ['callDrawer', 'callScrim', 'callTrace', 'callRaw']) {
+  for (const id of ['callDrawer', 'callScrim', 'callTrace', 'callJson']) {
     const element = $(id);
     if (element) element.hidden = true;
   }
+  shownCall = null;
   // A dialog gives focus back where it took it — if that place still exists.
   if (opener && document.contains(opener)) opener.focus();
   opener = null;
@@ -291,7 +297,8 @@ async function openDrawer(id) {
   // Focus moves into the dialog: the close button is its first control.
   $('callClose').focus();
   $('callTrace').hidden = true;
-  $('callRaw').hidden = true;
+  $('callJson').hidden = true;
+  shownCall = null;
   $('callNumber').textContent = '';
   $('callDrawerBody').innerHTML = `<p class="note">${esc(t().loading)}</p>`;
   try {
@@ -300,11 +307,11 @@ async function openDrawer(id) {
     // No link means nothing to open: show nothing rather than a dead button
     // (old capture rotated out, or neither Call-ID nor room usable).
     // A room link is not an exact match, so it gets its own label and a note.
-    // The number the search box accepts as "#3197", and the payload as a file.
+    // The number the search box accepts as "#3197"; the payload opens in
+    // its own window, where it can also be downloaded.
     $('callNumber').textContent = t().callNumber(call.id);
-    $('callRaw').href = `/api/reporting/calls/${encodeURIComponent(call.id)}/raw`;
-    $('callRaw').setAttribute('download', '');
-    $('callRaw').hidden = false;
+    shownCall = call;
+    $('callJson').hidden = false;
     const trace = $('callTrace');
     const exact = call.homer_link_kind === 'exact';
     trace.hidden = !call.homer_url;
@@ -321,14 +328,42 @@ async function openDrawer(id) {
       <h3>${esc(t().mediaTitle)}</h3>
       ${mediaTable(call.media)}
       ${dtmf ? `<h3>${esc(t().dtmfTitle)}</h3><p class="mono">${dtmf}</p>` : ''}
-      ${call.homer_url && !exact ? `<p class="note">${esc(t().homerRoomHint)}</p>` : ''}
-      <details><summary>${esc(t().rawTitle)}</summary>
-        <pre>${esc(JSON.stringify(call.raw, null, 2))}</pre></details>`;
+      ${call.homer_url && !exact ? `<p class="note">${esc(t().homerRoomHint)}</p>` : ''}`;
     attachHover($('callDrawerBody').querySelector('[data-chart="fps"]'));
   } catch (error) {
     if (error.message === 'unauthenticated' || !mounted) return;
     $('callDrawerBody').innerHTML = `<p class="msg err">${esc(errorMessage(error, t()))}</p>`;
   }
+}
+
+/* The payload as the gateway pushed it, in a window of its own: a tree open
+   on two levels, searchable, with its copy and its download. */
+function openJson() {
+  if (!shownCall) return;
+  const call = shownCall;
+  const text = JSON.stringify(call.raw ?? null, null, 2);
+  $('jsonCall').textContent = `— ${t().callNumber(call.id)}`;
+  $('jsonSize').textContent = t().jsonSize(nf.format(Math.max(1, Math.round(new Blob([text]).size / 1024))));
+  $('jsonDownload').href = `/api/reporting/calls/${encodeURIComponent(call.id)}/raw`;
+  $('jsonSearch').value = '';
+  $('jsonSearch').placeholder = t().jsonSearch;
+  $('jsonMatches').textContent = '';
+  $('jsonCopy').textContent = t().jsonCopy;
+  jsonTree.show(call.raw, 2);
+  $('jsonDialog').showModal();
+}
+
+async function copyJson() {
+  if (!shownCall) return;
+  // The toast lies under the modal window: the button says it instead.
+  const copied = await writeClipboard(JSON.stringify(shownCall.raw ?? null, null, 2));
+  if (!copied) {
+    toast(t().copyFail, 'err');
+    return;
+  }
+  $('jsonCopy').textContent = `${t().copied} ✓`;
+  clearTimeout(copiedTimer);
+  copiedTimer = setTimeout(() => { if ($('jsonCopy')) $('jsonCopy').textContent = t().jsonCopy; }, 1500);
 }
 
 /* ---------------------------------------------------------- loading */
@@ -507,6 +542,28 @@ export function mount() {
   }
   document.addEventListener('click', closePanels);
   $('callClose').addEventListener('click', closeDrawer);
+  $('callJson').addEventListener('click', openJson);
+  wireDialogs($('view'));
+  jsonTree = createJsonTree($('jsonTree'), {
+    onMatches: (count, opened) => {
+      $('jsonMatches').textContent = count === null ? '' : t().jsonMatches(count, nf.format(count), opened);
+    },
+  });
+  $('jsonSearch').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => jsonTree.search($('jsonSearch').value), 200);
+  });
+  $('jsonExpand').addEventListener('click', () => jsonTree.expandAll());
+  $('jsonCollapse').addEventListener('click', () => jsonTree.collapseAll());
+  $('jsonLevels').addEventListener('click', () => jsonTree.levels(2));
+  $('jsonCopy').addEventListener('click', copyJson);
+  // Closed, the window lets go of the tree: a day of samples is megabytes.
+  $('jsonDialog').addEventListener('close', () => {
+    clearTimeout(searchTimer);
+    // Queued: after an unmount the view, and the tree, may be gone already.
+    jsonTree?.clear();
+    if ($('callDrawer') && !$('callDrawer').hidden) $('callJson').focus();
+  });
   $('callScrim').addEventListener('click', closeDrawer);
   document.addEventListener('keydown', onEscape);
   enableCopy($('callRows'));
@@ -516,13 +573,19 @@ export function mount() {
 }
 
 function onEscape(event) {
-  if (event.key === 'Escape') closeDrawer();
+  // Escape in the JSON window closes that window only, not the drawer under it.
+  if (event.key !== 'Escape' || $('jsonDialog')?.open) return;
+  closeDrawer();
 }
 
 export function unmount() {
   mounted = false;
   clearTimeout(debounceTimer);
   document.removeEventListener('keydown', onEscape);
+  clearTimeout(searchTimer);
+  clearTimeout(copiedTimer);
+  closeDialogs(document.getElementById('view'));
+  jsonTree = null;
   document.removeEventListener('click', closePanels);
   if (calendar) calendar.destroy();
   calendar = null;
