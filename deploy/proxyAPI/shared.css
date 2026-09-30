@@ -71,7 +71,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: .6rem;
   margin-top: 1rem;
+}
+/* The page title sits between the language and the theme switches. On a
+   narrow phone the three no longer fit on a line: the title goes under them,
+   at its full size, rather than being cut. */
+.toolbar h1 {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.1rem;
+}
+@media (max-width: 380px) {
+  .toolbar { flex-wrap: wrap; }
+  .toolbar h1 { order: 3; flex-basis: 100%; margin-top: .9rem; font-size: 1.3rem; }
 }
 .segmented {
   display: inline-flex;
