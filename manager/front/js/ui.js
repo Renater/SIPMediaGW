@@ -49,6 +49,7 @@ export function fillMonths(select, count = 24) {
    each time the Users view was opened. */
 export function wireDialogs(view) {
   for (const dialog of view.querySelectorAll('dialog.modal')) {
+    makeMovable(dialog);
     // A click closes from the backdrop only if it also began there: a text
     // selection dragged out of a field ends with its click on the dialog
     // itself, and closed the form being filled in.
@@ -60,6 +61,40 @@ export function wireDialogs(view) {
       pressedOnBackdrop = false;
     });
   }
+}
+
+/* A dialog moves by its title bar, to uncover what lies under it — the rules
+   already written, while adding one. It opens in the middle again each time.
+   The offset is set through the CSSOM, which the CSP allows (a style
+   attribute it would drop). The dialog stays whole on screen: pushed to an
+   edge with only a strip showing, its close button and its fields were out
+   of reach. */
+function makeMovable(dialog) {
+  const bar = dialog.querySelector(':scope > form > header');
+  if (!bar) return;
+  bar.classList.add('movable');
+  let grab = null, x = 0, y = 0;
+  bar.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.target.closest('button, a, input, select, textarea')) return;
+    const box = dialog.getBoundingClientRect();
+    // Where the dialog would sit without the offset: the clamp works on it.
+    grab = { dx: event.clientX - x, dy: event.clientY - y,
+             left: box.left - x, top: box.top - y, width: box.width, height: box.height };
+    bar.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+  bar.addEventListener('pointermove', event => {
+    if (!grab) return;
+    // Whole on screen; a dialog taller or wider than the window stays put on that axis.
+    const clamp = (value, low, high) => (high < low ? 0 : Math.min(high, Math.max(low, value)));
+    x = clamp(event.clientX - grab.dx, -grab.left, window.innerWidth - grab.left - grab.width);
+    y = clamp(event.clientY - grab.dy, -grab.top, window.innerHeight - grab.top - grab.height);
+    dialog.style.transform = `translate(${x}px, ${y}px)`;
+  });
+  const release = () => { grab = null; };
+  bar.addEventListener('pointerup', release);
+  bar.addEventListener('pointercancel', release);
+  dialog.addEventListener('close', () => { x = 0; y = 0; dialog.style.transform = ''; });
 }
 
 /* On leaving a view: none of its dialogs stays open over the next one. */

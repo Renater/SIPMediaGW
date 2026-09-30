@@ -72,6 +72,16 @@ th.center, td.center { text-align: center; }
 .tag.warn { background: var(--warning-bg); color: var(--warning); }
 .tag.bad  { background: var(--error-bg);   color: var(--error); }
 .platform { display: inline-flex; align-items: center; gap: 8px; }
+/* A free-text value in a table row: one line, cut with an ellipsis, the whole
+   of it in the tooltip and the detail drawer. One unexpected value (a gateway
+   error where a platform name was expected) used to widen the whole call log
+   past the screen. */
+.clip { display: inline-block; max-width: 24ch; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; vertical-align: middle; }
+/* A platform is a short name; anything longer is not one. */
+.platform .clip { max-width: 14ch; }
+/* A SIP URI is what an operator reads first: more room before the cut. */
+.mono.clip { max-width: 34ch; }
 .platform img { width: 20px; height: 20px; object-fit: contain; }
 .msg { padding: 24px; text-align: center; color: var(--mention); white-space: normal; }
 .msg.err { color: var(--error); }
@@ -321,6 +331,8 @@ dialog.modal > form > header { display: flex; align-items: center; gap: 12px; pa
   background: var(--blue); color: var(--on-blue); border-radius: var(--radius) var(--radius) 0 0;
   border-bottom: 1px solid var(--border); }
 dialog.modal > form > header h2 { flex: 1; font-size: 16px; font-weight: 700; }
+/* Dragged by its title bar: makeMovable in the ui module. */
+dialog.modal > form > header.movable { cursor: move; user-select: none; touch-action: none; }
 dialog.modal .close { border: none; background: transparent; padding: 4px 8px; font-size: 16px; color: var(--on-blue); }
 dialog.modal .close:hover { background: transparent; opacity: .8; }
 dialog.modal .confirm-text { padding: 22px 20px 4px; font-size: 15px; }

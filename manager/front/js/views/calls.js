@@ -170,13 +170,13 @@ function render(rows) {
   $('callRows').innerHTML = rows.map(row => `<tr class="selectable" data-id="${esc(row.id)}">
     <td>${when(row.call_start)}</td>
     <td><span class="pill ${outcomeClass(row.outcome)}">${esc(t().outcomes[row.outcome] || row.outcome)}</span></td>
-    <td>${copyable(displayName(row))}</td>
-    <td>${copyable(norm(row.source_uri) || norm(row.source_number), 'mono')}</td>
-    <td>${copyable(norm(row.room), 'mono')}</td>
+    <td>${copyable(displayName(row), 'clip')}</td>
+    <td>${copyable(norm(row.source_uri) || norm(row.source_number), 'mono clip')}</td>
+    <td>${copyable(norm(row.room), 'mono clip')}</td>
     <td>${platformCell(row.platform, dash)}</td>
     <td>${cellOrDash(row.org_unit)}</td>
     <td class="num">${duration(row.duration_s)}</td>
-    <td>${cellOrDash(row.terminal)}</td>
+    <td>${norm(row.terminal) == null ? dash : `<span class="clip" title="${esc(row.terminal)}">${esc(row.terminal)}</span>`}</td>
     <td>${videoCell(row.video_state)}</td>
   </tr>`).join('');
   attachIconFallback($('callRows'));
