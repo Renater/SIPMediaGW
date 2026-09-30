@@ -41,6 +41,13 @@
        there is no form to submit: an unknown code is answered here. -->
   <div class="code" id="code-boxes" role="group"></div>
 
+  <!-- Where the eye is when the code is typed, rather than in the help box
+       below the button: a code read a minute ago may already be another one. -->
+  <p class="notice" id="hint-warning">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7z"/></svg>
+    <span><strong id="hint-warning-title"></strong><span id="hint-warning-text"></span></span>
+  </p>
+
   <button type="button" class="submit" id="btn" disabled>
     <span class="spinner" id="spinner" hidden aria-hidden="true"></span>
     <span id="btn-label"></span>
@@ -70,7 +77,6 @@
     </figure>
 
     <p class="callout__text" id="hint-text"></p>
-    <p class="callout__note" id="hint-warning"></p>
   </section>
 
   <p class="doc">
