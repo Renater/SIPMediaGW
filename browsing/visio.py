@@ -51,7 +51,7 @@ class Visio (Browsing):
                 while self.driver:
                     try:
                         dualScreenOn = self.driver.execute_script(
-                            "return !!(window.meeting && window.meeting.dualScreenOn);"
+                            "return !!(window.meeting && window.meeting.dualScreenOn == true);"
                         )
                     except (NoSuchWindowException, InvalidSessionIdException):
                         break

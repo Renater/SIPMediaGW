@@ -42,7 +42,8 @@ class Browsing:
                                                     json.dumps(self.room['config']['ivr_prompts']),
                                                     self.room['roomToken'],
                                                     os.environ.get('AUDIO_ONLY'),
-                                                    True if os.getenv("DUAL_SCREEN_LAYOUT") == "true" else False)
+                                                    True if os.getenv("DUAL_SCREEN_LAYOUT") == "true"
+                                                        and os.getenv("DUAL_SCREEN_BY_DEFAULT") == "true" else False)
 
     def loadJS(self, jsScript):
         cssPath = os.path.join(os.path.dirname(__file__),

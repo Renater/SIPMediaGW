@@ -9,7 +9,7 @@ class Visio extends UIHelper{
         this.joined = false;
         this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
         this.slideSelector = "video.lk-participant-media-video[data-lk-source='screen_share']";
-        this.dualScreenOn = dualScreenOn;
+        this.dualScreenOn = dualScreenOn.toLowerCase() == 'true';
     }
 
     async join() {
