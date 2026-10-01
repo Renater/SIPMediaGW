@@ -35,6 +35,7 @@ const TEXTS = {
     capture: 'Capturer',
     captureHint: 'Prendre une image de l\u2019\u00e9cran partag\u00e9',
     captureNone: 'Aucun contenu partag\u00e9 \u00e0 capturer pour le moment.',
+    captureWaiting: 'Aucun \u00e9cran partag\u00e9 pour le moment',
     captureFail: 'La capture a \u00e9chou\u00e9.',
     slideTitle: 'Capture de l\u2019\u00e9cran partag\u00e9',
     slideDownload: 'T\u00e9l\u00e9charger',
@@ -70,6 +71,7 @@ const TEXTS = {
     capture: 'Capture',
     captureHint: 'Take a still of the shared screen',
     captureNone: 'Nothing is being shared to capture right now.',
+    captureWaiting: 'No screen is being shared',
     captureFail: 'The capture failed.',
     slideTitle: 'Shared screen capture',
     slideDownload: 'Download',
@@ -227,8 +229,7 @@ function renderLangSwitch() {
     ss.innerHTML = ICON_CAPTURE + '<span></span>';
     ss.lastChild.textContent = t.capture;
   }
-  const hint = $('slide-hint');
-  if (hint) hint.textContent = t.captureHint;
+  paintCapture();
 
   updateRoomNameInputUi();
   showRoom();
@@ -825,8 +826,29 @@ async function fetchCtrlState() {
 // Reads the connector's state and moves the switches onto it. Called after
 // every command, since most of them toggle on the far side: without the
 // read-back a switch would show what it assumed rather than what happened.
+// Whether someone is sharing their screen, as the connector reports it: true,
+// false, or null for a connector that does not say (only Visio does).
+let shareSeen = null;
+let captureBusy = false;
+
+// Nothing to capture without a share: the button is greyed and its hint says
+// when it will work, rather than a press that answers far down the page. A
+// connector that does not report shares keeps the button as it always was.
+function paintCapture() {
+  const btn = $('btn-slideShot');
+  const hint = $('slide-hint');
+  const t = TEXTS[currentLang];
+  const none = shareSeen === false;
+  if (btn) btn.disabled = none || captureBusy;
+  if (hint) hint.textContent = none ? t.captureWaiting : t.captureHint;
+}
+
 async function syncCtrlState() {
   const ui = await fetchCtrlState();
+  if (ui) {
+    shareSeen = typeof ui.screenShare === 'boolean' ? ui.screenShare : null;
+    paintCapture();
+  }
 
   // A screen drawn without a state shows buttons; syncing the switches cannot
   // turn one into the other, so it is drawn again instead.
@@ -1145,9 +1167,9 @@ function addSlideThumbnail(b64) {
 }
 
 async function sendSlideShot() {
-   const btn = $('btn-slideShot');
    const payload = { gw_id: gwId, payload: { command: "slideShot" } };
-   if (btn) { btn.disabled = true; }
+   captureBusy = true;
+   paintCapture();
    try {
      const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
      const json = await res.json();
@@ -1164,7 +1186,8 @@ async function sendSlideShot() {
      say(/no image/i.test(e.message) ? t.captureNone : t.captureFail);
      console.error('capture failed:', e);
    } finally {
-     if (btn) { btn.disabled = false; }
+     captureBusy = false;
+     paintCapture();
    }
  }
 

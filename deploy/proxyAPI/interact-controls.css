@@ -172,6 +172,8 @@ button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
   white-space: nowrap;
 }
 .key:hover { background: var(--bf); color: #fff; }
+.key:disabled { opacity: .45; cursor: default; }
+.key:disabled:hover { background: transparent; color: var(--bf); }
 .key.small { min-height: 2rem; padding: 0 .7rem; font-size: .8rem; }
 
 /* Slide preview */
