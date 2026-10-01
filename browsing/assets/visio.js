@@ -259,8 +259,14 @@ class Visio extends UIHelper{
     uiState() {
         return {
             media: this.mediaState(),
-            panels: this.panelState()
+            panels: this.panelState(),
+            screenShare: this.screenShareState()
         };
+    }
+    screenShareState() {
+        // A screen being shared, by anyone — the room's own content included:
+        // what slideShot captures, found the same way.
+        return document.querySelector("video[data-lk-source='screen_share']") !== null;
     }
     panelState() {
         // Visio's side panels (chat, participants, info) carry a data-attr

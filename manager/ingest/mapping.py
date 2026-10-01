@@ -14,6 +14,7 @@ The payload's shape follows SIPMediaGW's pull requests, cited by number:
 """
 
 import math
+import re
 from datetime import datetime, timezone
 
 
@@ -57,6 +58,19 @@ def _float(value):
     except (TypeError, ValueError, OverflowError):
         return None
     return number if math.isfinite(number) else None
+
+
+# What a platform is: a connector key (visio, jitsi, webinaire...). The gateway
+# reads it from a log line; an error printed with the word "browsing:" in it
+# ("Error while browsing: Message: javascript error...") was taken for that
+# line and became the platform. Anything that is not a key is read as absent;
+# the text stays in `raw`.
+PLATFORM_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,39}")
+
+
+def _platform(value):
+    value = _text(value)
+    return value if value and PLATFORM_KEY.fullmatch(value) else None
 
 
 def _obj(value):
@@ -334,7 +348,7 @@ def callRow(payload):
         "gw_host": _text(destination.get("destinationDomainIp")),
 
         "main_app": _text(call.get("mainApp")),
-        "platform": _text(call.get("browsing")),
+        "platform": _platform(call.get("browsing")),
         "room": _text(call.get("room")),
         "call_url": _text(call.get("callUrl")),
 

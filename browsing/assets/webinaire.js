@@ -221,7 +221,7 @@ class Webinaire extends UIHelper {
                 document.querySelector("[data-test='leaveVideo']").click();
             }
         if (key == "3" || key == "c")
-            document.querySelector('[accesskey="P"]').click();
+            this.togglePublicChat();
         if (key == "4")
             document.querySelector('[accesskey="R"]').click();
         if (key == "5")
@@ -233,6 +233,41 @@ class Webinaire extends UIHelper {
             }
         if (key == "s" || key == "q")
             document.querySelector("[data-test='startScreenShare']").click();
+    }
+
+    isPublicChatOpen() {
+        const hideBtn = document.querySelector('[data-test="hidePublicChat"]');
+        return !!(hideBtn && hideBtn.offsetParent !== null);
+    }
+
+    async togglePublicChat() {
+        // The public chat entry (accesskey P) lives in the user list, which is
+        // closed on enter: its element is not in the DOM while the list is closed.
+        try {
+            if (this.isPublicChatOpen()) {
+                document.querySelector('[data-test="hidePublicChat"]').click();
+                if (this._userListOpenedForChat) {
+                    const usersToggle = document.querySelector('[accesskey="U"]');
+                    if (usersToggle) usersToggle.click();
+                }
+                this._userListOpenedForChat = false;
+                console.log('[✓] Public chat hidden');
+                return;
+            }
+            const chatSelector = '[data-test="chatButton"][accesskey="P"]';
+            if (document.querySelector(chatSelector)) {
+                this._userListOpenedForChat = false;
+            } else {
+                const usersToggle = await this.waitForElement('[accesskey="U"]', { clickable: true }, 5000);
+                usersToggle.click();
+                this._userListOpenedForChat = true;
+            }
+            const chatBtn = await this.waitForElement(chatSelector, { clickable: true }, 5000);
+            chatBtn.click();
+            console.log('[✓] Public chat shown');
+        } catch (e) {
+            console.error('[✗] togglePublicChat failed:', e?.message || e);
+        }
     }
 
     async sendChat(message) {

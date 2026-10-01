@@ -32,9 +32,10 @@ const TEXTS = {
     cancel: 'Annuler',
     chatPlaceholder: 'Envoyer un message au chat\u2026',
     chatSend: 'Envoyer',
-    capture: 'Capturer l\u2019\u00e9cran partag\u00e9',
-    captureHint: 'Prend une image du contenu partag\u00e9 pendant la r\u00e9union.',
+    capture: 'Capturer',
+    captureHint: 'Prendre une image de l\u2019\u00e9cran partag\u00e9',
     captureNone: 'Aucun contenu partag\u00e9 \u00e0 capturer pour le moment.',
+    captureWaiting: 'Aucun \u00e9cran partag\u00e9 pour le moment',
     captureFail: 'La capture a \u00e9chou\u00e9.',
     slideTitle: 'Capture de l\u2019\u00e9cran partag\u00e9',
     slideDownload: 'T\u00e9l\u00e9charger',
@@ -67,9 +68,10 @@ const TEXTS = {
     cancel: 'Cancel',
     chatPlaceholder: 'Send a message to chat\u2026',
     chatSend: 'Send',
-    capture: 'Capture the shared screen',
-    captureHint: 'Takes a still of the content being shared in the meeting.',
+    capture: 'Capture',
+    captureHint: 'Take a still of the shared screen',
     captureNone: 'Nothing is being shared to capture right now.',
+    captureWaiting: 'No screen is being shared',
     captureFail: 'The capture failed.',
     slideTitle: 'Shared screen capture',
     slideDownload: 'Download',
@@ -101,6 +103,7 @@ const $ = (id) => document.getElementById(id);
 const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zM5 18h14v2H5z"/></svg>';
 const ICON_EXPAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v2H6v5H4V4zm9 0h7v7h-2V6h-5V4zM4 13h2v5h5v2H4v-7zm14 0h2v7h-7v-2h5v-5z"/></svg>';
 const ICON_SHRINK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4V7h3V4h2zm6 0h2v3h3v2h-5V4zM4 15h5v5H7v-3H4v-2zm11 0h5v2h-3v3h-2v-5z"/></svg>';
+const ICON_CAPTURE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h6v2H5v4H3V3zm12 0h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 0h2v6h-6v-2h4v-4zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>';
 
 
@@ -222,9 +225,11 @@ function renderLangSwitch() {
   $('slide-close').dataset.tip = t.close;
 
   const ss = $('btn-slideShot');
-  if (ss) ss.textContent = t.capture;
-  const hint = $('slide-hint');
-  if (hint) hint.textContent = t.captureHint;
+  if (ss) {
+    ss.innerHTML = ICON_CAPTURE + '<span></span>';
+    ss.lastChild.textContent = t.capture;
+  }
+  paintCapture();
 
   updateRoomNameInputUi();
   showRoom();
@@ -589,6 +594,26 @@ function endOfCall() {
 
 let goneCount = 0;
 
+const IVR_CONFIG_TIMEOUT_MS = 3000;
+async function reloadIvrConfig() {
+  try {
+    const opts = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+      ? { signal: AbortSignal.timeout(IVR_CONFIG_TIMEOUT_MS) } : {};
+    const res = await fetch(apiUrl('/ivrConfig') + `?gw_id=${encodeURIComponent(gwId)}`, opts);
+    if (!res.ok) return false;
+    const data = await res.json();
+    const domains = data.webrtc_domains || {};
+    if (!Object.keys(domains).length) return false;
+    ivrMenus = data.menus || {};
+    webrtcDomains = domains;
+    roomNameInfo = data.room_name_info || {};
+    renderLangSwitch();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function checkGwStatus() {
   if (!gwId) return setTimeout(checkGwStatus, POLL_MS);
   try {
@@ -609,6 +634,10 @@ async function checkGwStatus() {
     }
     goneCount = 0;
     const statusData = await statusRes.json();
+    // Nothing to draw without the list: ask for it again, and once it is
+    // there, draw the screen the gateway is on (lastScreen reset so the
+    // comparison below does not skip it).
+    if (!Object.keys(webrtcDomains).length && await reloadIvrConfig()) lastScreen = null;
     // stopped: the container exited, the call is over. deleted: the VM is gone.
     // Either way there is nothing left to drive from here. The page used to
     // watch for "down", a value the proxy stopped writing when the states were
@@ -688,6 +717,7 @@ const CTRL_SHAPE = {
   lobby_icon:        'M12 2a5 5 0 0 0-5 5v3H5v12h14V10h-2V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3zm0 10a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z',
   muteall_icon:      'M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2zM3 1.6 22.4 21l-1.4 1.4L1.6 3z',
   accept_icon:       'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
+  dual_screen_icon:  'M2 5h9v13H2zm11 0h9v13h-9z',
 };
 
 // A slash says "nothing is going out" — it belongs on the microphone and the
@@ -796,8 +826,29 @@ async function fetchCtrlState() {
 // Reads the connector's state and moves the switches onto it. Called after
 // every command, since most of them toggle on the far side: without the
 // read-back a switch would show what it assumed rather than what happened.
+// Whether someone is sharing their screen, as the connector reports it: true,
+// false, or null for a connector that does not say (only Visio does).
+let shareSeen = null;
+let captureBusy = false;
+
+// Nothing to capture without a share: the button is greyed and its hint says
+// when it will work, rather than a press that answers far down the page. A
+// connector that does not report shares keeps the button as it always was.
+function paintCapture() {
+  const btn = $('btn-slideShot');
+  const hint = $('slide-hint');
+  const t = TEXTS[currentLang];
+  const none = shareSeen === false;
+  if (btn) btn.disabled = none || captureBusy;
+  if (hint) hint.textContent = none ? t.captureWaiting : t.captureHint;
+}
+
 async function syncCtrlState() {
   const ui = await fetchCtrlState();
+  if (ui) {
+    shareSeen = typeof ui.screenShare === 'boolean' ? ui.screenShare : null;
+    paintCapture();
+  }
 
   // A screen drawn without a state shows buttons; syncing the switches cannot
   // turn one into the other, so it is drawn again instead.
@@ -1116,9 +1167,9 @@ function addSlideThumbnail(b64) {
 }
 
 async function sendSlideShot() {
-   const btn = $('btn-slideShot');
    const payload = { gw_id: gwId, payload: { command: "slideShot" } };
-   if (btn) { btn.disabled = true; }
+   captureBusy = true;
+   paintCapture();
    try {
      const res = await fetch(apiUrl('/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
      const json = await res.json();
@@ -1135,7 +1186,8 @@ async function sendSlideShot() {
      say(/no image/i.test(e.message) ? t.captureNone : t.captureFail);
      console.error('capture failed:', e);
    } finally {
-     if (btn) { btn.disabled = false; }
+     captureBusy = false;
+     paintCapture();
    }
  }
 

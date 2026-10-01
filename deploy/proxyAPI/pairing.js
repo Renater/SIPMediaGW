@@ -12,7 +12,8 @@ const TEXTS = {
     button: 'Valider',
     hintTitle: 'Où trouver le code ?',
     hint: "Ce code à 5 caractères s'affiche sur l'écran de la salle, à côté du QR code.",
-    warning: "Attention, il change régulièrement : vérifiez qu'il est toujours le même avant de valider.",
+    warningTitle: 'Le code change régulièrement.',
+    warning: "Vérifiez-le à l'écran juste avant de valider.",
     sample: 'Exemple',
     sampleFrom: 'Depuis votre téléphone',
     close: 'Fermer ce message',
@@ -29,7 +30,8 @@ const TEXTS = {
     button: 'Submit',
     hintTitle: 'Where to find the code?',
     hint: 'This 5-character code is shown on the room screen, next to the QR code.',
-    warning: 'Note: it changes regularly — make sure it still matches before submitting.',
+    warningTitle: 'The code changes regularly.',
+    warning: 'Check it on the screen just before submitting.',
     sample: 'Example',
     sampleFrom: 'From your phone',
     close: 'Dismiss this message',
@@ -166,7 +168,8 @@ function render() {
   $('btn-label').textContent = t.button;
   $('hint-title').textContent = t.hintTitle;
   $('hint-text').textContent = t.hint;
-  $('hint-warning').textContent = t.warning;
+  $('hint-warning-title').textContent = t.warningTitle;
+  $('hint-warning-text').textContent = t.warning;
   $('sample-badge').textContent = t.sample;
   $('sample-from').textContent = t.sampleFrom;
 

@@ -62,7 +62,7 @@ export function platformIcon(key) {
 export function platformCell(key, dash = '<span class="dim">—</span>') {
   const label = platformLabel(key);
   if (label == null) return dash;
-  return `<span class="platform">${platformIcon(key)}<span>${esc(label)}</span></span>`;
+  return `<span class="platform">${platformIcon(key)}<span class="clip" title="${esc(label)}">${esc(label)}</span></span>`;
 }
 
 /* A missing icon (unknown connector, icons not deployed) is removed rather

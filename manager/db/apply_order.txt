@@ -22,4 +22,5 @@ schema_users.sql
 #   drop_gateway_hours.sql               one-off removal, run once per deployment
 #   drop_dead_objects.sql                one-off removal, run once per deployment
 #   drop_rates.sql                       one-off removal, run once per deployment
+#   fix_platform_values.sql              one-off cleanup, run once per deployment
 #   org_units.sample.sql                 example rules, never for production
