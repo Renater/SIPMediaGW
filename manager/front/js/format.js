@@ -16,7 +16,7 @@ export const norm = value => (value == null || value === '' || value === 'None')
 export const dash = '<span class="dim">—</span>';
 export const cell = value => value == null ? dash : esc(value);
 export const copyable = (value, className = '') => value == null ? dash
-  : `<span class="copy ${className}" data-copy="${esc(value)}">${esc(value)}</span>`;
+  : `<span class="copy ${className}" data-copy="${esc(value)}" title="${esc(value)}">${esc(value)}</span>`;
 
 /* The gateway field is the launcher address "host:port"; the port is fixed. */
 export const hostOf = value => {

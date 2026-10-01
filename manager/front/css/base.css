@@ -18,6 +18,8 @@
   --on-blue: #fff; --other: #8a9bc4;
   /* A day that cannot be picked (DSFR disabled grey). */
   --disabled: #929292;
+  /* The payload viewer: numbers, and the part a search found. */
+  --code-number: #a94645; --highlight: #fff2b3;
   --shadow: rgba(0, 0, 0, .12); --shadow-strong: rgba(0, 0, 0, .14);
 }
 

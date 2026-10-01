@@ -72,6 +72,16 @@ th.center, td.center { text-align: center; }
 .tag.warn { background: var(--warning-bg); color: var(--warning); }
 .tag.bad  { background: var(--error-bg);   color: var(--error); }
 .platform { display: inline-flex; align-items: center; gap: 8px; }
+/* A free-text value in a table row: one line, cut with an ellipsis, the whole
+   of it in the tooltip and the detail drawer. One unexpected value (a gateway
+   error where a platform name was expected) used to widen the whole call log
+   past the screen. */
+.clip { display: inline-block; max-width: 24ch; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; vertical-align: middle; }
+/* A platform is a short name; anything longer is not one. */
+.platform .clip { max-width: 14ch; }
+/* A SIP URI is what an operator reads first: more room before the cut. */
+.mono.clip { max-width: 34ch; }
 .platform img { width: 20px; height: 20px; object-fit: contain; }
 .msg { padding: 24px; text-align: center; color: var(--mention); white-space: normal; }
 .msg.err { color: var(--error); }
@@ -145,11 +155,6 @@ button.link:hover { background: transparent; color: var(--blue-hover); }
 .detail td { border-bottom: 1px solid var(--border); padding: 7px 0; white-space: normal;
   word-break: break-word; }
 .drawer h3 { font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
-.drawer details { margin-top: 14px; }
-.drawer summary { cursor: pointer; font-size: 13px; color: var(--blue); }
-.drawer pre { margin-top: 10px; padding: 12px; background: var(--bg-alt); border-radius: var(--radius);
-  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
-  white-space: pre-wrap; word-break: break-word; max-height: 40vh; overflow: auto; }
 tbody tr.selectable { cursor: pointer; }
 
 /* The buttons sit in a box inside the cell. A cell turned into a flex box
@@ -321,6 +326,8 @@ dialog.modal > form > header { display: flex; align-items: center; gap: 12px; pa
   background: var(--blue); color: var(--on-blue); border-radius: var(--radius) var(--radius) 0 0;
   border-bottom: 1px solid var(--border); }
 dialog.modal > form > header h2 { flex: 1; font-size: 16px; font-weight: 700; }
+/* Dragged by its title bar: makeMovable in the ui module. */
+dialog.modal > form > header.movable { cursor: move; user-select: none; touch-action: none; }
 dialog.modal .close { border: none; background: transparent; padding: 4px 8px; font-size: 16px; color: var(--on-blue); }
 dialog.modal .close:hover { background: transparent; opacity: .8; }
 dialog.modal .confirm-text { padding: 22px 20px 4px; font-size: 15px; }
@@ -328,6 +335,30 @@ dialog.modal > form > .stack, dialog.modal > form > p { padding: 18px 20px 0; ma
 dialog.modal > form > footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 18px 20px 16px; }
 dialog.modal .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 dialog.modal select { width: 100%; padding: 8px 11px; }
+dialog.modal.wide { width: min(980px, calc(100vw - 32px)); }
+dialog.modal .dim-light { font-weight: 400; opacity: .8; }
+
+/* The payload viewer (jsontree module): a tool row, then the tree, which
+   scrolls on its own so the tools stay in reach. */
+.json-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 20px;
+  border-bottom: 1px solid var(--border); }
+.json-tools input[type="search"] { flex: 1 1 160px; max-width: 280px; min-width: 0; padding: 7px 11px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-alt); color: var(--text); font: inherit; font-size: 13px; }
+.json-tools span.dim { font-size: 13px; }
+.json-tree { height: min(62vh, 640px); overflow: auto; padding: 10px 12px 16px 0; font-size: 12.5px; line-height: 1.6; }
+.jt-row { position: relative; white-space: pre-wrap; word-break: break-word; }
+.jt-toggle { position: absolute; margin-left: -20px; width: 18px; padding: 0; border: none; background: transparent;
+  color: var(--mention); font-size: 11px; line-height: inherit; }
+.jt-toggle:hover { background: transparent; color: var(--blue); }
+.jt-key { color: var(--blue); }
+.jt-index { color: var(--mention); }
+.jt-str { color: var(--success); }
+.jt-num { color: var(--code-number); }
+.jt-lit { color: var(--info); }
+.jt-punct { color: var(--mention); }
+.jt-sum { margin-left: 8px; color: var(--mention); font-style: italic; font-family: inherit; }
+.jt-hit { background: var(--highlight); color: inherit; border-radius: 2px; }
+.jt-more { padding: 1px 8px; font-size: 12px; }
 .note.err { color: var(--error); }
 /* Action buttons, as in interact and pairing: the one that does it filled,
    the one that backs out outlined, both a size above the small controls

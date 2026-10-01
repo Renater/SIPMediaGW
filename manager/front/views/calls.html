@@ -68,10 +68,30 @@
   <header>
     <h2 id="callDetailTitle"><span data-i18n="callDetail">Call detail</span> <span class="dim" id="callNumber"></span></h2>
     <div class="grow"></div>
-    <a class="btn" id="callRaw" data-i18n="callRawDownload" hidden>JSON</a>
+    <button type="button" id="callJson" data-i18n="callJson" hidden>JSON</button>
     <a class="btn" id="callTrace" target="_blank" rel="noopener" hidden></a>
     <button id="callClose">✕</button>
   </header>
   <div class="drawer-body" id="callDrawerBody"></div>
 </aside>
 <div class="scrim" id="callScrim" hidden></div>
+
+<dialog class="modal wide" id="jsonDialog" aria-labelledby="jsonTitle">
+  <form method="dialog">
+    <header><h2 id="jsonTitle"><span data-i18n="rawTitle">Raw payload</span> <span class="dim-light" id="jsonCall"></span></h2>
+      <span class="dim-light" id="jsonSize"></span>
+      <button type="button" class="close" data-close aria-label="Close" data-i18n-aria="close">✕</button></header>
+    <div class="json-tools">
+      <button type="button" id="jsonExpand" data-i18n="jsonExpand">Expand all</button>
+      <button type="button" id="jsonCollapse" data-i18n="jsonCollapse">Collapse all</button>
+      <button type="button" id="jsonLevels" data-i18n="jsonLevels">Two levels</button>
+      <label class="sr-only" for="jsonSearch" data-i18n="jsonSearch">Search a key or a value…</label>
+      <input type="search" id="jsonSearch" autocomplete="off" spellcheck="false">
+      <span class="dim" id="jsonMatches" role="status"></span>
+      <span class="grow"></span>
+      <button type="button" id="jsonCopy" data-i18n="jsonCopy">Copy</button>
+      <a class="btn" id="jsonDownload" download data-i18n="jsonDownload">Download .json</a>
+    </div>
+    <div class="json-tree mono" id="jsonTree"></div>
+  </form>
+</dialog>

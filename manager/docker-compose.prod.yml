@@ -41,6 +41,26 @@ services:
     volumes:
       - ./brand:/app/brand:ro
     restart: unless-stopped
+    # Journals that rotate: json-file keeps everything unless the daemon says
+    # otherwise, and uvicorn writes a line per request (a poll every 10 s per
+    # open tab). 5 files of 50 MB at most.
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    # The process writes nothing on disk: the image read-only, /tmp in memory
+    # for whatever a library might need. No capability (port 8200, not root),
+    # no privilege gained through a setuid file, and a memory ceiling — scrypt
+    # takes 16 MB per sign-in check.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "python3", "-c",
              "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8200/health', timeout=4).status == 200 else 1)"]

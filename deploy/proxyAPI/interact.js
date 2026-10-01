@@ -594,6 +594,26 @@ function endOfCall() {
 
 let goneCount = 0;
 
+const IVR_CONFIG_TIMEOUT_MS = 3000;
+async function reloadIvrConfig() {
+  try {
+    const opts = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+      ? { signal: AbortSignal.timeout(IVR_CONFIG_TIMEOUT_MS) } : {};
+    const res = await fetch(apiUrl('/ivrConfig') + `?gw_id=${encodeURIComponent(gwId)}`, opts);
+    if (!res.ok) return false;
+    const data = await res.json();
+    const domains = data.webrtc_domains || {};
+    if (!Object.keys(domains).length) return false;
+    ivrMenus = data.menus || {};
+    webrtcDomains = domains;
+    roomNameInfo = data.room_name_info || {};
+    renderLangSwitch();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function checkGwStatus() {
   if (!gwId) return setTimeout(checkGwStatus, POLL_MS);
   try {
@@ -614,6 +634,10 @@ async function checkGwStatus() {
     }
     goneCount = 0;
     const statusData = await statusRes.json();
+    // Nothing to draw without the list: ask for it again, and once it is
+    // there, draw the screen the gateway is on (lastScreen reset so the
+    // comparison below does not skip it).
+    if (!Object.keys(webrtcDomains).length && await reloadIvrConfig()) lastScreen = null;
     // stopped: the container exited, the call is over. deleted: the VM is gone.
     // Either way there is nothing left to drive from here. The page used to
     // watch for "down", a value the proxy stopped writing when the states were
@@ -693,6 +717,7 @@ const CTRL_SHAPE = {
   lobby_icon:        'M12 2a5 5 0 0 0-5 5v3H5v12h14V10h-2V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3zm0 10a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z',
   muteall_icon:      'M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2zM3 1.6 22.4 21l-1.4 1.4L1.6 3z',
   accept_icon:       'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
+  dual_screen_icon:  'M2 5h9v13H2zm11 0h9v13h-9z',
 };
 
 // A slash says "nothing is going out" — it belongs on the microphone and the
