@@ -368,6 +368,14 @@ process refuse to start without a session secret and a Secure cookie, and
 publishes the port on `MANAGER_BIND` — the loopback by default, so that a
 reverse proxy on the same host is the only client.
 
+It also rotates the container's journal (5 files of 50 MB) and locks the
+container down: read-only image with `/tmp` in memory, no capability, no
+privilege gained through a setuid file, 512 MB of memory at most. To check
+once deployed:
+
+    docker inspect manager --format '{{.HostConfig.LogConfig.Config}} {{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}} {{.HostConfig.Memory}}'
+    # map[max-file:5 max-size:50m] true [ALL] 536870912
+
 Which address the forwarded headers are believed from is easy to get wrong
 behind Docker: depending on its userland proxy, a connection published on the
 loopback can reach the container from the bridge gateway (172.17.0.1 or the

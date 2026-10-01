@@ -119,3 +119,12 @@ def test_a_sign_in_lands_on_supervision_and_a_reload_stays():
     assert "return takeSession(data, true);" in main, "login() does not mark a fresh sign-in"
     assert "const requested = fresh ? '' : window.location.hash.slice(1);" in main
     assert "? takeSession(session) :" in main, "the reload path must not be a fresh sign-in"
+
+
+def test_the_production_container_is_hardened_and_its_journal_rotates():
+    """docker-compose.prod.yml: journal rotation (O-01) and a locked-down
+    container (O-04). Read as text: the test image has no YAML parser."""
+    compose = (Path(__file__).resolve().parents[1] / "docker-compose.prod.yml").read_text()
+    for line in ("driver: json-file", 'max-size: "50m"', 'max-file: "5"',
+                 "read_only: true", "- /tmp", "- ALL", "- no-new-privileges:true", "mem_limit: 512m"):
+        assert line in compose, line
