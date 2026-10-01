@@ -589,12 +589,6 @@ function endOfCall() {
 
 let goneCount = 0;
 
-// The list of platforms is read once, when the page opens. A page opened as
-// soon as the QR code shows can ask a gateway that has not finished starting:
-// the answer is empty or an error, and the page used to stay blank for good,
-// until reloaded. Until a list arrives, the status poll asks again.
-// The poll waits for this answer, so it is given 3 s at most: a gateway that
-// never answers must not stop the page from seeing the end of the call.
 const IVR_CONFIG_TIMEOUT_MS = 3000;
 async function reloadIvrConfig() {
   try {
