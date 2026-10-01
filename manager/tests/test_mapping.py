@@ -62,3 +62,15 @@ def test_seconds_fall_back_to_milliseconds():
     payload = json.loads(json.dumps(REAL))
     del payload["call"]["callSession"]["totalTime"]["seconds"]
     assert callRow(payload)["duration_s"] == 30
+
+
+def test_a_gateway_error_is_not_a_platform():
+    """"Error while browsing: Message: javascript error: ..." was taken by the
+    gateway for the IVR's "browsing:" line and stored as the platform: the
+    call log grew past the screen. Only a connector key is a platform."""
+    payload = json.loads(json.dumps(REAL))
+    payload["call"]["browsing"] = "Message: javascript error: Cannot read properties of undefined (reading 'joined')"
+    assert callRow(payload)["platform"] is None
+    for key in ("visio", "jitsi", "webinaire", "bbb-esr", "rdv.example"):
+        payload["call"]["browsing"] = key
+        assert callRow(payload)["platform"] == key
