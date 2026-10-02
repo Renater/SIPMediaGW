@@ -52,10 +52,16 @@ class Teams extends UIHelper {
             document.querySelector('button[id="raisehands-button"]').click();
         if (key == "5")
             document.querySelector('button[id="roster-button"]').click();
-        if (key == "s" || key == "q")
+        if (key == "s" || key == "q") {
             document.querySelector('button#share-button, button#screenshare-button').click();
-            var logOutBtn = await this.waitForElement('[data-tid="share-screen-window-or-tab"]', { clickable: true }, 10000);
-            logOutBtn.click();
+            try {
+                const shareTabBtn = await this.waitForElement('[data-tid="share-screen-window-or-tab"]', { clickable: true }, 10000);
+                shareTabBtn.click();
+            } catch (e) {
+                // No share picker (e.g. stopping an ongoing share)
+                console.log('[INFO] Share picker not shown:', e.message);
+            }
+        }
     }
 
     async sendChat(message) {
