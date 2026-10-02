@@ -131,20 +131,38 @@ class Webinaire extends UIHelper {
     async browse() {
         try {
             await this.startAudio();
-            const acceptSelector = "[aria-label='Accept recording and continue']";
-            const acceptEl = document.querySelector(acceptSelector);
+            const acceptSelector = "[data-test='recordingNotifyContinue'], [aria-label='Accept recording and continue']";
+            let acceptEl = document.querySelector(acceptSelector);
+            if (!acceptEl && document.querySelector("[data-test='recordingIndicator']")) {
+                // Recordable meeting: BBB may render the recording notice shortly after the audio modal closes
+                acceptEl = await this.waitForElement(acceptSelector, { visible: true }, 3000).catch(() => null);
+            }
             if (acceptEl) {
                 console.log('[INFO] Waiting for recording acceptance (someone should trigger it)...');
-                const timeoutMs = 120000; // safety timeout
-                const pollMs = 500;
-                const start = Date.now();
-                while (Date.now() - start < timeoutMs) {
-                    const el = document.querySelector(acceptSelector);
-                    if (!el) break;
-                    const style = window.getComputedStyle(el);
-                    const visible = style.display !== 'none' && style.visibility !== 'hidden' && el.offsetHeight > 0 && el.offsetWidth > 0;
-                    if (!visible) break;
-                    await new Promise(res => setTimeout(res, pollMs));
+                // The IVR menu key listener is only installed once joined: handle key 6 here meanwhile
+                const acceptOnKey6 = (e) => {
+                    if (e.key === '6') {
+                        const btn = document.querySelector(acceptSelector);
+                        if (btn) {
+                            btn.click();
+                        }
+                    }
+                };
+                document.addEventListener('keydown', acceptOnKey6, true);
+                try {
+                    const timeoutMs = 120000; // safety timeout
+                    const pollMs = 500;
+                    const start = Date.now();
+                    while (Date.now() - start < timeoutMs) {
+                        const el = document.querySelector(acceptSelector);
+                        if (!el) break;
+                        const style = window.getComputedStyle(el);
+                        const visible = style.display !== 'none' && style.visibility !== 'hidden' && el.offsetHeight > 0 && el.offsetWidth > 0;
+                        if (!visible) break;
+                        await new Promise(res => setTimeout(res, pollMs));
+                    }
+                } finally {
+                    document.removeEventListener('keydown', acceptOnKey6, true);
                 }
             }
             await this.startVideo();
@@ -226,11 +244,15 @@ class Webinaire extends UIHelper {
             document.querySelector('[accesskey="R"]').click();
         if (key == "5")
             document.querySelector('[accesskey="U"]').click();
-        if (key == "6")
-            document.querySelector('[aria-label="Accept recording and continue"]').click();
+        if (key == "6") {
+            const acceptRecording = document.querySelector('[data-test="recordingNotifyContinue"], [aria-label="Accept recording and continue"]');
+            if (acceptRecording) {
+                acceptRecording.click();
+            }
             if (document.querySelector("[data-test='joinAudio']")) {
                 this.startAudio();
             }
+        }
         if (key == "s" || key == "q")
             document.querySelector("[data-test='startScreenShare']").click();
     }
