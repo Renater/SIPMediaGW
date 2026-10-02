@@ -271,15 +271,35 @@ class Webinaire extends UIHelper {
     }
 
     async sendChat(message) {
-        const input = document.querySelector('#message-input');
-        const lastValue = input.value;
-        input.value = message;
-        const tracker = input._valueTracker;
-        if (tracker) {
-            tracker.setValue(lastValue);
+        if (!message || !String(message).trim()) {
+            console.error('[✗] Empty chat message');
+            return false;
         }
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        document.querySelector('[data-test="sendMessageButton"]').click();
+        // The message field is only mounted while the public chat is open: open it
+        // (as DTMF 3 does), send, then put the screen back as it was.
+        const openedHere = !this.isPublicChatOpen();
+        try {
+            if (openedHere) {
+                await this.togglePublicChat();
+            }
+            const input = await this.waitForElement('#message-input', { visible: true }, 5000);
+            // Native setter, so that React registers the new value
+            const proto = input.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+            Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, String(message));
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            const sendBtn = await this.waitForElement('[data-test="sendMessageButton"]', { clickable: true }, 5000);
+            sendBtn.click();
+            console.log('[✓] Chat message sent');
+            return true;
+        } catch (e) {
+            console.error('[✗] sendChat failed:', e?.message || e);
+            return false;
+        } finally {
+            if (openedHere && this.isPublicChatOpen()) {
+                await new Promise(r => setTimeout(r, 1500));
+                await this.togglePublicChat();
+            }
+        }
     }
     async leave() {
         console.log('[INFO] Leave the meeting room');
