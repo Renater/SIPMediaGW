@@ -1,13 +1,11 @@
-FROM ghcr.io/kamailio/kamailio:5.6.3-bullseye
+FROM ghcr.io/kamailio/kamailio:6.1.4-trixie
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-dev python3-pip cron \
     && apt autoremove -y \
     && apt autoclean -y 
 
-RUN pip3 install --upgrade pip
-RUN pip3 install --upgrade setuptools
-RUN pip3 install requests httplib2 mysql-connector-python
+RUN pip3 install --break-system-packages requests httplib2 mysql-connector-python
 
 WORKDIR /etc/kamailio/
 
