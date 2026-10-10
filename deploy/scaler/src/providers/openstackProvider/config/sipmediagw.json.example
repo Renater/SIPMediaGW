@@ -1,0 +1,26 @@
+{
+  "name": "GW",
+  "key_pair": "",
+  "profile": {
+    "ovh_uk": {
+      "auth_url": "",
+      "region": "",
+      "client_id": "",
+      "client_secret": ""
+    }
+  },
+  "instance_image": "",
+  "delete_volumes_on_destroy": true,
+  "interface_1": {
+    "priv": "",
+    "pub": ""
+  },
+  "instance_type_by_cpu_num": {
+    "2": { "4": "d2-4" },
+    "4": { "8": "d2-8" }
+  },
+  "security_group": {
+    "admin": "default",
+    "app": "default"
+  }
+}

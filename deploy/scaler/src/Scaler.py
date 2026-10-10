@@ -18,6 +18,10 @@ class Scaler:
         self.config = json.load(f)
         f.close()
 
+    def reconcile(self):
+        # Let the provider settle in-flight work (no-op unless it overrides).
+        self.csp.reconcile()
+
     # Upscale function
     def upScale(self, numCPU):
         # cpuRange values must be multiples of 4
