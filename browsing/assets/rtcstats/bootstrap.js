@@ -23,12 +23,8 @@
             }
             trace(...args);
         };
-        const options = {getStatsInterval: config.getStatsInterval};
-        lib.wrapRTCPeerConnection(lazyTrace, window, options);
-        lib.wrapGetUserMedia(lazyTrace, window);
-        lib.wrapEnumerateDevices(lazyTrace, window);
-        lib.wrapSetSinkId(lazyTrace, window);
-
+        // Defined before wrapping anything: a frame whose setup fails
+        // halfway must still be able to close what it opened.
         window.__sipmediagwRtcstatsCloseAll = function () {
             if (!closed) {
                 closed = true;
@@ -45,6 +41,15 @@
                 window.__sipmediagwRtcstatsCloseAll();
             }
         });
+
+        const options = {getStatsInterval: config.getStatsInterval};
+        lib.wrapRTCPeerConnection(lazyTrace, window, options);
+        lib.wrapGetUserMedia(lazyTrace, window);
+        lib.wrapEnumerateDevices(lazyTrace, window);
+        // Not in any rtcstats release yet (v2.4.0); used once it is.
+        if (typeof lib.wrapSetSinkId === 'function') {
+            lib.wrapSetSinkId(lazyTrace, window);
+        }
     } catch (e) {
         console.warn('[rtcstats] setup failed, tracing off in this frame:', e);
     }
