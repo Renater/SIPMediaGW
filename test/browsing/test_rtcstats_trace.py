@@ -141,3 +141,12 @@ def test_close_never_raises():
     d = driver()
     d.execute_script.side_effect = Exception("window closed")
     rtcstatsTrace.close(d)
+
+
+def test_bootstrap_uses_the_names_python_relies_on():
+    with open(rtcstatsTrace.BOOTSTRAP, encoding="utf-8") as f:
+        source = f.read()
+    assert rtcstatsTrace.CONFIG_GLOBAL in source
+    assert rtcstatsTrace.CLOSE_FUNCTION in source
+    assert "window.__sipmediagwRtcstatsLib" in source
+    assert "'sipmediagw:rtcstats:close'" in source
