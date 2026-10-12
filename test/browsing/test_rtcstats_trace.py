@@ -1,14 +1,13 @@
 """
-rtcstatsTrace registers the rtcstats library in the call's Chrome before any
-meeting page loads, and only when RTCSTATS_ENABLED=true with a server URL. A
+rtcstatsTrace makes the call's Chrome load the rtcstats library, as an
+extension content script, in every tab and frame before any meeting script
+runs, and only when RTCSTATS_ENABLED=true with a ws(s):// server URL. A
 failure here must never stop the call, and the server token must never reach
 the logs.
 """
-import io
 import json
 import os
 import sys
-import urllib.error
 import urllib.parse
 from unittest.mock import Mock, patch
 
@@ -18,10 +17,13 @@ import rtcstatsTrace  # noqa: E402
 ON = {"RTCSTATS_ENABLED": "true", "RTCSTATS_SERVER_URL": "wss://stats.example.org/sipmediagw"}
 
 
-def driver():
-    d = Mock()
-    d.session_id = "abc123"
-    return d
+class Options:
+    """The part of selenium's ChromeOptions the module uses."""
+    def __init__(self, *arguments):
+        self.arguments = list(arguments)
+
+    def add_argument(self, argument):
+        self.arguments.append(argument)
 
 
 def assets(tmp_path, monkeypatch):
@@ -31,6 +33,7 @@ def assets(tmp_path, monkeypatch):
     boot.write_text("/* bootstrap */")
     monkeypatch.setattr(rtcstatsTrace, "BUNDLE", str(bundle))
     monkeypatch.setattr(rtcstatsTrace, "BOOTSTRAP", str(boot))
+    return tmp_path / "extension"
 
 
 def test_disabled_by_default():
@@ -46,6 +49,13 @@ def test_enabled_without_server_warns_and_stays_off(capsys):
 
 def test_enabled_with_server():
     assert rtcstatsTrace.serverUrl(ON) == ON["RTCSTATS_SERVER_URL"]
+
+
+def test_server_without_websocket_scheme_is_refused(capsys):
+    for url in ("stats.example.org/x", "https://stats.example.org/x"):
+        env = {"RTCSTATS_ENABLED": "true", "RTCSTATS_SERVER_URL": url}
+        assert rtcstatsTrace.serverUrl(env) is None
+    assert "rtcstats:" in capsys.readouterr().out
 
 
 def test_trace_url_keeps_token_and_adds_call_metadata():
@@ -74,64 +84,95 @@ def test_build_script_sets_config_before_bundle_and_bootstrap():
     assert config == {"url": "ws://s?gw=1", "getStatsInterval": 1000}
 
 
-def test_inject_does_nothing_when_disabled():
-    with patch("rtcstatsTrace.urllib.request.urlopen") as urlopen:
-        assert rtcstatsTrace.inject(driver(), "gw0", "r", "jitsi", env={}) is False
-    urlopen.assert_not_called()
+def test_prepare_does_nothing_when_disabled(tmp_path):
+    options = Options("--no-sandbox")
+    assert rtcstatsTrace.prepare(options, "gw0", "r", "jitsi", env={},
+                                 extensionDir=str(tmp_path / "extension")) is False
+    assert options.arguments == ["--no-sandbox"]
+    assert not (tmp_path / "extension").exists()
 
 
-def test_inject_registers_script_on_new_document(tmp_path, monkeypatch):
-    assets(tmp_path, monkeypatch)
-    with patch("rtcstatsTrace.urllib.request.urlopen",
-               return_value=io.BytesIO(b'{"value": {}}')) as urlopen:
-        assert rtcstatsTrace.inject(driver(), "gw0", "room1", "jitsi", env=ON) is True
-    request = urlopen.call_args.args[0]
-    assert request.full_url == "http://127.0.0.1:9515/session/abc123/goog/cdp/execute"
-    assert request.get_method() == "POST"
-    body = json.loads(request.data)
-    assert body["cmd"] == "Page.addScriptToEvaluateOnNewDocument"
-    source = body["params"]["source"]
+def test_prepare_loads_the_trace_in_every_tab_and_frame_before_the_page(tmp_path, monkeypatch):
+    extension = assets(tmp_path, monkeypatch)
+    options = Options("--no-sandbox")
+    assert rtcstatsTrace.prepare(options, "gw0", "room1", "jitsi", env=ON,
+                                 extensionDir=str(extension)) is True
+    assert options.arguments == ["--no-sandbox", "--load-extension=" + str(extension)]
+    manifest = json.loads((extension / "manifest.json").read_text())
+    assert manifest["manifest_version"] == 3
+    script, = manifest["content_scripts"]
+    assert script["matches"] == ["<all_urls>"]
+    assert script["run_at"] == "document_start"
+    assert script["world"] == "MAIN"
+    assert script["all_frames"] is True and script["match_about_blank"] is True
+    source = (extension / script["js"][0]).read_text()
     assert "window.__sipmediagwRtcstatsLib = {};" in source and "/* bootstrap */" in source
     assert "room=room1" in source and "gw=gw0" in source
 
 
+def test_prepare_twice_loads_the_extension_once(tmp_path, monkeypatch):
+    extension = assets(tmp_path, monkeypatch)
+    options = Options()
+    rtcstatsTrace.prepare(options, "gw0", "r", "jitsi", env=ON, extensionDir=str(extension))
+    rtcstatsTrace.prepare(options, "gw0", "r", "jitsi", env=ON, extensionDir=str(extension))
+    assert options.arguments == ["--load-extension=" + str(extension)]
+
+
 def test_missing_bundle_disables_tracing(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(rtcstatsTrace, "BUNDLE", str(tmp_path / "absent.js"))
-    with patch("rtcstatsTrace.urllib.request.urlopen") as urlopen:
-        assert rtcstatsTrace.inject(driver(), "gw0", "r", "jitsi", env=ON) is False
-    urlopen.assert_not_called()
+    options = Options()
+    assert rtcstatsTrace.prepare(options, "gw0", "r", "jitsi", env=ON,
+                                 extensionDir=str(tmp_path / "extension")) is False
+    assert options.arguments == []
     assert "rtcstats:" in capsys.readouterr().out
 
 
-def test_chromedriver_error_disables_tracing(tmp_path, monkeypatch):
+def test_unwritable_extension_dir_disables_tracing(tmp_path, monkeypatch):
     assets(tmp_path, monkeypatch)
-    with patch("rtcstatsTrace.urllib.request.urlopen",
-               side_effect=urllib.error.URLError("refused")):
-        assert rtcstatsTrace.inject(driver(), "gw0", "r", "jitsi", env=ON) is False
+    blocker = tmp_path / "file"
+    blocker.write_text("")
+    options = Options()
+    assert rtcstatsTrace.prepare(options, "gw0", "r", "jitsi", env=ON,
+                                 extensionDir=str(blocker / "extension")) is False
+    assert options.arguments == []
 
 
 def test_logs_never_show_the_token(tmp_path, monkeypatch, capsys):
-    assets(tmp_path, monkeypatch)
+    extension = assets(tmp_path, monkeypatch)
     env = {"RTCSTATS_ENABLED": "true",
            "RTCSTATS_SERVER_URL": "wss://stats.example.org/x?rtcstats-token=SECRET"}
-    with patch("rtcstatsTrace.urllib.request.urlopen", return_value=io.BytesIO(b"{}")):
-        rtcstatsTrace.inject(driver(), "gw0", "r", "jitsi", env=env)
+    rtcstatsTrace.prepare(Options(), "gw0", "r", "jitsi", env=env, extensionDir=str(extension))
     out = capsys.readouterr().out
     assert "SECRET" not in out and "stats.example.org" in out
 
 
-def test_close_waits_for_the_websockets_to_close():
-    d = driver()
-    d.execute_script.return_value = True
+def driver(handles=("main",), closedIn=("main",)):
+    d = Mock()
+    d.window_handles = list(handles)
+    d.current_window_handle = handles[0]
+    visited = []
+
+    def switch(handle):
+        d.current_window_handle = handle
+        visited.append(handle)
+    d.switch_to.window.side_effect = switch
+    d.execute_script.side_effect = lambda script: d.current_window_handle in closedIn
+    d.visited = visited
+    return d
+
+
+def test_close_closes_every_tab_and_comes_back():
+    d = driver(handles=("lobby", "meeting"), closedIn=("lobby", "meeting"))
     with patch("rtcstatsTrace.time.sleep") as sleep:
         rtcstatsTrace.close(d, flushSeconds=0.5)
     assert "__sipmediagwRtcstatsCloseAll" in d.execute_script.call_args.args[0]
+    assert d.execute_script.call_count == 2
+    assert d.visited[-1] == "lobby"
     sleep.assert_called_once_with(0.5)
 
 
 def test_close_without_trace_does_not_wait():
-    d = driver()
-    d.execute_script.return_value = False
+    d = driver(closedIn=())
     with patch("rtcstatsTrace.time.sleep") as sleep:
         rtcstatsTrace.close(d)
     sleep.assert_not_called()

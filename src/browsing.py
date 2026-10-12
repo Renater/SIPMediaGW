@@ -221,15 +221,15 @@ class Browsing:
 
     def run(self):
         try:
+            # Before Chrome starts: the trace must wrap WebRTC before the meeting scripts run.
+            self.rtcstatsOn = rtcstatsTrace.prepare(self.chromeOptions,
+                                                    os.getenv('GW_NAME', ''),
+                                                    self.room.get('roomName', ''),
+                                                    self.modName)
             self.driver = webdriver.Remote(
                 command_executor="http://127.0.0.1:9515",
                 options=self.chromeOptions
             )
-            # Before loadPage(): the trace must wrap WebRTC before the meeting scripts run.
-            self.rtcstatsOn = rtcstatsTrace.inject(self.driver,
-                                                   os.getenv('GW_NAME', ''),
-                                                   self.room.get('roomName', ''),
-                                                   self.modName)
             self.loadPage()
             self.join()
             while True:

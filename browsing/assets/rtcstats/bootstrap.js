@@ -1,5 +1,5 @@
-// Runs in every frame before the page's own scripts (CDP
-// Page.addScriptToEvaluateOnNewDocument, see src/rtcstatsTrace.py).
+// Runs in every tab and frame before the page's own scripts (extension
+// content script, MAIN world, document_start: see src/rtcstatsTrace.py).
 (function () {
     const CLOSE_MESSAGE = 'sipmediagw:rtcstats:close';
     const config = window.__sipmediagwRtcstats;
@@ -17,11 +17,17 @@
             if (closed) {
                 return;
             }
-            if (!connected) {
-                connected = true;
-                trace.connect(config.url);
+            // Never let a tracing error reach the meeting's own WebRTC calls.
+            try {
+                if (!connected) {
+                    connected = true;
+                    trace.connect(config.url);
+                }
+                trace(...args);
+            } catch (e) {
+                closed = true;
+                console.warn('[rtcstats] tracing off in this frame:', e);
             }
-            trace(...args);
         };
         // Defined before wrapping anything: a frame whose setup fails
         // halfway must still be able to close what it opened.

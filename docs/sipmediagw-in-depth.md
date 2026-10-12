@@ -52,7 +52,7 @@ The browser side of a call can stream its WebRTC API calls and `getStats()` resu
 	RTCSTATS_ENABLED=true
 	RTCSTATS_SERVER_URL=wss://rtcstats.example.org/sipmediagw   # append ?rtcstats-token=<jwt> if the server requires one
 
-The library is registered in the call's Chrome before the meeting page loads, so it wraps WebRTC before the meeting scripts run, in every frame. Each frame that uses WebRTC opens its own connection (one dump per frame); frames without WebRTC open none. The trace is closed when the call ends, after the gateway leaves the meeting.
+The library is loaded in the call's Chrome as an extension content script (generated in `/tmp/sipmediagw-rtcstats` when the call starts), so it wraps WebRTC before the meeting scripts run, in every tab and frame, including the tab some platforms open to run the meeting. The URL must start with `ws://` or `wss://`, otherwise tracing stays off. Each frame that uses WebRTC opens its own connection (one dump per frame); frames without WebRTC open none. The trace is closed when the call ends, after the gateway leaves the meeting.
 
 The gateway adds `gw` (GW_NAME), `room` and `browsing` (the platform) to the URL query; the server records them in the dump's `url` metadata. The query, and so the token, is never written to the gateway logs. Look for these lines:
 
