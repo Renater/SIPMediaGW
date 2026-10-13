@@ -16,6 +16,15 @@ export DOCKER_IMAGE=${DOCKER_IMAGE:-sipmediagw:dev}
 # The address that routes to the internet, not docker0 (hostname -I lists it first).
 export HOST_IP=${HOST_IP:-$(ip route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}')}
 [[ -n "$HOST_IP" ]] || { echo "Cannot detect HOST_IP, set it explicitly." >&2; exit 1; }
+
+docker network inspect gw_net > /dev/null 2>&1 ||
+    docker network create --subnet=192.168.92.0/29 gw_net > /dev/null
+# gw0 sits on gw_net, where 127.0.0.1 is the container itself: a loopback
+# HOST_IP becomes the gw_net gateway, a host address that gw0 can reach.
+if [[ "$HOST_IP" == 127.* || "$HOST_IP" == localhost ]]; then
+    HOST_IP=$(docker network inspect -f '{{(index .IPAM.Config 0).Gateway}}' gw_net)
+    echo "Loopback HOST_IP is unreachable from gw0, using the gw_net gateway instead."
+fi
 echo "HOST_IP=$HOST_IP  BROWSING=${BROWSING:-<IVR>}  DOCKER_IMAGE=$DOCKER_IMAGE"
 
 ### Kernel modules ###
@@ -32,9 +41,7 @@ fi
 VIDEO_DEV=$(ls /sys/devices/virtual/video4linux 2>/dev/null | sort -V | head -1)
 [[ -n "$VIDEO_DEV" ]] || { echo "No v4l2loopback device found." >&2; exit 1; }
 
-### Network and images ###
-docker network inspect gw_net > /dev/null 2>&1 ||
-    docker network create --subnet=192.168.92.0/29 gw_net > /dev/null
+### Images ###
 docker image inspect kamailio4sipmediagw > /dev/null 2>&1 ||
     docker build -t kamailio4sipmediagw deploy/kamailio
 docker image inspect coturn4sipmediagw > /dev/null 2>&1 ||

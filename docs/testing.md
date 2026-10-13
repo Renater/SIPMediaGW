@@ -19,7 +19,7 @@ To run Kamailio, TURN, the database and one gateway directly on your machine (no
 ./test/environnement/local/stop.sh      # --purge also drops the Kamailio DB volume and gw_net
 ```
 
-- `BROWSING` (default `jitsi`, empty for the IVR), `DOCKER_IMAGE` (default `sipmediagw:dev`, built if missing), `HOST_IP` (detected from the default route, never docker0) and `RTCSTATS_SERVER_URL` (turns rtcstats on) can be set in the environment.
+- `BROWSING` (default `jitsi`, empty for the IVR), `DOCKER_IMAGE` (default `sipmediagw:dev`, built if missing), `HOST_IP` (detected from the default route, never docker0; a loopback value is replaced by the `gw_net` gateway `192.168.92.1`, since `127.0.0.1` inside gw0 is the container itself) and `RTCSTATS_SERVER_URL` (turns rtcstats on) can be set in the environment.
 - The v4l2loopback devices are created from `/dev/video10`, so the script also works on a laptop whose webcams hold `/dev/video0`…; `sudo` is asked to load the kernel modules, and `stop.sh` unloads only the ones `start.sh` loaded.
 - Then call `sip:<room>@HOST_IP` (or `sip:0@HOST_IP` for the IVR) from Linphone, as below. The containers log to syslog: `journalctl -f | grep -E 'gw0|kamailio'`.
 
