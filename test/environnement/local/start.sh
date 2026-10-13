@@ -64,7 +64,9 @@ HOST_TZ=$(cat /etc/timezone 2>/dev/null || timedatectl show -p Timezone --value)
 export ID=0 GW_NAME=localgw MAIN_APP=baresip VIDEO_DEV HOST_TZ \
        CHECK_REG=yes RESTART=no WITH_ALSA=true
 # The rest of what SIPMediaGW.sh exports, empty here: keeps compose quiet.
-export ROOM="" PREFIX="" INIT="" RTMP_DST="" FS_API_KEY="" FS_USER_MAIL="" FS_RECIPIENT_MAIL="" \
+# DISPLAY too: the desktop's DISPLAY would make gw0 skip its own Xvfb and
+# look for the host's X server, which is not shared (SIPMediaGW.sh -d does).
+export DISPLAY="" ROOM="" PREFIX="" INIT="" RTMP_DST="" FS_API_KEY="" FS_USER_MAIL="" FS_RECIPIENT_MAIL="" \
        WITH_TRANSCRIPT="" PULSE_SERVER=""
 if [[ -n "${RTCSTATS_SERVER_URL:-}" ]]; then
     export RTCSTATS_ENABLED=true RTCSTATS_SERVER_URL
