@@ -16,18 +16,22 @@ cd "$ROOT"
 
 export BROWSING=${BROWSING-jitsi}
 export DOCKER_IMAGE=${DOCKER_IMAGE:-sipmediagw:dev}
-# The address that routes to the internet, not docker0 (hostname -I lists it first).
-export HOST_IP=${HOST_IP:-$(ip route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}')}
+# The address a softphone on this host advertises in its SDP: the one that
+# routes to the internet (not docker0, which hostname -I lists first).
+DEFAULT_IP=$(ip route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}')
+export HOST_IP=${HOST_IP:-$DEFAULT_IP}
+# 127.0.0.1 inside gw0 is the container itself. Another host address (e.g. the
+# gw_net gateway) gets signalling through but not media: TURN only relays
+# from the address Linphone advertises, while Linphone sends from the address
+# it targets. So a loopback HOST_IP becomes that advertised address.
+if [[ "$HOST_IP" == 127.* || "$HOST_IP" == localhost ]]; then
+    echo "Loopback HOST_IP is unreachable from gw0, using $DEFAULT_IP instead."
+    HOST_IP=$DEFAULT_IP
+fi
 [[ -n "$HOST_IP" ]] || { echo "Cannot detect HOST_IP, set it explicitly." >&2; exit 1; }
 
 docker network inspect gw_net > /dev/null 2>&1 ||
     docker network create --subnet=192.168.92.0/29 gw_net > /dev/null
-# gw0 sits on gw_net, where 127.0.0.1 is the container itself: a loopback
-# HOST_IP becomes the gw_net gateway, a host address that gw0 can reach.
-if [[ "$HOST_IP" == 127.* || "$HOST_IP" == localhost ]]; then
-    HOST_IP=$(docker network inspect -f '{{(index .IPAM.Config 0).Gateway}}' gw_net)
-    echo "Loopback HOST_IP is unreachable from gw0, using the gw_net gateway instead."
-fi
 echo "HOST_IP=$HOST_IP  BROWSING=${BROWSING:-<IVR>}  DOCKER_IMAGE=$DOCKER_IMAGE"
 
 ### Kernel modules ###
