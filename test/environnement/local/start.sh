@@ -105,8 +105,10 @@ fi
 
 cat <<EOF
 
-Ready. From a SIP softphone (Linphone: no registration, no ICE/AVPF, TCP),
-call one of:
+Ready. From a SIP softphone: server <sip:$HOST_IP;transport=tcp>, no
+registration, no ICE/STUN/AVPF. Its identity must not use $HOST_IP as domain
+(e.g. sip:bob@softphone.local), or Kamailio takes it for a local subscriber
+and answers 407. Then call one of:
     sip:<room>@$HOST_IP      join <room> on ${BROWSING:-the platform chosen in the IVR}
     sip:0@$HOST_IP           IVR
 Logs:   journalctl -f | grep -E 'gw0|kamailio'
