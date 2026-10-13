@@ -4,11 +4,14 @@
 #
 #   BROWSING=jitsi DOCKER_IMAGE=sipmediagw:dev ./start.sh
 #
-# Optional: HOST_IP (auto-detected), RTCSTATS_SERVER_URL (enables rtcstats).
+# Optional: HOST_IP (auto-detected), RTCSTATS_SERVER_URL (enables rtcstats),
+# LOOP=0 (do not recreate gw0 after each call).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 STATE=/tmp/sipmediagw-local.state
+LOOP_PID=/tmp/sipmediagw-local.loop.pid
+LOOP_LOG=/tmp/sipmediagw-local.loop.log
 cd "$ROOT"
 
 export BROWSING=${BROWSING-jitsi}
@@ -71,6 +74,9 @@ export DISPLAY="" ROOM="" PREFIX="" INIT="" RTMP_DST="" FS_API_KEY="" FS_USER_MA
 if [[ -n "${RTCSTATS_SERVER_URL:-}" ]]; then
     export RTCSTATS_ENABLED=true RTCSTATS_SERVER_URL
 fi
+# A watcher left by a previous run would recreate gw0 behind our back.
+[[ -f "$LOOP_PID" ]] && { kill -- -"$(cat "$LOOP_PID")" 2> /dev/null || true; }
+rm -f "$LOOP_PID"
 docker compose -p localgw up -d --force-recreate gw
 echo -n "Waiting for gw0 "
 for _ in $(seq 60); do
@@ -81,6 +87,18 @@ done
     { echo " gateway failed to start (journalctl | grep gw0)" >&2; exit 1; }
 echo " ok"
 
+# gw0 exits at the end of each call: recreate it, as SIPMediaGW.sh --loop does.
+# Own session (setsid) so stop.sh can kill the watcher and docker events at once.
+if [[ "${LOOP:-1}" == 1 ]]; then
+    setsid bash -c 'docker events --filter container=gw0 --filter event=die |
+        while read -r _; do
+            echo "$(date +%T) gw0 exited, recreating it"
+            sleep 2
+            docker compose -p localgw up -d --force-recreate gw
+        done' > "$LOOP_LOG" 2>&1 < /dev/null &
+    echo $! > "$LOOP_PID"
+fi
+
 cat <<EOF
 
 Ready. From a SIP softphone (Linphone: no registration, no ICE/AVPF, TCP),
@@ -88,5 +106,6 @@ call one of:
     sip:<room>@$HOST_IP      join <room> on ${BROWSING:-the platform chosen in the IVR}
     sip:0@$HOST_IP           IVR
 Logs:   journalctl -f | grep -E 'gw0|kamailio'
+Loop:   gw0 is recreated after each call (LOOP=0 to disable): $LOOP_LOG
 Stop:   $(dirname "${BASH_SOURCE[0]}")/stop.sh
 EOF

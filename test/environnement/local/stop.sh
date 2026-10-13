@@ -6,7 +6,14 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 STATE=/tmp/sipmediagw-local.state
+LOOP_PID=/tmp/sipmediagw-local.loop.pid
 cd "$ROOT" || exit 1
+
+# Kill the restart watcher first, or stopping gw0 would recreate it.
+if [[ -f "$LOOP_PID" ]]; then
+    kill -- -"$(cat "$LOOP_PID")" 2> /dev/null
+    rm -f "$LOOP_PID"
+fi
 
 # Values only needed for compose to parse the files.
 export ID=0 VIDEO_DEV=null HOST_IP=${HOST_IP:-127.0.0.1} GW_NAME="" HOST_TZ="" CHECK_REG="" \
