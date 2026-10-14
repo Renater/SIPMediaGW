@@ -133,7 +133,7 @@ function initIVR(config) {
 
     function handleInput(char) {
         activateDigitsHalo()
-        if (/^[a-zA-Z0-9-_/]$/.test(char)) {
+        if (/^[a-zA-Z0-9-_/-_.]$/.test(char)) {
             if (stage === "domain") inputDigits = [char];
             else inputDigits.push(char);
         } else if (char === '*') {
