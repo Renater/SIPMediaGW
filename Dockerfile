@@ -100,6 +100,7 @@ COPY baresip /var/baresip
 COPY streaming /var/streaming
 COPY recording /var/recording
 COPY transcript /var/transcript
+# browsing/assets/rtcstats/rtcstats.bundle.js is pre-built: tools/build-rtcstats-bundle.sh
 COPY browsing /var/browsing
 COPY src /var/src
 

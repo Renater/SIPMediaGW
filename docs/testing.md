@@ -10,6 +10,19 @@ Once the services are up and running, you can join a conference from your prefer
     sip:0@KAMAILIO_IP_ADDRESS
     ```
 
+### Local environment on the host
+
+To run Kamailio, TURN, the database and one gateway directly on your machine (no VM):
+
+```
+./test/environnement/local/start.sh     # BROWSING=jitsi by default
+./test/environnement/local/stop.sh      # --purge also drops the Kamailio DB volume and gw_net
+```
+
+- `BROWSING` (default `jitsi`, empty for the IVR), `DOCKER_IMAGE` (default `sipmediagw:dev`, built if missing), `HOST_IP` (detected from the default route, never docker0; a loopback value is replaced by that detected address: `127.0.0.1` inside gw0 is the container itself, and TURN relays a host softphone's media only when `HOST_IP` is the address the softphone advertises) and `RTCSTATS_SERVER_URL` (turns rtcstats on) and `LOOP` (default `1`: gw0 is recreated after each call, as with `SIPMediaGW.sh --loop`; `0` to disable) can be set in the environment.
+- The v4l2loopback devices are created from `/dev/video10`, so the script also works on a laptop whose webcams hold `/dev/video0`…; `sudo` is asked to load the kernel modules, and `stop.sh` unloads only the ones `start.sh` loaded.
+- Then call `sip:<room>@HOST_IP` (or `sip:0@HOST_IP` for the IVR) from Linphone, as below, but with an identity whose domain is not `HOST_IP` (e.g. `sip:bob@softphone.local`): a softphone on the same host would otherwise use Kamailio's own address and get `407 Proxy Authentication Required`. The containers log to syslog: `journalctl -f | grep -E 'gw0|kamailio'`.
+
 ### Testing with Baresip
 
 We provide a bash script that runs a SIP call via Baresip.

@@ -10,6 +10,7 @@ import threading
 import subprocess
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+import rtcstatsTrace
 
 class Browsing:
     def __init__(self, width, height, config,
@@ -34,6 +35,7 @@ class Browsing:
             self.chromeOptions.add_argument('--headless=new')
             self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.driver = None
+        self.rtcstatsOn = False
         self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(
                                                     self.room['config']['webrtc_domain'],
                                                     self.room['roomName'],
@@ -219,6 +221,11 @@ class Browsing:
 
     def run(self):
         try:
+            # Before Chrome starts: the trace must wrap WebRTC before the meeting scripts run.
+            self.rtcstatsOn = rtcstatsTrace.prepare(self.chromeOptions,
+                                                    os.getenv('GW_NAME', ''),
+                                                    self.room.get('roomName', ''),
+                                                    self.modName)
             self.driver = webdriver.Remote(
                 command_executor="http://127.0.0.1:9515",
                 options=self.chromeOptions
@@ -267,6 +274,9 @@ class Browsing:
                         self.unset()
                 except:
                     pass
+                if self.rtcstatsOn:
+                    rtcstatsTrace.close(self.driver)
+                    self.rtcstatsOn = False
                 self.driver.close()
                 self.driver.quit()
                 self.driver = []
