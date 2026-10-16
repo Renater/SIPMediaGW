@@ -1,17 +1,3 @@
-# rtcstats-js browser bundle (https://github.com/rtcstats/rtcstats, MIT).
-# Built here and copied into the gateway image; Node does not ship in it.
-FROM node:22-bookworm AS rtcstats
-ARG RTCSTATS_VERSION=v2.4.0
-RUN git clone --depth 1 --branch ${RTCSTATS_VERSION} https://github.com/rtcstats/rtcstats.git /rtcstats
-WORKDIR /rtcstats
-RUN npm install --omit=dev --ignore-scripts \
-    && npx --yes -p webpack@5.99.9 -p webpack-cli@6.0.1 webpack \
-        --entry ./packages/rtcstats-js/rtcstats.js \
-        --output-path /out --output-filename rtcstats.bundle.js \
-        --mode production \
-        --output-library-name __sipmediagwRtcstatsLib --output-library-type window \
-    && grep -q __sipmediagwRtcstatsLib /out/rtcstats.bundle.js
-
 FROM debian:12-slim
 
 ARG BARESIP_BRANCH=v3.15.0_patchv5
@@ -114,8 +100,8 @@ COPY baresip /var/baresip
 COPY streaming /var/streaming
 COPY recording /var/recording
 COPY transcript /var/transcript
+# browsing/assets/rtcstats/rtcstats.bundle.js is pre-built: tools/build-rtcstats-bundle.sh
 COPY browsing /var/browsing
-COPY --from=rtcstats /out/rtcstats.bundle.js /var/browsing/assets/rtcstats/rtcstats.bundle.js
 COPY src /var/src
 
 RUN mkdir /var/.baresip

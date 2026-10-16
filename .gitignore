@@ -6,4 +6,3 @@ logs/
 .ruff_cache/
 .vscode/
 browsing/assets/config.json
-browsing/assets/rtcstats/rtcstats.bundle.js
