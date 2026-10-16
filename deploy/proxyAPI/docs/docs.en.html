@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIPMediaGW</title>
+<link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg">
+<link rel="alternate" hreflang="fr" href="/docs">
+<link rel="alternate" hreflang="en" href="/docs/en">
+<script>
+  // Theme set before first paint, so the page does not flash light.
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="stylesheet" href="/interact/static/shared.css">
+<link rel="stylesheet" href="/docs/docs.css">
+</head>
+<body>
+<main class="wrap wrap--doc">
+
+  <header class="brand">
+    <img id="brand-logo" class="brand__logo" src="" alt="">
+    <div class="brand__text">
+      <div class="brand__name" id="brand-name"></div>
+      <div class="brand__tagline" id="brand-tagline"></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <nav class="segmented" aria-label="Language">
+      <a class="segmented__el" href="/docs" lang="fr" hreflang="fr">FR</a>
+      <a class="segmented__el" href="/docs?lang=en" lang="en" hreflang="en" aria-current="page">EN</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button" data-tip="Switch theme" aria-label="Switch theme">◐</button>
+  </div>
+
+  <h1>SIPMediaGW: multi-platform room connector</h1>
+
+  <h2>Overview</h2>
+  <p>
+    The <strong>SIPMediaGW</strong> multi-platform room connector is an interoperability gateway
+    that dynamically links meeting-room videoconferencing systems to a WebRTC-compatible
+    videoconferencing platform such as:
+  </p>
+  <ul>
+    <li>Platform A</li>
+    <li>Platform B</li>
+    <li>Platform C</li>
+    <li>Platform D</li>
+  </ul>
+  <p>
+    A room system (SIP or compatible) can call the connector to join a videoconference,
+    whatever its manufacturer or technical environment.
+  </p>
+
+  <h2>How to use the SIP room connectors</h2>
+
+  <section class="step">
+    <div class="step__num">1</div>
+    <div class="step__body">
+      <h3>Create the meeting (required)</h3>
+      <p>First, create your meeting on the target platform:</p>
+      <ul>
+        <li><a href="https://platform-a.example" target="_blank" rel="noopener">Platform A</a></li>
+        <li><a href="https://platform-b.example" target="_blank" rel="noopener">Platform B</a></li>
+        <li><a href="https://platform-c.example" target="_blank" rel="noopener">Platform C</a></li>
+        <li><a href="https://platform-d.example" target="_blank" rel="noopener">Platform D</a></li>
+      </ul>
+      <div class="callout callout--warn"><p>The room connector cannot create or start a conference.</p></div>
+
+      <h4>Find the right conference identifier</h4>
+      <p>The identifier to enter depends on the platform:</p>
+      <ul>
+        <li><strong>Platform A and Platform C</strong> → the conference name, i.e. the end of the conference URL.</li>
+        <li><strong>Platform B</strong> → the invitation code given to participants.</li>
+        <li><strong>Platform D</strong> → the full access URL of the conference, obtained from the platform management interface.</li>
+      </ul>
+      <p>Once you have this identifier, you can generate the SIP address in the next step.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">2</div>
+    <div class="step__body">
+      <h3>Generate the SIP address</h3>
+      <p>From the service's address-generation interface, choose the target platform and enter the meeting identifier.</p>
+      <p>The service then generates a SIP address adapted to the conference you want to join.</p>
+      <p>Example: <code>sip:[platform_number].[conference_number]@your-domain.example</code></p>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">3</div>
+    <div class="step__body">
+      <h3>Join the meeting from the room</h3>
+
+      <h4>Option A: call the meeting directly</h4>
+      <ul>
+        <li><code>sip:[platform_number].[conference_number]@service.example</code></li>
+        <li>or <code>sip:[platform_number].[conference_number]@your-domain.example</code></li>
+      </ul>
+
+      <h4>Option B: call through the interactive menu</h4>
+      <ol>
+        <li>Call: <code>sip:9@your-domain.example</code></li>
+        <li>Select the platform, then enter the conference number.</li>
+      </ol>
+
+      <h4>Option B bis: call through the interactive menu and QR code</h4>
+      <ol>
+        <li>Call: <code>sip:9@your-domain.example</code></li>
+        <li>Scan the displayed QR code (or go to <a href="https://service.example" target="_blank" rel="noopener">service.example</a>), which opens a remote-control page allowing you to:
+          <ul>
+            <li>select the platform</li>
+            <li>enter the meeting name and the room display name</li>
+            <li>interact with the UI while the meeting is in progress</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="callout">
+        <p>This option replaces step 2 (generating the SIP address): the meeting can be configured directly in the web interface or from the control page associated with the QR code.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">4</div>
+    <div class="step__body">
+      <h3>Interact during the meeting</h3>
+      <p>Once connected, press <code>#</code> to show the menu.</p>
+      <p>Available functions:</p>
+      <ul>
+        <li>raise your hand</li>
+        <li>change the layout</li>
+        <li>show the chat</li>
+        <li>view the participants</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">5</div>
+    <div class="step__body">
+      <h3>Share content</h3>
+      <p>
+        Content sharing is supported through BFCP (presentation), usually exposed
+        on room systems through an HDMI/VGA input.
+      </p>
+    </div>
+  </section>
+
+  <h2>Known limitations</h2>
+  <ul>
+    <li>A conference cannot be started through the connector</li>
+    <li>The meeting must exist and be active</li>
+  </ul>
+
+  <h2>Compatibility</h2>
+  <p>Compatible with SIP equipment (RFC 3261), validated with:</p>
+  <div class="compat">
+    <span>Polycom</span>
+    <span>Cisco</span>
+    <span>Huawei</span>
+    <span>Aver</span>
+  </div>
+
+  <h2>Configuring your equipment</h2>
+
+  <h4>Enable the SIP protocol</h4>
+  <p>
+    To connect your equipment, set it to use the SIP protocol (RFC 3261) when it calls the
+    room connector. Refer to the equipment's manual or to your videoconferencing integrator
+    for this configuration.
+  </p>
+
+  <h4>Add the room connector to the equipment's address book</h4>
+  <p>To make the SIPMediaGW room connectors easier to use, you can add the interactive menu number to your equipment's address book:</p>
+  <ul>
+    <li><code>sip:9@your-domain.example</code></li>
+    <li>or <code>sip:9@service.example</code> if your equipment does not resolve domain names</li>
+  </ul>
+
+  <h4>Make sure media streams can be received</h4>
+  <p>
+    To communicate, a videoconferencing system must be correctly configured to receive audio and video
+    streams. The exact setup depends on your network environment and your equipment.
+  </p>
+  <ul>
+    <li>Assign a public address to your equipment.</li>
+    <li>Set up explicit NAT between your equipment address and a public address.</li>
+  </ul>
+
+  <h4>Network best practices</h4>
+  <p>
+    To ensure video calls to the SIP room connectors work correctly, make sure your network and security
+    policies allow the SIP traffic and media streams required by your environment.
+  </p>
+
+  <div class="box">
+    <p><strong>Example configuration</strong></p>
+    <ul>
+      <li>Service SIP address: <code>sip:9@your-domain.example</code></li>
+      <li>Public access address: <code>203.0.113.10</code></li>
+      <li>Service domain: <code>service.example</code></li>
+    </ul>
+  </div>
+
+  <p><strong>Common protocols and ports</strong></p>
+  <p>To the SIP servers:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Port</th><th>Transport</th><th>Application</th></tr></thead>
+      <tbody>
+        <tr><td>5060</td><td>tcp</td><td>SIP</td></tr>
+        <tr><td>5060</td><td>udp</td><td>SIP</td></tr>
+        <tr><td>5061</td><td>tcp</td><td>SIP/TLS</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>For media traffic to relay servers:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Port</th><th>Transport</th><th>Application</th></tr></thead>
+      <tbody>
+        <tr><td>40000-49999</td><td>udp</td><td>rtp, rtcp, bfcp</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    The service is built on the open source project
+    <a href="https://github.com/Renater/SIPMediaGW" target="_blank" rel="noopener">SIPMediaGW</a>,
+    developed and maintained by RENATER.
+  </footer>
+
+</main>
+
+<div id="lightbox" class="lightbox" role="dialog" aria-label="Enlarged image">
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script src="/interact/static/brand.js"></script>
+<script>
+  document.title = `${BRAND.name} /docs`;
+
+  (function () {
+    const brand = (BRAND && BRAND.name) || 'SIPMediaGW';
+    const lower = brand.toLowerCase();
+    const upper = brand.toUpperCase();
+
+    function walk(node) {
+      if (!node || node.nodeType === 8) return;
+      if (node.nodeType === 3) {
+        const value = node.textContent || '';
+        const replaced = value
+          .replace(/SIPMediaGW/g, brand)
+          .replace(/sipmediagw/g, lower)
+          .replace(/SIPMEDIAGW/g, upper);
+        if (replaced !== value) node.textContent = replaced;
+        return;
+      }
+      if (node.tagName === 'A' || node.tagName === 'CODE' || node.tagName === 'IMG') return;
+      for (const child of node.childNodes) walk(child);
+    }
+
+    walk(document.body);
+  })();
+
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var root = document.documentElement;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+</script>
+
+</body>
+</html>

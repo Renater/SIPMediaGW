@@ -198,21 +198,15 @@ function render() {
 
   const link = $('doc-link');
   if (BRAND.docUrl) {
-    link.href = BRAND.docUrl;
-    link.textContent = lang === 'fr' ? BRAND.docLabelFr : BRAND.docLabelEn;
-  } else {
-    link.parentElement.hidden = true;
-  }
-}
-
-function applyBrand() {
-  document.title = BRAND.name;
-  $('brand-name').textContent = BRAND.name;
-  $('brand-tagline').textContent = BRAND.tagline;
-  if (BRAND.logo) {
-    const logo = $('brand-logo');
-    logo.src = BRAND.logo;
-    logo.alt = BRAND.name;
+    const selectedDocUrl = lang === 'fr'
+      ? (BRAND.docUrlFr || BRAND.docUrl)
+      : (BRAND.docUrlEn || BRAND.docUrl);
+    if (selectedDocUrl) {
+      link.href = selectedDocUrl;
+      link.textContent = lang === 'fr' ? BRAND.docLabelFr : BRAND.docLabelEn;
+    } else {
+      link.parentElement.hidden = true;
+    }
   }
 }
 
@@ -225,7 +219,6 @@ function setLang(value) {
 // --- startup ---------------------------------------------------------------
 
 buildBoxes();
-applyBrand();
 
 $('lang-fr').addEventListener('click', () => setLang('fr'));
 $('lang-en').addEventListener('click', () => setLang('en'));

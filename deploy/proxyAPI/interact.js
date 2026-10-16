@@ -185,11 +185,6 @@ function renderLangSwitch() {
   toggle.setAttribute('aria-pressed', String(dark));
   toggle.setAttribute('aria-label', dark ? t.themeToLight : t.themeToDark);
 
-  document.title = BRAND.name;
-  $('brand-name').textContent = BRAND.name;
-  $('brand-tagline').textContent = BRAND.tagline;
-  if (BRAND.logo) { $('brand-logo').src = BRAND.logo; $('brand-logo').alt = BRAND.name; }
-
   $('title-text').textContent = t.title;
   $('platforms-subtitle').textContent = t.pickPlatform;
   $('waiting').textContent = t.waiting;

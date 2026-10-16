@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIPMediaGW</title>
+<link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg">
+<link rel="alternate" hreflang="fr" href="/docs">
+<link rel="alternate" hreflang="en" href="/docs/en">
+<script>
+    // Theme set before first paint, so the page does not flash light.
+    (function () {
+        var t = null;
+        try { t = localStorage.getItem('theme'); } catch (e) {}
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+    })();
+</script>
+<link rel="stylesheet" href="/interact/static/shared.css">
+<link rel="stylesheet" href="/docs/docs.css">
+</head>
+<body>
+<main class="wrap wrap--doc">
+
+  <header class="brand">
+    <img id="brand-logo" class="brand__logo" src="" alt="">
+    <div class="brand__text">
+      <div class="brand__name" id="brand-name"></div>
+      <div class="brand__tagline" id="brand-tagline"></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <nav class="segmented" aria-label="Langue">
+      <a class="segmented__el" href="/docs" lang="fr" hreflang="fr" aria-current="page">FR</a>
+      <a class="segmented__el" href="/docs?lang=en" lang="en" hreflang="en">EN</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button" data-tip="Changer de thème" aria-label="Changer de thème">◐</button>
+  </div>
+
+  <h1>SIPMediaGW : connecteur de salle multi-plateforme</h1>
+
+  <h2>Présentation</h2>
+  <p>
+    Le connecteur de salle multi-plateforme <strong>SIPMediaGW</strong> est une passerelle
+    d'interopérabilité permettant de relier dynamiquement des systèmes de visioconférence
+    de salle de réunion à une plateforme de visioconférence compatible WebRTC comme&nbsp;:
+  </p>
+  <ul>
+    <li>Plateforme A</li>
+    <li>Plateforme B</li>
+    <li>Plateforme C</li>
+    <li>Plateforme D</li>
+  </ul>
+  <p>
+    Un équipement de salle (SIP ou compatible) peut ainsi établir un appel vers le connecteur
+    afin de rejoindre une visioconférence, quel que soit son constructeur ou son environnement technique.
+  </p>
+
+  <h2>Comment utiliser les connecteurs de salle SIP</h2>
+
+  <section class="step">
+    <div class="step__num">1</div>
+    <div class="step__body">
+      <h3>Créer la réunion (obligatoire)</h3>
+      <p>Avant toute chose, vous devez créer votre réunion sur la plateforme cible&nbsp;:</p>
+      <ul>
+        <li><a href="https://platform-a.example" target="_blank" rel="noopener">Plateforme A</a></li>
+        <li><a href="https://platform-b.example" target="_blank" rel="noopener">Plateforme B</a></li>
+        <li><a href="https://platform-c.example" target="_blank" rel="noopener">Plateforme C</a></li>
+        <li><a href="https://platform-d.example" target="_blank" rel="noopener">Plateforme D</a></li>
+      </ul>
+      <div class="callout callout--warn"><p>Le connecteur de salle ne permet pas de créer ni démarrer une conférence.</p></div>
+
+      <h4>Récupérer le bon identifiant de conférence</h4>
+      <p>Selon la plateforme utilisée, l'identifiant à renseigner n'est pas le même&nbsp;:</p>
+      <ul>
+        <li><strong>Plateforme A et Plateforme C</strong> → il s'agit du nom de la conférence, c'est-à-dire la fin de l'URL de la conférence.</li>
+        <li><strong>Plateforme B</strong> → il s'agit du code d'invitation fourni aux participants.</li>
+        <li><strong>Plateforme D</strong> → il s'agit de l'URL complète d'accès à la visioconférence obtenue depuis l'outil de gestion.</li>
+      </ul>
+      <p>Une fois cet identifiant récupéré, vous pourrez générer l'adresse SIP à l'étape suivante.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">2</div>
+    <div class="step__body">
+      <h3>Générer l'adresse SIP</h3>
+      <p>Depuis l'interface de génération du service, choisissez la plateforme cible et renseignez le nom ou l'identifiant de la réunion.</p>
+      <p>Vous obtenez ensuite un format de liaison SIP adapté à la conférence à rejoindre.</p>
+      <p>Exemple&nbsp;: <code>sip:[numero_plateforme].[numero_conference]@votre-domaine.example</code></p>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">3</div>
+    <div class="step__body">
+      <h3>Rejoindre la réunion depuis la salle</h3>
+
+      <h4>Option A : appel direct de la réunion</h4>
+      <ul>
+        <li><code>sip:[numero_plateforme].[numero_de_conférence]@service.example</code></li>
+        <li>ou <code>sip:[numero_plateforme].[numero_de_conférence]@votre-domaine.example</code></li>
+      </ul>
+
+      <h4>Option B : appel via menu interactif</h4>
+      <ol>
+        <li>Appeler&nbsp;: <code>sip:9@votre-domaine.example</code></li>
+        <li>Sélectionner la plateforme puis entrer le numéro de la conférence.</li>
+      </ol>
+
+      <h4>Option B bis : appel via menu interactif et QR code</h4>
+      <ol>
+        <li>Appeler&nbsp;: <code>sip:9@votre-domaine.example</code></li>
+        <li>Scanner le QR code affiché (ou aller sur <a href="https://service.example" target="_blank" rel="noopener">service.example</a>), qui renvoie vers une page de contrôle à distance permettant de&nbsp;:
+          <ul>
+            <li>sélectionner la plateforme</li>
+            <li>renseigner le nom de la réunion et le nom d'affichage de la salle</li>
+            <li>interagir avec l'UI en cours de réunion</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="callout">
+        <p>Cette option permet de se passer de l'étape 2 (génération de l'adresse SIP)&nbsp;:
+        la réunion peut être renseignée directement depuis l'interface web ou depuis la page de contrôle associée au QR code.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">4</div>
+    <div class="step__body">
+      <h3>Interagir pendant la réunion</h3>
+      <p>Une fois connecté, appuyer sur <code>#</code> pour afficher le menu.</p>
+      <p>Fonctions disponibles&nbsp;:</p>
+      <ul>
+        <li>lever la main</li>
+        <li>changer l'affichage</li>
+        <li>afficher le chat</li>
+        <li>voir les participants</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step__num">5</div>
+    <div class="step__body">
+      <h3>Partager du contenu</h3>
+      <p>
+        Le partage de contenu est supporté via BFCP (présentation), généralement exposé
+        sur les équipements via une entrée HDMI/VGA.
+      </p>
+    </div>
+  </section>
+
+  <h2>Limitations connues</h2>
+  <ul>
+    <li>Impossible de démarrer une conférence via le connecteur</li>
+    <li>La réunion doit exister et être active</li>
+  </ul>
+
+  <h2>Compatibilité</h2>
+  <p>Compatible avec les équipements SIP (RFC 3261), validé avec&nbsp;:</p>
+  <div class="compat">
+    <span>Polycom</span>
+    <span>Cisco</span>
+    <span>Huawei</span>
+    <span>Aver</span>
+  </div>
+
+  <h2>Configuration de votre équipement</h2>
+
+  <h4>Activer le protocole SIP</h4>
+  <p>
+    Pour connecter votre équipement, vous devez le régler pour utiliser le protocole
+    SIP (RFC 3261) lors de son appel vers le connecteur de salle. Veuillez vous référer à
+    la notice de votre équipement ou à votre intégrateur visio pour réaliser cette configuration.
+  </p>
+
+  <h4>Ajouter le connecteur au carnet d'adresses de l'équipement</h4>
+  <p>Pour faciliter l'utilisation des connecteurs de salle SIPMediaGW, vous pouvez enregistrer le numéro du menu interactif dans le carnet d'adresses de votre équipement.</p>
+  <ul>
+    <li><code>sip:9@votre-domaine.example</code></li>
+    <li>ou bien <code>sip:9@service.example</code> si votre équipement ne résout pas les noms de domaine</li>
+  </ul>
+
+  <h4>Assurer la réception des flux média</h4>
+  <p>
+    Afin de pouvoir communiquer, un équipement de visioconférence doit être correctement configuré
+    pour recevoir les flux audio et vidéo. La configuration exacte dépend de votre environnement
+    réseau et de votre matériel.
+  </p>
+  <ul>
+    <li>Attribuer une adresse publique à votre équipement.</li>
+    <li>Mettre en place un NAT explicite entre l'adresse de votre équipement et une adresse publique.</li>
+  </ul>
+
+  <h4>Bonnes pratiques réseau</h4>
+  <p>
+    Pour que les appels vidéo vers les connecteurs de salle SIP se déroulent correctement,
+    il est important que les règles de sécurité et de réseau de votre environnement autorisent
+    le trafic SIP et les flux multimédias attendus.
+  </p>
+
+  <div class="box">
+    <p><strong>Exemples de configuration</strong></p>
+    <ul>
+      <li>Adresse SIP de service&nbsp;: <code>sip:9@votre-domaine.example</code></li>
+      <li>Adresse publique d'accès&nbsp;: <code>203.0.113.10</code></li>
+      <li>Nom de domaine de service&nbsp;: <code>service.example</code></li>
+    </ul>
+  </div>
+
+  <p><strong>Protocoles et ports courants</strong></p>
+  <p>Vers les serveurs SIP&nbsp;:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Port</th><th>Transport</th><th>Application</th></tr></thead>
+      <tbody>
+        <tr><td>5060</td><td>tcp</td><td>SIP</td></tr>
+        <tr><td>5060</td><td>udp</td><td>SIP</td></tr>
+        <tr><td>5061</td><td>tcp</td><td>SIP/TLS</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Pour les flux multimédias vers les serveurs de transit&nbsp;:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Port</th><th>Transport</th><th>Application</th></tr></thead>
+      <tbody>
+        <tr><td>40000-49999</td><td>udp</td><td>rtp, rtcp, bfcp</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    Le service s'appuie sur le projet open source
+    <a href="https://github.com/Renater/SIPMediaGW" target="_blank" rel="noopener">SIPMediaGW</a>,
+    développé et maintenu par RENATER.
+  </footer>
+
+</main>
+
+<div id="lightbox" class="lightbox" role="dialog" aria-label="Image agrandie">
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script src="/interact/static/brand.js"></script>
+<script>
+  document.title = `${BRAND.name} /docs`;
+
+  (function () {
+    const brand = (BRAND && BRAND.name) || 'SIPMediaGW';
+    const lower = brand.toLowerCase();
+    const upper = brand.toUpperCase();
+
+    function walk(node) {
+      if (!node || node.nodeType === 8) return;
+      if (node.nodeType === 3) {
+        const value = node.textContent || '';
+        const replaced = value
+          .replace(/SIPMediaGW/g, brand)
+          .replace(/sipmediagw/g, lower)
+          .replace(/SIPMEDIAGW/g, upper);
+        if (replaced !== value) node.textContent = replaced;
+        return;
+      }
+      if (node.tagName === 'A' || node.tagName === 'CODE' || node.tagName === 'IMG') return;
+      for (const child of node.childNodes) walk(child);
+    }
+
+    walk(document.body);
+  })();
+
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var root = document.documentElement;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+</script>
+
+</body>
+</html>

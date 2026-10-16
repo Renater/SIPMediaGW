@@ -1,0 +1,169 @@
+/* The documentation page. The palette, the brand, the theme toggle and the
+   tooltips live in shared.css, loaded before this. Everything here reads the
+   same variables, so the dark theme needs nothing of its own. */
+
+/* A page of reading is wider than the phone-sized screens of the pairing
+   page; the brand and toolbar stay at the same left edge. */
+.wrap--doc { max-width: 46rem; }
+
+/* The language switch is two pages, so two links wearing the segmented
+   control's look; aria-current plays the part of aria-checked. */
+.segmented a.segmented__el { display: inline-block; text-decoration: none; font-weight: 400; }
+.segmented a.segmented__el[aria-current="page"] {
+  background: color-mix(in srgb, var(--bf) 13%, transparent);
+  color: var(--bf);
+  font-weight: 700;
+}
+.segmented a.segmented__el:focus-visible { outline: 2px solid var(--bf); outline-offset: -2px; }
+
+h1 { text-align: left; margin-top: 1.2rem; }
+h2 {
+  margin: 2.2rem 0 .6rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+h3 { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; }
+h4 { margin: 1.3rem 0 .4rem; font-size: .9rem; font-weight: 700; color: var(--bf); }
+p { margin: .6rem 0; }
+ul, ol { margin: .6rem 0; padding-left: 1.4rem; }
+li { margin: .3rem 0; }
+a { color: var(--bf); font-weight: 600; }
+a:focus-visible, .doc-img:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
+
+/* Code and SIP addresses */
+code {
+  padding: .1em .4em;
+  border-radius: .25rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .85em;
+  overflow-wrap: anywhere;
+}
+
+/* Figures */
+figure {
+  margin: 1rem auto;
+  padding: .5rem;
+  border-radius: .5rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+  text-align: center;
+}
+figure img { display: block; max-width: 100%; height: auto; margin: 0 auto; border-radius: .3rem; }
+.doc-img { cursor: zoom-in; }
+.figure--narrow { max-width: 32rem; }
+
+/* Notes: info by default, the warning palette when it is a limit */
+.callout {
+  margin: .8rem 0;
+  padding: .6rem .75rem;
+  border-radius: .5rem;
+  border-left: 3px solid var(--bf);
+  background: color-mix(in srgb, var(--bf) 9%, var(--bg));
+  font-size: .85rem;
+  line-height: 1.4;
+}
+.callout p { margin: 0; }
+.callout--warn { border-left-color: var(--warning-txt); background: var(--warning-bg); color: var(--warning-txt); }
+
+.box {
+  margin: .8rem 0;
+  padding: .9rem 1rem;
+  border-radius: .5rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.box > :first-child { margin-top: 0; }
+.box > :last-child { margin-bottom: 0; }
+
+/* Steps: a sequence, so the numbers carry information */
+.step {
+  display: flex;
+  gap: .8rem;
+  margin: 1rem 0;
+  padding: .9rem 1rem;
+  border-radius: .55rem;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.step__num {
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bf);
+  color: var(--bg);
+  font-size: .85rem;
+  font-weight: 700;
+}
+.step__body { flex: 1; min-width: 0; }
+.step__body > :last-child { margin-bottom: 0; }
+.step figure { background: var(--bg); }
+@media (max-width: 480px) {
+  .step { flex-direction: column; gap: .5rem; }
+}
+
+/* Screenshots of the companion page */
+.screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: .6rem;
+  margin: 1rem 0;
+}
+.screenshot-grid figure {
+  position: relative;
+  margin: 0;
+  background: var(--bg);
+  cursor: zoom-in;
+  transition: transform .2s ease;
+}
+/* Only where there is a hover: on a touch screen the effect would stick
+   after a tap, on top of the lightbox. */
+@media (hover: hover) {
+  .screenshot-grid figure:hover { transform: scale(2); z-index: 5; }
+}
+.screenshot-grid img { width: 100%; aspect-ratio: 372 / 665; object-fit: cover; }
+
+/* Compatible equipment */
+.compat { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+.compat span {
+  padding: .3rem .85rem;
+  border-radius: 1.25rem;
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: .85rem;
+}
+
+/* Tables scroll inside their own container, never the page */
+.table-wrap { margin: .8rem 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th, td { padding: .45rem .7rem; text-align: left; border: 1px solid var(--border); white-space: nowrap; }
+th { background: var(--tile); font-weight: 700; }
+
+footer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+/* Enlarged image */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 22, .75);
+  cursor: zoom-out;
+}
+.lightbox.is-open { display: flex; }
+.lightbox img { max-width: 100%; max-height: 90vh; border-radius: .25rem; box-shadow: 0 8px 24px rgba(0, 0, 18, .4); }

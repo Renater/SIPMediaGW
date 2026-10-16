@@ -26,8 +26,9 @@ async def lifespan(app: FastAPI):
     except asyncio.CancelledError:
         pass
 
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan,
+              docs_url="/api_docs",
+              redoc_url="/api_redoc")
 
 redisClient = redis.Redis(host=os.getenv('REDIS_HOST', '127.0.0.1'),
                           port=int(os.getenv('REDIS_PORT', '6379')),
@@ -111,6 +112,14 @@ async def root(request: Request):
     """
     return await pairing_page(request)
 
+@app.get("/favicon/{filename}.svg")
+async def logo(filename: str):
+    filePath = Path(assetDir) / f"{filename}.svg"
+
+    if not filePath.is_file():
+        raise HTTPException(status_code=404, detail="Logo not found")
+
+    return FileResponse(filePath, media_type="image/svg+xml")
 
 @app.get("/pairing")
 async def pairing_page(request: Request):
@@ -141,6 +150,7 @@ interactStaticFiles = {"brand.js": "application/javascript",
                        "interact-controls.css": "text/css",
                        "interact.js": "application/javascript"}
 
+DOCS = {"fr": "docs/docs.fr.html", "en": "docs/docs.en.html"}
 
 def serveAsset(file_name: str, allowed: dict):
     """One file from a page's whitelist, or a 404."""
@@ -1034,6 +1044,10 @@ async def unregisterGateway(request: Request):
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/docs")
+async def docs(lang: str = "fr"):
+    return FileResponse(DOCS.get(lang, DOCS["fr"]))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
