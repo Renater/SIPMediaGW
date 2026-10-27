@@ -13,7 +13,7 @@ import urllib.parse
 class BBBESR (Browsing):
 
     def loadPage(self):
-        self.driver.get("http://{}".format(
+        self.driver.get("https://{}".format(
             urllib.parse.unquote(self.room['roomName']).lstrip("/").replace('https://','')
         ))
         # try:
@@ -41,23 +41,14 @@ class BBBESR (Browsing):
         self.driver.execute_script(self.initScript)
         preJoinTab = self.driver.execute_script("return window.meeting.preJoin();")
         super().join()
-        # Switch to the new tab if one was opened
-        WebDriverWait(self.driver, 10).until(lambda d: len(d.window_handles) > 1)
-        newTabHandle = [h for h in self.driver.window_handles if h != self.driver.current_window_handle][0]
-        self.driver.switch_to.window(newTabHandle)
-        # handlesBefore = set(self.driver.window_handles)
-        # if preJoinTab:
-        #     WebDriverWait(self.driver, 10).until(
-        #         lambda d: len(set(d.window_handles) - handlesBefore) > 0
-        #     )
-        #     newTabHandle = list(set(self.driver.window_handles) - handlesBefore)[0]
-        #     self.driver.switch_to.window(newTabHandle)
+
+        if preJoinTab:
+            # Switch to the new tab if one was opened
+            WebDriverWait(self.driver, 10).until(lambda d: len(d.window_handles) > 1)
+            newTabHandle = [h for h in self.driver.window_handles if h != self.driver.current_window_handle][0]
+            self.driver.switch_to.window(newTabHandle)
         try:
-            WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable(
-                        (By.CSS_SELECTOR, '[data-test="audioModal"]')
-                    )
-                )
+            WebDriverWait(self.driver, 10).until(EC.url_contains("html5client"))
         except:
             print("Cannot enter meeting", flush=True)
             return
