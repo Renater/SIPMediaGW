@@ -5,6 +5,7 @@ import re
 import base64
 import redis
 import os
+from pathlib import Path
 import httpx
 import datetime as dt
 import random, string
@@ -1044,6 +1045,29 @@ async def unregisterGateway(request: Request):
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+def serveDocsStatic(file_name: str):
+    """Serve doc assets that are explicitly allowed: .png and .css files."""
+    docs_root = Path(assetDir) / "docs"
+    requested = (docs_root / file_name).resolve()
+    try:
+        requested.relative_to(docs_root.resolve())
+    except ValueError:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    lower_name = requested.name.lower()
+    if requested.is_file() and requested.suffix.lower() == ".png":
+        return FileResponse(requested, media_type="image/png")
+    if requested.is_file() and requested.suffix.lower() == ".css":
+        return FileResponse(requested, media_type="text/css")
+
+    raise HTTPException(status_code=404, detail=f"File '{file_name}' not found")
+
+
+@app.get("/docs/{file_name:path}")
+async def docs_static(file_name: str):
+    return serveDocsStatic(file_name)
+
 
 @app.get("/docs")
 async def docs(lang: str = "fr"):
