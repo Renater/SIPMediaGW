@@ -1,0 +1,227 @@
+/* Vitrine SIPMediaGW — page "Le service".
+   The palette, the segmented control and the theme toggle come from
+   shared.css, single-sourced with the pairing page the phone shows; this file
+   adds the tokens the diagram needs and the portal's own layout. The page in
+   the phone carries the brand and owns the theme and language switches: the
+   portal follows them through the shared localStorage keys. */
+:root{
+  --surface:#f5f6fa; --line:#b7bdd3; --phone:#1a1a1a;
+}
+[data-theme="dark"]{
+  --surface:#1d1e24; --line:#4a4f66; --phone:#000;
+}
+
+/* shared.css pads the body for the narrow pages; the portal is full-bleed.
+   The page takes the surface tone so the phone's screen (--bg) stands out of
+   it; the pieces that used to lean on --surface pick --bg back. */
+body{padding:0;background:var(--surface)}
+:focus-visible{outline:2px solid var(--bf);outline-offset:2px}
+
+.page{max-width:80rem;margin:0 auto;padding:1.25rem 1rem 2rem}
+/* minmax(0,1fr): the diagram's 764px design width must not stretch the
+   column (and the page) on phones; the track takes the viewport instead. */
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:2rem}
+@media (min-width:62rem){.cols{grid-template-columns:26rem minmax(0,1fr);gap:3rem;align-items:start}.showcase{align-self:center}}
+
+/* ---------- Product column: the real pairing page, in a phone on wide screens ----------
+   On a phone there is no bezel: the live page is the page, full width. The
+   frame is as tall as its page (portal.js fits it), so nothing scrolls inside
+   it. */
+.app{max-width:26rem;width:100%;margin:0 auto}
+/* Fallback height until portal.js fits the frame to the page's own height. */
+.phone__screen iframe{display:block;width:100%;height:46rem;border:0;background:var(--bg)}
+@media (min-width:62rem){
+  .app{position:sticky;top:1rem}
+  /* A faint halo in the accent tone detaches the phone from the surface
+     background. z-index:-1 works because neither .page nor .cols creates a
+     stacking context. */
+  .app::before{content:"";position:absolute;inset:-4rem -6rem;z-index:-1;background:radial-gradient(closest-side,color-mix(in srgb,var(--bf) 14%,transparent),transparent)}
+  .phone{background:var(--phone);border-radius:2.7rem;padding:.6rem;box-shadow:0 1.5rem 3rem -1rem rgba(0,0,40,.3),inset 0 0 0 2px #3a3a3a}
+  .phone__screen{position:relative;overflow:hidden;border-radius:2.15rem;background:var(--bg);padding:2.1rem 0 0}
+  .phone__screen::before{content:"";position:absolute;top:.55rem;left:50%;transform:translateX(-50%);width:5.2rem;height:1.25rem;border-radius:1rem;background:var(--phone);z-index:1}
+  /* The pairing page renders at its natural 390px width; portal.js scales the
+     whole page (var(--fit)) so it fills the frame without scrolling. When the
+     height constraint makes the scaled page narrower than the screen, centering
+     on the cross axis (translateX(-50%) + top center origin) keeps it from
+     hugging the left edge as the window narrows toward the breakpoint. */
+  .phone__screen iframe{position:absolute;top:2.1rem;left:50%;width:390px;transform:translateX(-50%) scale(var(--fit,1));transform-origin:top center}
+}
+.phone-cap{display:none}
+@media (min-width:62rem){
+  .phone-cap{display:flex;gap:.55rem;align-items:center;justify-content:center;margin:.9rem 0 0;font-size:.78rem;color:var(--muted)}
+  .phone-cap svg{width:1.4rem;height:1.4rem;color:var(--bf);fill:currentColor;flex:none}
+}
+
+/* ---------- "Le service": the right column on wide screens; on phones it
+   only appears in the presentation mode (html.presenting) ---------- */
+.showcase{display:none}
+@media (min-width:62rem){.showcase{display:block}}
+
+.eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--bf);margin:0 0 .4rem}
+/* The headline is the former eyebrow — the solution's name and its role —
+   set in the hero's typeface. text-align beats the centered h1 shared.css
+   gives the narrow pages. The role keeps the accent, as the old headline's
+   second line did. */
+.hero-title{font-size:2.3rem;line-height:1.12;margin:0;max-width:44rem;text-align:left;text-wrap:balance;font-weight:800}
+.hero-title em{font-style:normal;font-weight:600;color:var(--bf)}
+.lead{color:var(--muted);margin:.65rem 0 0;max-width:46rem;font-size:.95rem}
+
+/* ---------- The diagram: any room -> SIPMediaGW -> any meeting ----------
+   As HTML rather than an external SVG, so every word is translatable like the
+   rest of the page. Laid out at a fixed 764px design width; portal.js scales
+   .hub__in to the column, so the proportions never break. The row is the
+   room block 13.75rem, the gateway 10.625rem and the meeting block 16.375rem
+   (cards 14.375 + block padding), two 2.5rem arrows, four 8px gaps:
+   47.75rem = 764px. */
+/* overflow:hidden: .hub__in keeps its 764px layout width while scaled, and
+   the visual result never exceeds the column, so nothing must show beyond. */
+.hub{--card-h:3rem;--gap:.6875rem;position:relative;margin-top:1.25rem;overflow:hidden}
+.hub__in{width:764px;transform-origin:top left}
+/* The two groups are drawn as labelled containers, so the diagram reads as
+   block -> gateway -> block: caption top-left inside, content below. */
+.hub__block{padding:.9rem 1rem;border:1px solid var(--border);border-radius:1rem;background:var(--bg)}
+/* The caption is the block's title. It leans on the hero title's typeface —
+   bigger and heavier than a small-caps label — so the slogan "any room / any
+   meeting" appears again here, under the headline it started from. The room
+   block carries a faint hairline under its caption (its list is ragged, so
+   the line helps the eye); the meeting block's cards are already aligned. */
+.hub__cap{display:block;font-size:.875rem;font-weight:800;margin:0;padding-bottom:.45rem;color:var(--txt)}
+.hub__cap--line{padding-bottom:.6rem;border-bottom:1px solid var(--border);margin-bottom:.3rem}
+/* The room brands: one uniform font, flowing inline but scattered — each name
+   carries its own left inset, vertical nudge and gap, so no two lines share a
+   left edge and the list reads as a crowd of brands, not a left-justified one.
+   The max-width caps the side's shrink-to-fit, so the block keeps its
+   13.75rem width. */
+.hub__cloud{list-style:none;margin:0;padding:0;max-width:11.75rem;line-height:1.9;font-size:.85rem;font-weight:600}
+.hub__cloud li{display:inline-block}
+.hub__cloud li:nth-child(1){margin:0 .5rem 0 .25rem;vertical-align:-.05em}
+.hub__cloud li:nth-child(2){margin:0 .4rem 0 .6rem;vertical-align:.18em}
+.hub__cloud li:nth-child(3){margin:0 .6rem 0 .1rem;vertical-align:-.24em}
+.hub__cloud li:nth-child(4){margin:0 .4rem 0 .65rem;vertical-align:.1em}
+.hub__cloud li:nth-child(5){margin:0 .55rem 0 .35rem;vertical-align:-.2em}
+.hub__cloud li:nth-child(6){margin:0 .3rem 0 .2rem;vertical-align:.24em}
+.hub__cloud li:nth-child(7){margin:0 .5rem 0 .5rem;vertical-align:-.1em}
+.hub__cloud li:nth-child(8){margin:0 0 0 .2rem;vertical-align:.12em}
+.hub__sip{margin-top:.7rem;font-size:.72rem;font-weight:400;color:var(--muted);text-align:center}
+/* The gap keeps the arrows off the blocks they point at: a tip touching a
+   card would read as "this one", and the point is "any". */
+.hub__row{display:flex;align-items:center;gap:.5rem}
+.hub__side{display:flex;flex-direction:column;justify-content:center;flex:none}
+
+/* One thick, stylized arrow per hop: the room group points at the gateway,
+   the gateway at the meeting group. The shaft stops short and the head
+   carries the tip to the extreme end, so the arrow reads as one gesture;
+   the row's gap keeps it off the blocks it points at. The accent tone, like
+   the captions: the line tone was too faint for a shape this size. */
+.hub__arrow{position:relative;flex:none;width:2.5rem;height:1.25rem}
+.hub__arrow::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:1.75rem;height:.5rem;background:var(--bf)}
+.hub__arrow::after{content:"";position:absolute;left:1.75rem;top:50%;transform:translateY(-50%);border:.625rem solid transparent;border-left:.75rem solid var(--bf);border-right:0}
+
+/* The gateway, drawn exactly as the pairing page's brand header is. */
+.hub__gw{width:10.625rem;height:4rem;border:1px solid var(--border);border-radius:.875rem;background:var(--bg);justify-content:center;gap:.55rem;padding:0 .9rem}
+.hub__gw .brand__logo{height:2rem}
+
+/* Each card is a brand, as the pairing page's header draws the gateway's:
+   logo + name. (.brand's bottom border and padding do not belong here.)
+   The fixed width is what sizes the enclosing block, keeping the design
+   width deterministic. */
+.hub__cards{display:grid;grid-template-rows:repeat(4,var(--card-h));gap:var(--gap);width:14.375rem}
+.hub__card{display:flex;align-items:center;gap:.55rem;height:var(--card-h);padding:0 .65rem;border:1px solid var(--border);border-radius:.625rem;background:var(--bg)}
+.hub__card .brand__logo{height:1.75rem;flex:none}
+/* The platform name and, under it, the service that runs it: two compact
+   lines, so the provider reappears the way the mockup drew it. */
+.hub__card-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.hub__card-txt .brand__name{font-size:.78rem}
+.hub__by{font-size:.65rem;color:var(--muted);white-space:nowrap}
+
+/* ---------- The steps: they comment the live interface: alongside it on
+   wide screens, just below it on phones ---------- */
+.how{margin-top:1.5rem}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;counter-reset:step}
+.steps li{counter-increment:step;padding:.8rem 1rem;border:1px solid var(--border);border-radius:.875rem;background:var(--bg)}
+/* var(--bg), not #fff: on the accent it stays readable in both themes. */
+.steps li::before{content:counter(step);display:grid;place-items:center;width:1.6rem;height:1.6rem;margin-bottom:.55rem;border-radius:50%;background:var(--bf);color:var(--bg);font-size:.8rem;font-weight:700}
+.steps__t{margin:0;font-weight:700;font-size:.94rem}
+.steps__d{margin:.25rem 0 0;font-size:.85rem;color:var(--muted)}
+
+/* ---------- Footer: the one place a repeated mention does not bother ---------- */
+.foot{max-width:80rem;margin:0 auto;padding:1rem 1rem 2rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem 1.5rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted)}
+.foot__links{display:flex;gap:1.25rem}
+.foot a{color:inherit;text-decoration:none}
+.foot a:hover{color:var(--bf);text-decoration:underline}
+/* The RENATER lockup: the network's logo beside its full name, the whole line
+   linking out to renater.fr. The logo is a ~3.9:1 strip, sized by height so it
+   sits against the two-line name. */
+.foot__renater{display:flex;align-items:center;gap:.7rem}
+.foot__renater img{height:1.9rem;width:auto}
+.foot__renater-text{line-height:1.35}
+/* The logo is a dark blue: it reads on the light footer but would sink into
+   the dark one, so it goes monochrome-white there (the name beside it is
+   already light in that theme). */
+[data-theme="dark"] .foot__renater img{filter:brightness(0) invert(1)}
+
+/* ---------- Wide call mode: a successful pairing walks the live page onto
+    /interact — the room is in the call, and the interface takes the whole
+    screen. The showcase and the footer step aside (portal.js toggles
+    html.calling from the live page's path); the columns collapse to one, and
+    the phone, centered, takes the full height. When the call ends and the
+    live page bounces back to /pairing, the vitrine returns. ---------- */
+@media (min-width:62rem){
+  html.calling .showcase, html.calling .foot{display:none}
+  html.calling .cols{grid-template-columns:minmax(0,1fr)}
+  /* Full-screen live: the page is the screen — no frame, no notch, no
+     caption, no scale. The iframe takes the whole viewport at 1:1 and the
+     live page renders at its natural width (its own 26rem column, centered
+     on its own background). */
+  /* max-width:none: the framed look caps the page at 80rem — in call mode
+     the iframe must run to the true viewport edge, so the live page's own
+     background fills the whole screen like a direct /interact load. */
+  html.calling .page{max-width:none;padding:0}
+  html.calling .app{max-width:none}
+  html.calling .app::before{display:none}
+  html.calling .phone{background:none;padding:0;border-radius:0;box-shadow:none}
+  html.calling .phone__screen{padding:0;border-radius:0}
+  html.calling .phone__screen::before{display:none}
+  html.calling .phone__screen iframe{position:static;transform:none;width:100%;height:100vh}
+  html.calling .phone-cap{display:none}
+}
+
+/* ---------- Phones: the default page is the live pairing interface alone,
+   no footer. Its "Présentation du service" link toggles the page into the
+   presentation (the html.presenting class, set from location.hash): the
+   showcase up top, the footer below it, and the live interface stays beneath
+   the steps so the reader can still use it. The diagram lays out vertically,
+   at full column width, with no scaling; the arrows turn and the workflow
+   runs top to bottom. */
+@media (max-width:61.99rem){
+  .showcase{display:none}
+  .foot{display:none}
+  html.presenting .showcase{display:block;order:-1}
+  html.presenting .foot{display:flex}
+  /* The lockup and the links stack; centered reads better than two left-hung
+     lines. */
+  html.presenting .foot{justify-content:center;text-align:center;gap:.75rem}
+  /* Small enough for the role to stay on its one line at phone width. */
+  .hero-title{font-size:1.4rem}
+  .steps{grid-template-columns:1fr}
+  .hub__in{width:auto}
+  .hub__row{flex-direction:column;align-items:stretch;gap:.75rem}
+  .hub__side{width:100%}
+  .hub__block{width:100%}
+  .hub__cloud{max-width:none}
+  .hub__gw{width:100%;max-width:16rem;margin:0 auto}
+  /* Same arrows, turned: shaft and head swap their axes. margin auto
+     centers them: align-items:stretch does not stretch an item that has an
+     explicit width, so without it they would hug the left edge. */
+  .hub__arrow{width:1.25rem;height:2.25rem;margin:0 auto}
+  .hub__arrow::before{left:50%;top:0;transform:translateX(-50%);width:.5rem;height:1.5rem}
+  .hub__arrow::after{left:50%;top:1.5rem;transform:translateX(-50%);border-top:.75rem solid var(--bf);border-right:.625rem solid transparent;border-bottom:0;border-left:.625rem solid transparent}
+  .hub__cards{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;gap:.625rem}
+  .hub__card{height:auto;min-height:var(--card-h)}
+  /* Two columns leave too little width for the longest provider name: let it
+     wrap rather than run out of the card. */
+  .hub__by{white-space:normal}
+}
+
+@media (prefers-reduced-motion:no-preference){.showcase{animation:rise .18s ease-out}}
+@keyframes rise{from{transform:translateY(4px)}to{transform:none}}

@@ -52,7 +52,10 @@ let rejectedCode = '';
 // Set when the proxy has had enough attempts from here for the moment.
 let waited = false;
 
-let lang = localStorage.getItem('lang') || 'fr';
+// When no language was chosen yet, fall back to the browser's, so a visitor
+// arriving straight here (from the room's QR code) starts in their language.
+let lang = localStorage.getItem('lang')
+  || ((navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'fr');
 if (!TEXTS[lang]) lang = 'fr';
 
 // The banner stays until it is closed rather than fading on a timer: it names
@@ -197,16 +200,18 @@ function render() {
   $('sample-url').textContent = window.location.host;
 
   const link = $('doc-link');
-  if (BRAND.docUrl) {
-    const selectedDocUrl = lang === 'fr'
-      ? (BRAND.docUrlFr || BRAND.docUrl)
-      : (BRAND.docUrlEn || BRAND.docUrl);
-    if (selectedDocUrl) {
-      link.href = selectedDocUrl;
-      link.textContent = lang === 'fr' ? BRAND.docLabelFr : BRAND.docLabelEn;
-    } else {
-      link.parentElement.hidden = true;
-    }
+  const selectedDocUrl = BRAND.docUrl
+    ? (lang === 'fr' ? (BRAND.docUrlFr || BRAND.docUrl) : (BRAND.docUrlEn || BRAND.docUrl))
+    : '';
+  if (selectedDocUrl) {
+    link.href = selectedDocUrl;
+    link.textContent = lang === 'fr' ? BRAND.docLabelFr : BRAND.docLabelEn;
+    // Inside a wide portal the link would only reopen the page the visitor is
+    // already on, so it goes away there; on phones the click toggles the
+    // portal's presentation instead (see the click handler).
+    link.parentElement.hidden = portalContext() === 'wide';
+  } else {
+    link.parentElement.hidden = true;
   }
 }
 
@@ -241,6 +246,38 @@ $('theme-toggle').addEventListener('click', () => {
   localStorage.setItem('theme', dark ? 'dark' : 'light');
   render();
 });
+
+// The portal context, read from the page's own frame. "standalone" covers a
+// top-level visit (the room's QR code) and a cross-origin embed alike, where
+// the parent's location is not readable; the link keeps its ordinary new-tab
+// behavior in both. "narrow" and "wide" are the portal's phone and desktop.
+function portalContext() {
+  if (window.parent === window) return 'standalone';
+  try {
+    const p = window.parent;
+    const inPortal = p.location.origin === location.origin
+      && (p.location.pathname === '/portal' || p.location.pathname === '/');
+    if (!inPortal) return 'standalone';
+    return p.matchMedia('(min-width:62rem)').matches ? 'wide' : 'narrow';
+  } catch (err) { return 'standalone'; }
+}
+
+// "Présentation du service" points at the portal. Inside the portal's phone
+// (same origin), on phones the presentation is an in-page mode of that
+// portal: toggle its hash instead of navigating the iframe (a portal inside
+// the portal) or opening a tab.
+$('doc-link').addEventListener('click', (e) => {
+  if (portalContext() !== 'narrow') return;
+  e.preventDefault();
+  window.parent.location.hash = '#presentation';   // a history entry: back restores the interface
+});
+
+// On a wide portal the link only reopens the current page, so it hides there;
+// re-check when a resize crosses the breakpoint.
+const syncDocLink = () => {
+  if (BRAND.docUrl) $('doc-link').parentElement.hidden = portalContext() === 'wide';
+};
+window.addEventListener('resize', syncDocLink);
 
 // The code is checked before going anywhere: the page asks the proxy, and
 // only navigates once it knows the code is live. A refused one is answered

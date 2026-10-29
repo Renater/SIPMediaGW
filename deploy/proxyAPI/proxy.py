@@ -104,15 +104,6 @@ def cleanPart(value):
     return value if value and value != "" and value != "None" else None
 
 
-@app.get("/")
-async def root(request: Request):
-    """The pairing page, at the address a room screen can print in full.
-
-    /pairing keeps working: the redirects after a refused code point at it, and
-    so may links made before this.
-    """
-    return await pairing_page(request)
-
 @app.get("/favicon/{filename}.svg")
 async def logo(filename: str):
     filePath = Path(assetDir) / f"{filename}.svg"
@@ -134,6 +125,23 @@ async def pairing_page(request: Request):
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": "pairing.html not found"})
 
+@app.get("/")
+@app.get("/portal")
+async def portal_page(request: Request):
+    """The vitrine, the default page: the service, beside a phone showing the
+    live pairing page.
+
+    The phone loads /pairing, so a code entered there drives the real flow —
+    a live one walks the phone onto /interact, still in the frame. A room
+    screen prints /pairing in full; the redirects after a refused code point
+    at it, and so may links made before this.
+    """
+    try:
+        with open(os.path.join(assetDir, "portal.html"), "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/html")
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content={"detail": "portal.html not found"})
+
 # What each page is allowed to ask for. A whitelist rather than a directory:
 # the name arrives in a URL, and these are the only files a page ever wants.
 #
@@ -154,13 +162,18 @@ interactStaticFiles = {"brand.js": "application/javascript",
 DOCS = {"fr": "docs/docs.fr.html", "en": "docs/docs.en.html"}
 
 def serveAsset(file_name: str, allowed: dict):
-    """One file from a page's whitelist, or a 404."""
+    """One file from a page's whitelist, or a 404.
+
+    no-cache: the pages are edited in place and re-read on every request, so a
+    browser holding a cached script would silently run the old one beside the
+    new markup. The header forces a revalidation on every load."""
     mediaType = allowed.get(file_name)
     if not mediaType:
         return JSONResponse(status_code=404, content={"detail": "not found"})
     try:
         with open(os.path.join(assetDir, file_name), "r", encoding="utf-8") as f:
-            return Response(content=f.read(), media_type=mediaType)
+            return Response(content=f.read(), media_type=mediaType,
+                            headers={"Cache-Control": "no-cache"})
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
 
@@ -173,6 +186,34 @@ async def pairing_static(file_name: str):
 @app.get("/interact/static/{file_name}")
 async def interact_static(file_name: str):
     return serveAsset(file_name, interactStaticFiles)
+
+
+# The portal's own files, a whitelist as above: its css and js sit in the
+# project root like the other pages', its diagram assets in assets/. This
+# handler reads whole files rather than going through serveAsset, whose text
+# mode cannot carry the diagram's pngs.
+portalStaticFiles = {"portal.css": "text/css",
+                     "portal.js": "application/javascript",
+                     "icons.svg": "image/svg+xml",
+                     "renater.png": "image/png",
+                     "rendez-vous-renater.png": "image/png",
+                     "webinaire-etat-dinum.png": "image/png",
+                     "visio-dinum.png": "image/png",
+                     "classe-virtuelle-esr.png": "image/png"}
+
+@app.get("/portal/static/{file_name}")
+async def portal_static(file_name: str):
+    mediaType = portalStaticFiles.get(file_name)
+    if not mediaType:
+        return JSONResponse(status_code=404, content={"detail": "not found"})
+    path = os.path.join(assetDir, file_name)
+    if not os.path.isfile(path):
+        path = os.path.join(assetDir, "assets", file_name)
+    if not os.path.isfile(path):
+        return JSONResponse(status_code=404, content={"detail": f"{file_name} not found"})
+    # no-cache, as serveAsset: same reason, same dev loop.
+    return FileResponse(path, media_type=mediaType,
+                        headers={"Cache-Control": "no-cache"})
 
 
 @app.exception_handler(RequestValidationError)

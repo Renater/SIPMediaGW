@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIPMediaGW — Le service</title>
+<link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg">
+<!-- The shared palette and frame, single-sourced with the pairing page the
+     phone shows; then the portal's own layout. -->
+<link rel="stylesheet" href="/pairing/static/shared.css">
+<link rel="stylesheet" href="/portal/static/portal.css">
+<script>
+/* Restore the theme and the language before first paint. Both keys are shared
+   with the page inside the phone, which owns their switches. When the language
+   key is absent, seed it from the browser's language: the portal and the phone
+   must start in the same one, and the portal loads first, so it writes it. */
+try {
+  if (localStorage.getItem('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+  var lang = localStorage.getItem('lang');
+  if (!lang) {
+    lang = (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'fr';
+    localStorage.setItem('lang', lang);
+  }
+  document.documentElement.lang = lang === 'en' ? 'en' : 'fr';
+  /* Presentation mode, toggled from the pairing page's "Présentation du
+     service" link: read before first paint so a direct #presentation link
+     does not flash the default mode first. (Harmless on wide screens, where
+     the presentation is always on.) */
+  if (location.hash === '#presentation') document.documentElement.classList.add('presenting');
+} catch (e) {}
+</script>
+<!-- The white-label settings, single-sourced with the pairing page: the
+     eyebrow carries the solution's name, portal.js reads BRAND. -->
+<script src="/pairing/static/brand.js"></script>
+</head>
+<body>
+
+<main class="page">
+<div class="cols">
+
+  <!-- ===== Product column: the live pairing page, in a phone on wide screens =====
+       The frame loads the real page the proxy serves: a code entered there
+       drives the real flow, and a live one walks the phone onto /interact.
+       The frame is as tall as its page (portal.js fits it), so nothing
+       scrolls inside it. -->
+  <div class="app">
+    <div class="phone"><div class="phone__screen">
+      <iframe id="live" src="/pairing" title="Pages d'appairage et de pilotage"></iframe>
+    </div></div>
+    <p class="phone-cap"><svg aria-hidden="true"><use href="/portal/static/icons.svg#i-tap"/></svg><span data-i18n="phone">Cette interface est réelle, interagissez avec elle.</span></p>
+  </div>
+
+  <!-- ===== "Le service": the right column on wide screens, the top of the
+       page on phones, above the live interface ===== -->
+  <section class="showcase" aria-labelledby="hero-title">
+    <!-- The solution's name (set from BRAND.name by portal.js) and its role:
+         the line that used to be the eyebrow is now the headline. The role
+         keeps the accent, as the old headline's second line did. -->
+    <h1 class="hero-title" id="hero-title"><span id="hero-brand">SIPMediaGW</span><br><em data-i18n="eyebrow">Connecteur de salles universel</em></h1>
+    <p class="lead" data-i18n="lead">Vos salles de visioconférence rejoignent toutes les plateformes de réunion, en toute simplicité et en toute sécurité.</p>
+
+    <!-- "Any room -> SIPMediaGW -> any meeting", as HTML so every word is
+         translatable like the rest of the page. Laid out at a fixed 764px
+         design width and scaled to the column by portal.js, so the
+         proportions never break; on phones the presentation mode lays it out
+         vertically at full column width instead. -->
+    <div class="hub" id="hub" role="img" aria-label="N'importe quelle salle : Cisco, Poly, Yealink, Lifesize, Crestron, Huawei, AVer et tout terminal SIP. Via SIPMediaGW, n'importe quelle réunion : Rendez-vous, Webinaire de l'État, Visio, Classe virtuelle de l'ESR.">
+      <div class="hub__in">
+      <div class="hub__row">
+        <div class="hub__side">
+          <!-- The room brands: uniform font, spread evenly across the block
+               — an open, exhaustive list, not a menu. -->
+          <div class="hub__block">
+            <span class="hub__cap hub__cap--line" data-i18n="capRoom">N'importe quelle salle</span>
+            <ul class="hub__cloud">
+              <li>Cisco</li><li>Poly</li><li>Yealink</li><li>Lifesize</li>
+              <li>Crestron</li><li>Huawei</li><li>AVer</li><li>…</li>
+            </ul>
+            <span class="hub__sip" data-i18n="sip">et tout terminal SIP</span>
+          </div>
+        </div>
+        <div class="hub__arrow" aria-hidden="true"></div>
+        <div class="hub__side">
+          <!-- The gateway, as the pairing page's header draws it. The name
+               and the logo are the default deployment's; portal.js fills
+               them from BRAND (brand.js already ran in the head, before
+               this markup existed). -->
+          <div class="brand hub__gw">
+            <img class="brand__logo" src="/favicon/favicon.svg" alt="SIPMediaGW">
+            <span class="brand__name">SIPMediaGW</span>
+          </div>
+        </div>
+        <div class="hub__arrow" aria-hidden="true"></div>
+        <div class="hub__side">
+          <!-- The meeting platforms, as the pairing page's header draws a
+               brand: logo + name (brand names stay untranslated). The block
+               draws both groups the same way: caption top-left, content
+               below. -->
+          <div class="hub__block">
+            <span class="hub__cap" data-i18n="capMeeting">N'importe quelle réunion</span>
+            <!-- Each card names the platform and, under it, the service
+                 provider that runs it (brand names stay untranslated). -->
+            <div class="hub__cards">
+              <div class="brand hub__card"><img class="brand__logo" src="/portal/static/rendez-vous-renater.png" alt=""><span class="hub__card-txt"><span class="brand__name">Rendez-vous</span><span class="hub__by">RENATER</span></span></div>
+              <div class="brand hub__card"><img class="brand__logo" src="/portal/static/webinaire-etat-dinum.png" alt=""><span class="hub__card-txt"><span class="brand__name">Webinaire de l'État</span><span class="hub__by">DINUM</span></span></div>
+              <div class="brand hub__card"><img class="brand__logo" src="/portal/static/visio-dinum.png" alt=""><span class="hub__card-txt"><span class="brand__name">Visio</span><span class="hub__by">DINUM</span></span></div>
+              <div class="brand hub__card"><img class="brand__logo" src="/portal/static/classe-virtuelle-esr.png" alt=""><span class="hub__card-txt"><span class="brand__name">Classe virtuelle de l'ESR</span><span class="hub__by">France Université Numérique</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+    <!-- The steps comment the live interface: alongside it on wide screens,
+         just below it on phones. -->
+    <section class="how" aria-labelledby="how-title">
+      <h2 class="eyebrow" id="how-title" data-i18n="howTitle">Comment ça se passe</h2>
+      <ol class="steps">
+        <li>
+          <p class="steps__t" data-i18n="step1t">Le code</p>
+          <p class="steps__d" data-i18n="step1">Un code à 5 caractères s'affiche sur l'écran de la salle.</p>
+        </li>
+        <li>
+          <p class="steps__t" data-i18n="step2t">L'appairage</p>
+          <p class="steps__d" data-i18n="step2">Saisissez-le dans l'interface ci-contre.</p>
+        </li>
+        <li>
+          <p class="steps__t" data-i18n="step3t">La réunion</p>
+          <p class="steps__d" data-i18n="step3">Choisissez la plateforme et la réunion, la salle la rejoint.</p>
+        </li>
+      </ol>
+    </section>
+  </section>
+</div>
+</main>
+
+<!-- The one place a repeated mention does not bother. -->
+<footer class="foot">
+  <a class="foot__renater" href="https://www.renater.fr/" target="_blank" rel="noopener">
+    <img src="/portal/static/renater.png" alt="RENATER">
+    <!-- The network's official name, kept in French in both languages. -->
+    <span class="foot__renater-text">Réseau National de télécommunications<br>pour la Technologie, l'Enseignement et la Recherche.</span>
+  </a>
+  <nav class="foot__links" aria-label="Liens">
+    <a id="foot-doc" href="/docs?lang=fr" data-i18n="footDoc">Documentation</a>
+    <a href="https://rendez-vous.renater.fr/home/terms" target="_blank" rel="noopener" data-i18n="footLegal">Mentions légales</a>
+  </nav>
+</footer>
+
+<script src="/portal/static/portal.js" defer></script>
+</body>
+</html>

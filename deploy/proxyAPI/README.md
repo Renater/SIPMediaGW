@@ -56,7 +56,7 @@ Who may call what, as `proxy.py` checks it today:
 | `/gateway_id` | `Bearer <PROXY_ROOM_TOKEN>` |
 | `/status`, `/progress` | none: the check is commented out in `statusGateway` |
 | `/command`, `/ivrConfig`, `/browsing`, `/icon/*`, `/logo/*` | none at the proxy: relayed to the gateway's launcher with the caller's `Authorization` header; `/command` only while `gw_state` is `started` |
-| `/`, `/pairing`, `/interact`, their static files, `/assets/*` | none (pages); `/pairing/resolve` is rate-limited per client |
+| `/` and `/portal` (the vitrine, `/` is the default page), `/pairing`, `/interact`, `/docs`, their static files, `/assets/*` | none (pages); `/pairing/resolve` is rate-limited per client |
 
 ### POST /start
 Start a gateway for a room (body JSON).

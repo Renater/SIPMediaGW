@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Icons used by the vitrine page. Coloured via currentColor. -->
+  <symbol id="i-tap" viewBox="0 0 24 24">
+    <circle cx="10" cy="14" r="3" fill="currentColor"/>
+    <path d="M10 7a7 7 0 0 1 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M10 3a11 11 0 0 1 11 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+</svg>
