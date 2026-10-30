@@ -8,6 +8,12 @@
   const live = document.getElementById('live');
   const hub = document.getElementById('hub');
 
+  // The QR code points at the portal's own URL with ?pairingCode=..., but the
+  // code has to reach the pairing page inside the phone, which reads it from
+  // its own address — forward it to the live document.
+  const pairingCode = new URLSearchParams(location.search).get('pairingCode');
+  if (pairingCode) live.src = '/pairing?pairingCode=' + encodeURIComponent(pairingCode);
+
   /* ---------- FR/EN, like the pairing page: same 'lang' key ---------- */
   const TEXTS = {
     fr: {
@@ -180,6 +186,15 @@
   const stopCallWatcher = () => {
     if (callWatcher) { clearInterval(callWatcher); callWatcher = null; }
   };
+  // The QR's ?pairingCode has done its job once the pairing succeeds (the live
+  // page walks onto /interact): it leaves the address so a reload does not
+  // re-prefill a code that has already been spent.
+  const urlWithoutCode = (dropHash) => {
+    const url = new URL(location.href);
+    url.searchParams.delete('pairingCode');
+    if (dropHash) url.hash = '';
+    return url.pathname + url.search + url.hash;
+  };
   const syncCallMode = () => {
     const html = document.documentElement;
     const presenting = html.classList.contains('presenting');
@@ -190,12 +205,17 @@
     if (WIDE.matches) {
       if (inCall !== html.classList.contains('calling')) {
         html.classList.toggle('calling', inCall);
+        if (inCall && new URLSearchParams(location.search).has('pairingCode')) {
+          // replaceState: no history entry, so back does not hand the code back.
+          history.replaceState(null, '', urlWithoutCode(false));
+        }
         fitAll();   // the phone's budget changes with the showcase and footer
       }
     } else if (presenting && inCall) {
       // replaceState, not a hash change: no history entry, so the back button
-      // does not re-enter the presentation.
-      history.replaceState(null, '', location.pathname + location.search);
+      // does not re-enter the presentation. The QR's code leaves with the hash —
+      // it has done its job and a reload must not re-prefill it.
+      history.replaceState(null, '', urlWithoutCode(true));
       setPresenting();
       window.scrollTo(0, 0);
     }
