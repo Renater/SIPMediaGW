@@ -64,7 +64,7 @@ def controlServer():
             with conn:
                 data = conn.recv(BUFFER_SIZE).decode("utf-8").strip()
                 print(f"Event server control received: {data}", flush=True)
-                if data == "/quit":
+                if data == "/quit" or data == "/hangup":
                     print("Shutdown command received. Stopping server...", flush=True)
                     StopEvent.set()
         except socket.timeout:

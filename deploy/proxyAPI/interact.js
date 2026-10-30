@@ -26,6 +26,7 @@ const TEXTS = {
     roomName: 'Nom de la salle :',
     roomUri: 'Adresse vidéo :',
     connecting: 'connexion en cours…',
+    defaultRoom: 'Ma salle',
     waiting: 'En attente de la connexion d\u2019un terminal de visioconf\u00e9rence.',
     editName: 'Modifier le nom affich\u00e9 dans la conf\u00e9rence',
     save: 'Valider',
@@ -62,6 +63,7 @@ const TEXTS = {
     roomName: 'Room name:',
     roomUri: 'Video address:',
     connecting: 'connecting…',
+    defaultRoom: 'My room',
     waiting: 'Waiting for a room endpoint to call in.',
     editName: 'Change the name shown in the conference',
     save: 'Save',
@@ -258,6 +260,12 @@ function showScreen(name) {
 let roomName = '';
 let roomUri = '';
 
+// The gateway kind and the physical room it controls, both read from /status.
+// A browser gateway has no SIP peer, so `known` in showRoom() leans on gwType
+// instead of the peer fields, and the room line shows the physical name.
+let gwType = '';
+let physicalRoom = '';
+
 // The name the conference shows. It starts out as the endpoint's own — which
 // is why the two usually match — but it is a separate value, and the only one
 // of the pair the room may change.
@@ -310,10 +318,19 @@ function stopEditName() {
 
 function showRoom() {
   const t = TEXTS[currentLang];
-  const known = !!(roomName || roomUri);
+  const isBrowser = gwType === 'browser';
+  // A browser gateway IS the endpoint: there is nothing to wait for, so the room
+  // is "known" as soon as the gateway is up, not when a SIP peer calls in.
+  const known = !!(roomName || roomUri) || isBrowser;
   $('room').classList.toggle('room--pending', !known);
-  $('room-name').textContent = displayName || roomName || t.connecting;
+  // In browser mode the line shows the physical room (the room the gateway
+  // controls) — a static value, independent of the name the conference shows.
+  $('room-name').textContent = isBrowser
+    ? (physicalRoom || t.defaultRoom)
+    : (displayName || roomName || t.connecting);
   $('room-uri').textContent = roomUri || t.connecting;
+  // No SIP address to show in browser mode: the browser is the endpoint.
+  $('room-uri-line').hidden = isBrowser;
 
   // Until an endpoint has called in there is nothing on the other end: a
   // platform key would go nowhere, and there is no call to hang up. The
@@ -457,10 +474,13 @@ async function fetchIvrConfigAndRestoreState() {
     // stages: room, then conference, then logo, two seconds apart.
     roomName = statusData.data.peer_name || '';
     roomUri = statusData.data.peer_uri || '';
+    gwType = statusData.data.gw_type || '';
+    physicalRoom = statusData.data.physical_room || '';
     // Awaited: it answers in about half a second, and it changes the name on
     // screen. Left to resolve on its own it would rewrite the line after the
-    // page had been shown, which reads as one more step.
-    if (roomName || roomUri) await fetchDisplayName();
+    // page had been shown, which reads as one more step. In browser mode the
+    // peer fields are empty, so the condition also opens on the gateway kind.
+    if (roomName || roomUri || gwType === 'browser') await fetchDisplayName();
 
     let bn = statusData.data.browsing;
     let rn = statusData.data.room;
@@ -629,6 +649,16 @@ async function checkGwStatus() {
     }
     goneCount = 0;
     const statusData = await statusRes.json();
+    // Refresh the gateway kind and the physical room name each poll: they are
+    // static, but the first /status can predate the monitor's on-demand write.
+    // Redraw the room line when either lands or changes, so a name that
+    // reaches Redis after the first render replaces the default on the next
+    // poll instead of waiting for a page reload.
+    const prevGwType = gwType;
+    const prevPhysicalRoom = physicalRoom;
+    gwType = statusData.data?.gw_type || '';
+    physicalRoom = statusData.data?.physical_room || '';
+    if (gwType !== prevGwType || physicalRoom !== prevPhysicalRoom) showRoom();
     // Nothing to draw without the list: ask for it again, and once it is
     // there, draw the screen the gateway is on (lastScreen reset so the
     // comparison below does not skip it).

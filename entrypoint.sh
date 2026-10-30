@@ -40,7 +40,7 @@ if [[ -n "$GW_PROXY" &&  -n "$GW_NAME" ]]; then
     ) &
 fi
 
-if [[ -z "$ROOM_NAME" && ( "$MAIN_APP" != "baresip" ) ]]; then
+if [[ -z "$ROOM_NAME" &&  "$MAIN_APP" != "baresip" && "$MAIN_APP" != "browser"  ]]; then
     echo "Must provide ROOM_NAME with $MAIN_APP"
     exit 1
 fi

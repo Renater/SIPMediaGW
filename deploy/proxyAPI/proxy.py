@@ -46,6 +46,7 @@ roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
 
 # Redis Mapping:
 # gateway:<gw_id> => {"gw_ip": …, "gw_state": …, "gw_type": …, "room": …,
+#                     "physical_room": …,
 #                     "start_time": …, "media_duration": …,
 #                     "transcript_progress": …, "browsing": …,
 #                     "peer_uri": …, "peer_name": …, "call_started": …}
@@ -72,7 +73,7 @@ assetDir = os.path.dirname(os.path.abspath(__file__))
 # A gateway's entry, by name. Adding a field here is the whole of adding a
 # field: nothing reads by position any more, and an entry written before a
 # field existed simply does not carry it.
-gwFields = ("gw_ip", "gw_state", "gw_type", "room", "start_time",
+gwFields = ("gw_ip", "gw_state", "gw_type", "room", "physical_room", "start_time",
             "media_duration", "transcript_progress", "browsing",
             "peer_uri", "peer_name", "call_started")
 
@@ -301,6 +302,7 @@ def updateProgressInfo(gw_id: str, gw: dict, data: dict):
     transcript = data.get("transcript_progress")
     state  = data.get("gw_state")
     room = data.get("room")
+    physicalRoom = data.get("physical_room")
     browsing = data.get("browsing")
     peerUri = data.get("peer_uri")
     peerName = data.get("peer_name")
@@ -320,6 +322,7 @@ def updateProgressInfo(gw_id: str, gw: dict, data: dict):
     # null where the pipe-separated form had to write the word "None", having
     # no way to tell an absent value from that text.
     gw["room"] = f"{room}" if room else None
+    gw["physical_room"] = f"{physicalRoom}" if physicalRoom else None
     gw["browsing"] = f"{browsing}" if browsing else None
     gw["peer_uri"] = f"{peerUri}" if peerUri else None
     gw["peer_name"] = f"{peerName}" if peerName else None
@@ -335,6 +338,7 @@ def getGatewayStatusFromRedis(gw_id: str):
     gw = gwLoad(rawValue)
     gwIp = gw["gw_ip"]
     room = gw.get("room")
+    physicalRoom = gw.get("physical_room")
     state = gw.get("gw_state")
     media_duration = gw.get("media_duration")
     transcript = gw.get("transcript_progress")
@@ -350,6 +354,7 @@ def getGatewayStatusFromRedis(gw_id: str):
             "gw_type": cleanPart(gwType),
             "gw_state": state,
             "room": cleanPart(room),
+            "physical_room": cleanPart(physicalRoom),
             "browsing": cleanPart(browsing),
             "peer_uri": cleanPart(peerUri),
             "peer_name": cleanPart(peerName),
@@ -540,7 +545,7 @@ async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, gw: dict):
         redisClient.delete(f"gateway:{gw_id}")
 
 async def monitorOneGateway(gw_id: str, gw_ip: str):
-    """Check a single gateway (baresip case) and refresh its Redis entry."""
+    """Check a single gateway (baresip/browser case) and refresh its Redis entry."""
     raw = redisClient.get(f"gateway:{gw_id}")
     gw = gwLoad(raw)
     await _fetchAndStoreGatewayStatus(gw_id, gw_ip, gw)
@@ -887,9 +892,10 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
     gw = gwLoad(rawValue)
     gwIp = gw["gw_ip"]
 
-    # ----- Refresh baresip gateways on demand --------------------
+    # ----- Refresh baresip and browser gateways on demand --------------------
+
     gw_type = gw.get("gw_type")
-    if gw_type == "baresip":
+    if gw_type in ("baresip", "browser"):
         # call the on‑demand monitor to get a fresh status
         await monitorOneGateway(gw_id, gwIp)
 

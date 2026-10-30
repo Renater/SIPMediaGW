@@ -12,6 +12,7 @@ while [[ $# -gt 0 ]]; do
         -d|--dial-uri) dial_uri="$2"; shift 2;;
         -g|--gw-name) gw_name="$2"; shift 2;;
         -p|--prefix) prefix="$2"; shift 2;;
+        -P|--physical-room) physical_room="$2"; shift 2;;
         -r|--room) room="$2"; shift 2;;
         -t|--timeout) timeout="$2"; shift 2;;
         -u|--rtmp-dst) rtmp_dst="$2"; shift 2;;
@@ -104,7 +105,7 @@ fi
 restart="no"
 check_reg="no"
 video_dev="null"
-if [[ "$MAIN_APP" == "baresip" ]]; then
+if [[ "$MAIN_APP" == "baresip" || "$MAIN_APP" == "browser" ]]; then
 	if [[ "$loop" ]]; then
 		restart="unless-stopped"
 	else
@@ -147,6 +148,7 @@ CHECK_REG=$check_reg
 HOST_TZ=$(cat /etc/timezone)
 HOST_IP=${HOST_IP:-$(hostname -I | awk '{print $1}')}
 ROOM=$room
+PHYSICAL_ROOM=$physical_room
 GW_NAME=$GW_NAME
 GW_PROXY=$gw_proxy
 BROWSING=$browsing_name
@@ -165,7 +167,7 @@ WITH_ALSA=$with_alsa
 USER=$user_name
 export COMPOSE_FILE SERVICES \
        MAIN_APP RESTART LOOP CHECK_REG HOST_TZ \
-       HOST_IP ROOM GW_NAME GW_PROXY BROWSING \
+       HOST_IP ROOM PHYSICAL_ROOM GW_NAME GW_PROXY BROWSING \
        RTMP_DST FS_API_KEY FS_RECIPIENT_MAIL WITH_TRANSCRIPT PREFIX ID INIT \
        AUDIO_ONLY VIDEO_DEV DISPLAY PULSE_SERVER WITH_ALSA USER
 
@@ -209,7 +211,7 @@ export MAIN_APP
 if [[  "$init"  &&  "$MAIN_APP" != "baresip" ]]; then
     nohup bash -c "docker wait gw$id" &> /dev/null &
 else 
-    nohup bash -c 'if [[ $LOOP && "$MAIN_APP" == "baresip" ]] ; then
+    nohup bash -c 'if [[ $LOOP && ( "$MAIN_APP" == "baresip" || "$MAIN_APP" == "browser" ) ]] ; then
                     docker events \
                         --filter "container=gw$ID" \
                         --filter "event=stop" \

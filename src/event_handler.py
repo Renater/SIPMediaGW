@@ -96,6 +96,14 @@ def browse(args):
 def endBrowse(args):
     if args['ivr'] and args['ivr'].browsingObj:
         args['ivr'].browsingObj.stop()
+    elif args['ivr'] and args['ivr'].driver:
+        # The IVR browser is still up (no meeting joined): quit it through
+        # selenium, which is deterministic. The xdotool fallback below only
+        # reaches whatever window has X focus.
+        try:
+            args['ivr'].driver.quit()
+        except Exception as e:
+            print("endBrowse: driver.quit() failed: {}".format(e), flush=True)
     subprocess.run(["xdotool", "key", "ctrl+W"])
 
 # How often the control port is asked how the media is doing, in seconds.

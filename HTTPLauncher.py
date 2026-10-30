@@ -310,6 +310,15 @@ class DockerGateway:
             )
             resp["transcript_progress"] = processedPercent
 
+        # Physical room name, passed at launch (SIPMediaGW.sh -P) for browser
+        # gateways: the room the gateway physically controls. Absent when unset.
+        gwSubProc = ['docker', 'exec', gwName, 'sh', '-c', 'echo $PHYSICAL_ROOM']
+        res = subprocess.Popen(gwSubProc, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = res.communicate()
+        physicalRoom = out.decode().strip()
+        if physicalRoom:
+            resp["physical_room"] = physicalRoom
+
         historyFile = './logs/{}_history'.format(gwData['Name'])
         history = self.parseHistoryFile(historyFile)
         resp["browsing"] = ""
