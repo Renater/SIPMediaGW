@@ -208,7 +208,10 @@ body{padding:0;background:var(--surface)}
   .hub__row{flex-direction:column;align-items:stretch;gap:.75rem}
   .hub__side{width:100%}
   .hub__block{width:100%}
-  .hub__cloud{max-width:none}
+  /* Brands cloud keeps the wide diagram's narrow 11.75rem shape —
+     short staggered lines, in step with the phone's top-to-bottom flow —
+     centered in the card like the gateway block. */
+  .hub__cloud{margin:0 auto}
   .hub__gw{width:100%;max-width:16rem;margin:0 auto}
   /* Same arrows, turned: shaft and head swap their axes. margin auto
      centers them: align-items:stretch does not stretch an item that has an
