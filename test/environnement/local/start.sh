@@ -3,6 +3,7 @@
 # MySQL and one gateway (gw0), ready to receive a SIP call.
 #
 #   BROWSING=jitsi DOCKER_IMAGE=sipmediagw:dev ./start.sh
+#   MAIN_APP=browser ./start.sh        # web-client gateway (proxy interact page)
 #
 # Optional: HOST_IP (auto-detected), RTCSTATS_SERVER_URL (enables rtcstats),
 # LOOP=0 (do not recreate gw0 after each call).
@@ -68,7 +69,7 @@ echo " ok"
 
 ### Gateway gw0 ###
 HOST_TZ=$(cat /etc/timezone 2>/dev/null || timedatectl show -p Timezone --value)
-export ID=0 GW_NAME=localgw MAIN_APP=baresip VIDEO_DEV HOST_TZ \
+export ID=0 GW_NAME=localgw MAIN_APP=${MAIN_APP:-baresip} VIDEO_DEV HOST_TZ \
        CHECK_REG=yes RESTART=no WITH_ALSA=true
 # The rest of what SIPMediaGW.sh exports, empty here: keeps compose quiet.
 # DISPLAY too: the desktop's DISPLAY would make gw0 skip its own Xvfb and
@@ -103,7 +104,22 @@ if [[ "${LOOP:-1}" == 1 ]]; then
     echo $! > "$LOOP_PID"
 fi
 
-cat <<EOF
+if [[ "$MAIN_APP" == browser ]]; then
+    cat <<EOF
+
+Ready (browser gateway). It is driven from a web browser, not a softphone:
+  1. make sure the proxy and the host launcher are running:
+       docker compose -f deploy/proxyAPI/docker-compose.yml up -d
+       python3 HTTPLauncher.py &        # from the repo root
+  2. open http://$HOST_IP:9000, pair with the code shown on the gateway IVR,
+     pick the platform, enter the room name.
+Raccrocher ends the call; with LOOP the gateway is recreated after each call.
+Logs:   journalctl -f | grep -E 'gw0|kamailio'
+Loop:   $LOOP_LOG
+Stop:   $(dirname "${BASH_SOURCE[0]}")/stop.sh
+EOF
+else
+    cat <<EOF
 
 Ready. From a SIP softphone: server <sip:$HOST_IP;transport=tcp>, no
 registration, no ICE/STUN/AVPF. Its identity must not use $HOST_IP as domain
@@ -115,3 +131,4 @@ Logs:   journalctl -f | grep -E 'gw0|kamailio'
 Loop:   gw0 is recreated after each call (LOOP=0 to disable): $LOOP_LOG
 Stop:   $(dirname "${BASH_SOURCE[0]}")/stop.sh
 EOF
+fi
