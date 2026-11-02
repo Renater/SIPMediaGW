@@ -45,3 +45,27 @@ It is also possible to perform tests from a SIP client such as Linphone.
 7.  Launch a new SIP call from the call menu in Linphone
    1.  `sip:myConference@KAMAILIO_IP_ADDRESS` for direct access to the conference `myConference`
    2.  `sip:0@KAMAILIO_IP_ADDRESS` for DTMF access (ConfMapper should be configured)
+
+### Browser gateway (web client)
+
+The gateway can also be the web client itself — no SIP softphone needed:
+
+```
+./SIPMediaGW.sh -a browser [-P "Salle de Conférence"] [-l]
+```
+
+The IVR (and later the meeting) open in the gateway's own Chromium, and you
+drive it from the proxy's web UI: open the proxy (default
+`http://<HOST_IP>:9000`, i.e. the `GW_PROXY` URL), pair with the code shown
+on the gateway's IVR screen, pick the platform, enter the room name.
+
+- **Raccrocher** ends the call at any IVR stage (it sends `/hangup` to the
+  gateway's control port); with `-l` the gateway is recreated after each
+  call, exactly as for baresip.
+- With `-x N` the IVR displays on your desktop `:N`. Keystrokes (platform
+  digit, `#`, room name) follow the **X focus**: if your own browser window
+  has the focus, they land in it instead of the gateway's — keep the gateway
+  window focused while entering the room name.
+- Prerequisites: the proxy (`deploy/proxyAPI/docker-compose.yml`) and the
+  host launcher (`python3 HTTPLauncher.py`, run from the repo root) must be
+  running — the page's commands go proxy → launcher → gateway.
