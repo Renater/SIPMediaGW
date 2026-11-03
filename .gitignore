@@ -6,3 +6,6 @@ logs/
 .ruff_cache/
 .vscode/
 browsing/assets/config.json
+
+# Local OpenStack credentials (keep *.json.example committed)
+deploy/scaler/src/providers/openstackProvider/config/sipmediagw.json
