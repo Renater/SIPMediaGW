@@ -64,19 +64,28 @@ class Teams extends UIHelper {
         }
     }
 
+    // Returns true once the message is handed to Teams: HTTPLauncher treats any falsy
+    // value as a failure (404), and the room macro then sends the message again.
     async sendChat(message) {
-        const ed = document.querySelector('div[data-tid="ckeditor"]').ckeditorInstance;
+        const host = document.querySelector('div[data-tid="ckeditor"]');
+        const ed = host && host.ckeditorInstance;
+        const send = document.querySelector('button[data-tid="newMessageCommands-send"]');
+        if (!ed || !send) {
+            console.error('[✗] Chat editor or send button not found');
+            return false;
+        }
         ed.setData('<p>' + message + '</p>');
-        document.querySelector('button[data-tid="newMessageCommands-send"]')?.click();
-        const waitRetry = () => {
+        send.click();
+        // Teams shows the retry button for about half a second on every successful send:
+        // only a button still visible 3 s later is a real failure. Retry once, then stop.
+        setTimeout(() => {
             const retry = document.querySelector('button[data-tid="message-failed-retry"]');
-            if (retry) {
+            if (retry && retry.getClientRects().length) {
+                console.log('[INFO] Chat message failed, retrying once');
                 retry.click();
-                return;
             }
-            setTimeout(waitRetry, 200);
-        };
-        setTimeout(waitRetry, 500);
+        }, 3000);
+        return true;
     }
 
     async leave() {
