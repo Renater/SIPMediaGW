@@ -32,6 +32,8 @@ button.ctrl:focus-visible { outline: 2px solid var(--bf); outline-offset: 2px; }
    when on, with a slash across it where one applies. */
 .ctrl__icon { width: 1.3rem; height: 1.3rem; flex: none; display: inline-flex; color: var(--muted); }
 .ctrl--on .ctrl__icon { color: var(--on); }
+.ctrl--waiting { opacity: .45; }
+.ctrl--waiting .ctrl__switch { cursor: default; }
 /* The gap the slash sits in, cut in the colour behind the icon. Only the
    microphone and the camera carry one. */
 .ctrl__icon .ctrl__cut { fill: var(--tile); }

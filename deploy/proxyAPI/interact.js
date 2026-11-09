@@ -37,6 +37,7 @@ const TEXTS = {
     captureHint: 'Prendre une image de l\u2019\u00e9cran partag\u00e9',
     captureNone: 'Aucun contenu partag\u00e9 \u00e0 capturer pour le moment.',
     captureWaiting: 'Aucun \u00e9cran partag\u00e9 pour le moment',
+    dualWaiting: 'Disponible pendant un partage d\u2019\u00e9cran',
     captureFail: 'La capture a \u00e9chou\u00e9.',
     slideTitle: 'Capture de l\u2019\u00e9cran partag\u00e9',
     slideDownload: 'T\u00e9l\u00e9charger',
@@ -74,6 +75,7 @@ const TEXTS = {
     captureHint: 'Take a still of the shared screen',
     captureNone: 'Nothing is being shared to capture right now.',
     captureWaiting: 'No screen is being shared',
+    dualWaiting: 'Available while a screen is shared',
     captureFail: 'The capture failed.',
     slideTitle: 'Shared screen capture',
     slideDownload: 'Download',
@@ -875,6 +877,18 @@ function paintCapture() {
   if (hint) hint.textContent = none ? t.captureWaiting : t.captureHint;
 }
 
+// Same rule for the dual screen switch: it only changes what a share looks like
+// in the room, so with nothing shared it is greyed and says when it will work.
+function paintDualAvailability() {
+  const sw = document.querySelector('.ctrl__switch[data-icon="dual_screen_icon"]');
+  if (!sw) return;
+  const none = shareSeen === false;
+  const row = sw.closest('.ctrl');
+  sw.disabled = none;
+  row.classList.toggle('ctrl--waiting', none);
+  if (none) row.querySelector('.ctrl__hint').textContent = TEXTS[currentLang].dualWaiting;
+}
+
 async function syncCtrlState() {
   const ui = await fetchCtrlState();
   if (ui) {
@@ -899,6 +913,7 @@ async function syncCtrlState() {
     sw.checked = on;
     paintCtrlRow(sw.closest('.ctrl'), icon, on);
   });
+  paintDualAvailability();
 }
 
 async function renderMenuOptions() {
@@ -922,6 +937,7 @@ async function renderMenuOptions() {
   // two seconds. A started gateway that still reports nothing is one whose
   // connector has no uiState: the second empty read is taken as the answer.
   ctrlState = await fetchCtrlState();
+  if (ctrlState) shareSeen = typeof ctrlState.screenShare === 'boolean' ? ctrlState.screenShare : null;
   if (!ctrlState && !ctrlOnceBlind) {
     // Nothing is drawn yet, and menuDisplayed is left false so the next poll
     // comes back here rather than deciding the screen is already up. Without
@@ -1011,6 +1027,7 @@ async function renderMenuOptions() {
   }
   // The chat row sits under the commands rather than among them: typing a
   // message is a different gesture from pressing a control.
+  paintDualAvailability();
   const chatRow = $('chat-row');
   chatRow.hidden = !hasChat;
   if (hasChat) {
