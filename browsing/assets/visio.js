@@ -260,7 +260,8 @@ class Visio extends UIHelper{
         return {
             media: this.mediaState(),
             panels: this.panelState(),
-            screenShare: this.screenShareState()
+            screenShare: this.screenShareState(),
+            dualScreen: this.dualScreenOn
         };
     }
     screenShareState() {
