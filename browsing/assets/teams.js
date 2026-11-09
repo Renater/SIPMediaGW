@@ -115,8 +115,93 @@ class Teams extends UIHelper {
         return {
             media: this.mediaState(),
             panels: this.panelState(),
-            screenShare: null
+            screenShare: this.screenShareState()
         };
+    }
+
+    // A screen being shared, by anyone: Teams draws the shared content on a canvas
+    // (no <video> in the page) with its zoom controls, present only while sharing.
+    screenShareState() {
+        return document.querySelector('[data-tid="screen-share-zoom-controls"]') !== null;
+    }
+
+    // The shared content as a PNG (base64), or null. Teams renders it on a canvas
+    // next to the zoom controls; a WebGL canvas may read back empty, which is
+    // reported as null (nothing to capture) rather than a blank image.
+    async slideShot() {
+        try {
+            const controls = document.querySelector('[data-tid="screen-share-zoom-controls"]');
+            if (!controls) {
+                return null;
+            }
+            let source = null;
+            for (let p = controls.parentElement, depth = 0; p && depth < 8 && !source; p = p.parentElement, depth++) {
+                const candidates = [...p.querySelectorAll('canvas, video')]
+                    .filter(e => e.getBoundingClientRect().width > 100);
+                candidates.sort((a, b) => b.getBoundingClientRect().width * b.getBoundingClientRect().height
+                                        - a.getBoundingClientRect().width * a.getBoundingClientRect().height);
+                source = candidates[0] || null;
+            }
+            if (!source) {
+                return null;
+            }
+            const width = source.videoWidth || source.width || Math.round(source.getBoundingClientRect().width);
+            const height = source.videoHeight || source.height || Math.round(source.getBoundingClientRect().height);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(source, 0, 0, width, height);
+            const sample = ctx.getImageData(0, 0, width, height).data;
+            let lit = 0;
+            for (let i = 0; i < sample.length; i += 4 * 97) {
+                if (sample[i + 3] && (sample[i] || sample[i + 1] || sample[i + 2])) {
+                    lit++;
+                }
+            }
+            if (lit === 0) {
+                console.error('[✗] slideShot: shared content read back empty');
+                return null;
+            }
+            return canvas.toDataURL('image/png').split(',')[1];
+        } catch (e) {
+            console.error('slideShot failed:', e);
+            return null;
+        }
+    }
+
+    // Same names as Visio (HTTPLauncher, interact, macro); ids from the Teams
+    // reactions popup (#reactions-menu-button).
+    async reaction(name) {
+        const ids = {
+            'thumbs-up': 'like-button',
+            'red-heart': 'heart-button',
+            'clapping-hands': 'applause-button',
+            'face-with-tears-of-joy': 'laugh-button',
+            'face-with-open-mouth': 'surprised-button'
+        };
+        if (!(name in ids)) {
+            console.error('[✗] Unknown reaction: ' + name);
+            return false;
+        }
+        let button = document.getElementById(ids[name]);
+        if (!button) {
+            if (!this.clickById('reactions-menu-button')) {
+                return false;
+            }
+            try {
+                button = await this.waitForElement('#' + ids[name], { clickable: true }, 2000);
+            } catch (e) {
+                console.error('[✗] Reaction button not reachable: ' + name);
+                return false;
+            }
+        }
+        button.click();
+        // close the popup if it stayed open
+        if (document.querySelector('[data-tid="reactions-popup"]')) {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        }
+        return true;
     }
 
     microphone(param) {
