@@ -8,6 +8,30 @@ class Teams extends UIHelper {
         this.token = token;
         this.joinded = false;
         this.passwordPrompt = JSON.parse(prompts)[lang]['password'];
+        this.watchOwnShare();
+    }
+
+    // The room's own share (BFCP content, key s) is not drawn in the presenter's
+    // page, so it cannot be found in the DOM: the stream Teams asks the browser for
+    // is kept instead, to report the share and capture from it.
+    watchOwnShare() {
+        this.ownShareStream = null;
+        const md = navigator.mediaDevices;
+        if (!md || !md.getDisplayMedia || md.__gatewayWatched) {
+            return;
+        }
+        const original = md.getDisplayMedia.bind(md);
+        md.getDisplayMedia = async (...args) => {
+            const stream = await original(...args);
+            this.ownShareStream = stream;
+            return stream;
+        };
+        md.__gatewayWatched = true;
+    }
+
+    ownShareLive() {
+        const s = this.ownShareStream;
+        return !!(s && s.getVideoTracks().some(t => t.readyState === 'live'));
     }
 
     async join() {
@@ -122,7 +146,35 @@ class Teams extends UIHelper {
     // A screen being shared, by anyone: Teams draws the shared content on a canvas
     // (no <video> in the page) with its zoom controls, present only while sharing.
     screenShareState() {
-        return document.querySelector('[data-tid="screen-share-zoom-controls"]') !== null;
+        return document.querySelector('[data-tid="screen-share-zoom-controls"]') !== null || this.ownShareLive();
+    }
+
+    async ownShareShot() {
+        if (!this.ownShareLive()) {
+            return null;
+        }
+        const video = document.createElement('video');
+        video.muted = true;
+        video.srcObject = this.ownShareStream;
+        try {
+            await video.play();
+            if (!video.videoWidth) {
+                await new Promise(resolve => {
+                    const t = setTimeout(resolve, 1500);
+                    video.addEventListener('loadeddata', () => { clearTimeout(t); resolve(); }, { once: true });
+                });
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/png').split(',')[1];
+        } catch (e) {
+            console.error('slideShot (own share) failed:', e);
+            return null;
+        } finally {
+            video.srcObject = null;
+        }
     }
 
     // The shared content as a PNG (base64), or null. Teams renders it on a canvas
@@ -132,7 +184,7 @@ class Teams extends UIHelper {
         try {
             const controls = document.querySelector('[data-tid="screen-share-zoom-controls"]');
             if (!controls) {
-                return null;
+                return await this.ownShareShot();
             }
             let source = null;
             for (let p = controls.parentElement, depth = 0; p && depth < 8 && !source; p = p.parentElement, depth++) {
