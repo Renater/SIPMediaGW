@@ -759,6 +759,7 @@ const CTRL_WORDS = {
     hand_icon:         [['Main baissée', 'Vous ne demandez pas la parole'], ['Main levée', 'Vous demandez la parole']],
     participants_icon: [['Participants masqués', 'Liste non affichée en salle'], ['Participants affichés', 'Liste visible sur l\u2019écran']],
     info_icon:         [['Informations masquées', 'Non affichées en salle'], ['Informations affichées', 'Visibles sur l\u2019écran']],
+    dual_screen_icon:  [['Présentation dans l\u2019image', 'Le partage d\u2019écran est incrusté dans la vidéo'], ['Présentation séparée', 'Le partage d\u2019écran arrive à part dans la salle']],
   },
   en: {
     microphone_icon:   [['Microphone off', 'Nobody can hear you'], ['Microphone on', 'You can be heard']],
@@ -767,6 +768,7 @@ const CTRL_WORDS = {
     hand_icon:         [['Hand down', 'You are not asking to speak'], ['Hand raised', 'You are asking to speak']],
     participants_icon: [['Participants hidden', 'List not shown in the room'], ['Participants shown', 'List visible on the screen']],
     info_icon:         [['Details hidden', 'Not shown in the room'], ['Details shown', 'Visible on the screen']],
+    dual_screen_icon:  [['Presentation in the picture', 'Screen sharing is embedded in the video'], ['Separate presentation', 'Screen sharing reaches the room on its own']],
   },
 };
 
@@ -807,11 +809,16 @@ const CTRL_STATE = {
   hand_icon:         (ui) => ui.panels && ui.panels.handRaised,
   participants_icon: (ui) => ui.panels && ui.panels.participants,
   info_icon:         (ui) => ui.panels && ui.panels.info,
+  dual_screen_icon:  (ui) => ui.dualScreen,
 };
+
+// States only some gateways report: drawn as a switch where the field is
+// present, as a plain button otherwise (a gateway older than the field).
+const CTRL_OPTIONAL = ['dual_screen_icon'];
 
 // The five every connector offers. What comes after is its own, and is drawn
 // as plain buttons below the chat row.
-const CTRL_COMMON = Object.keys(CTRL_STATE);
+const CTRL_COMMON = Object.keys(CTRL_STATE).filter((icon) => !CTRL_OPTIONAL.includes(icon));
 
 // The same four the room tablet offers, out of the eight the connector knows.
 const REACTIONS = [
@@ -965,7 +972,8 @@ async function renderMenuOptions() {
     const common = CTRL_COMMON.includes(icon);
     if (icon.toLowerCase().includes('chat')) hasChat = true;
 
-    if (probe && ctrlState) {
+    const reported = !CTRL_OPTIONAL.includes(icon) || (ctrlState && typeof probe(ctrlState) === 'boolean');
+    if (probe && ctrlState && reported) {
       const on = probe(ctrlState) === true;
 
       const row = document.createElement('label');
