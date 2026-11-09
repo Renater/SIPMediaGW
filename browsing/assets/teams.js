@@ -112,20 +112,43 @@ class Teams extends UIHelper {
         };
     }
 
-    // The raised-hand outline is drawn on the video tile of whoever raised it, so
-    // only the outline found in the room's own tile counts. Without a tile carrying
-    // the display name, the answer is null rather than someone else's hand.
+    // Raised hand, as the room's own button shows it. The outline Teams draws on the
+    // tile of whoever raised a hand fades after a few seconds (lab, 09/11/2026), so it
+    // cannot tell a hand still raised. The button itself carries no aria state: only
+    // its style changes, with the same generated class as any pressed toolbar toggle.
+    // It is compared with the participants or chat button while that panel is closed
+    // (an unpressed toggle): same classes = hand down, different = hand up. Class
+    // names change with each Teams build; the comparison does not depend on them.
     ownHandRaised() {
-        const outlines = [...document.querySelectorAll('[data-tid="raise-hand-stream-outline"]')];
-        if (outlines.length === 0) {
-            return false;
-        }
-        const name = (this.displayName || '').trim().toLowerCase();
-        if (!name) {
+        const hand = document.getElementById('raisehands-button');
+        if (!hand) {
             return null;
         }
+        let ref = null;
+        if (!this.isVisible('[data-tid="calling-roster-attendees"]')) {
+            ref = document.getElementById('roster-button');
+        }
+        if (!ref && !this.isVisible('[data-tid="chat-pane-compose-message-footer"]')) {
+            ref = document.getElementById('chat-button');
+        }
+        if (ref) {
+            const classes = el => new Set(String(el.className || '').split(/\s+/).filter(Boolean));
+            const h = classes(hand), r = classes(ref);
+            return [...h].some(c => !r.has(c)) || [...r].some(c => !h.has(c));
+        }
+        return this.ownHandOutline();
+    }
+
+    // Fallback while no unpressed reference is available: the outline on the room's
+    // own tile (found by its display name), shown for a few seconds after raising.
+    ownHandOutline() {
+        const outlines = [...document.querySelectorAll('[data-tid="raise-hand-stream-outline"]')];
+        if (outlines.length === 0) {
+            return null;
+        }
+        const name = (this.displayName || '').trim().toLowerCase();
         for (const o of outlines) {
-            for (let p = o.parentElement, depth = 0; p && depth < 8; p = p.parentElement, depth++) {
+            for (let p = o.parentElement, depth = 0; name && p && depth < 8; p = p.parentElement, depth++) {
                 const label = ((p.getAttribute('aria-label') || '') + ' ' + (p.getAttribute('data-tid') || '')).toLowerCase();
                 if (label.includes(name)) {
                     return true;
