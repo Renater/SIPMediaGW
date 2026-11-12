@@ -49,6 +49,8 @@ class StartRequest(BaseModel):
     audio_only: Optional[str] = None
     api_key: Optional[str] = None
     recipient_mail: Optional[str] = None
+    user_name: Optional[str] = None
+    physical_room: Optional[str] = None
 
 class StartResponse(BaseResponse):
     data: Optional[Dict[str, str]] = None
@@ -205,6 +207,10 @@ class DockerGateway:
             gwSubProc.extend(['-g', req.gw_id])
         if req.main_app:
             gwSubProc.extend(['-a', req.main_app])
+        if req.user_name:
+            gwSubProc.extend(['-n', req.user_name])
+        if req.physical_room:
+            gwSubProc.extend(['-P', req.physical_room])
 
         filePath = os.path.dirname(__file__)
         print(gwSubProc)
@@ -218,7 +224,9 @@ class DockerGateway:
         if resJson.get("res") != "ok":
             raise ValueError("Failed to start gateway container")
         
-        return {"processing_state": "working", "gw_id": req.gw_id}
+        return {"processing_state": "working",
+                "gw_id": resJson.get("gw_uid") or req.gw_id,
+                "gw_slot": resJson.get("gw_id")}
 
     def stop_gateway(self, req: StopRequest) -> Dict[str, Any]:
         print(f"[STOP CONTAINER] for gateway id={req.gw_id}")
@@ -625,7 +633,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 def start_gateway(req: StartRequest, backend: DockerGateway = Depends(get_backend)):
     try:
         res = backend.start_gateway(req)
-        return StartResponse(status="success", data={"processing_state": res.get("processing_state"), "gw_id": res.get("gw_id")})
+        data = {"processing_state": res.get("processing_state"),
+                "gw_id": res.get("gw_id")}
+        if res.get("gw_slot") is not None:
+            data["gw_slot"] = res["gw_slot"]
+        return StartResponse(status="success", data=data)
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
