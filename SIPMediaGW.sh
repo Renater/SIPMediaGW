@@ -123,6 +123,10 @@ if [[ -n "$init" || ( "$MAIN_APP" == "baresip" ) ]]; then
     docker container rm gw$id --force > /dev/null
 fi
 
+if [[ -z "$gw_name" ]]; then
+    docker container rm gw$id --force > /dev/null
+fi
+
 SERVICES="gw"
 COMPOSE_FILE="-f docker-compose.yml"
 if [[ "$with_transcript" ]]; then
@@ -203,6 +207,10 @@ fi
 
 if [ "$MAIN_APP" == "recording" ]; then
     echo "{'res':'ok', 'app': '$MAIN_APP', 'recipient mail': '$recipient_mail'}"
+fi
+
+if [ "$MAIN_APP" == "browser" ]; then
+    echo "{'res':'ok', 'app': '$MAIN_APP', 'gw_uid': '$GW_NAME', 'gw_id': '$id'}"
 fi
 
 export MAIN_APP
