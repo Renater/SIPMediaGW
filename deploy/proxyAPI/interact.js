@@ -37,6 +37,7 @@ const TEXTS = {
     captureHint: 'Prendre une image de l\u2019\u00e9cran partag\u00e9',
     captureNone: 'Aucun contenu partag\u00e9 \u00e0 capturer pour le moment.',
     captureWaiting: 'Aucun \u00e9cran partag\u00e9 pour le moment',
+    dualWaiting: 'Disponible pendant un partage d\u2019\u00e9cran',
     captureFail: 'La capture a \u00e9chou\u00e9.',
     slideTitle: 'Capture de l\u2019\u00e9cran partag\u00e9',
     slideDownload: 'T\u00e9l\u00e9charger',
@@ -74,6 +75,7 @@ const TEXTS = {
     captureHint: 'Take a still of the shared screen',
     captureNone: 'Nothing is being shared to capture right now.',
     captureWaiting: 'No screen is being shared',
+    dualWaiting: 'Available while a screen is shared',
     captureFail: 'The capture failed.',
     slideTitle: 'Shared screen capture',
     slideDownload: 'Download',
@@ -759,6 +761,7 @@ const CTRL_WORDS = {
     hand_icon:         [['Main baissée', 'Vous ne demandez pas la parole'], ['Main levée', 'Vous demandez la parole']],
     participants_icon: [['Participants masqués', 'Liste non affichée en salle'], ['Participants affichés', 'Liste visible sur l\u2019écran']],
     info_icon:         [['Informations masquées', 'Non affichées en salle'], ['Informations affichées', 'Visibles sur l\u2019écran']],
+    dual_screen_icon:  [['Présentation dans l\u2019image', 'Le partage d\u2019écran est incrusté dans la vidéo'], ['Présentation séparée', 'Le partage d\u2019écran arrive à part dans la salle']],
   },
   en: {
     microphone_icon:   [['Microphone off', 'Nobody can hear you'], ['Microphone on', 'You can be heard']],
@@ -767,6 +770,7 @@ const CTRL_WORDS = {
     hand_icon:         [['Hand down', 'You are not asking to speak'], ['Hand raised', 'You are asking to speak']],
     participants_icon: [['Participants hidden', 'List not shown in the room'], ['Participants shown', 'List visible on the screen']],
     info_icon:         [['Details hidden', 'Not shown in the room'], ['Details shown', 'Visible on the screen']],
+    dual_screen_icon:  [['Presentation in the picture', 'Screen sharing is embedded in the video'], ['Separate presentation', 'Screen sharing reaches the room on its own']],
   },
 };
 
@@ -807,11 +811,16 @@ const CTRL_STATE = {
   hand_icon:         (ui) => ui.panels && ui.panels.handRaised,
   participants_icon: (ui) => ui.panels && ui.panels.participants,
   info_icon:         (ui) => ui.panels && ui.panels.info,
+  dual_screen_icon:  (ui) => ui.dualScreen,
 };
+
+// States only some gateways report: drawn as a switch where the field is
+// present, as a plain button otherwise (a gateway older than the field).
+const CTRL_OPTIONAL = ['dual_screen_icon'];
 
 // The five every connector offers. What comes after is its own, and is drawn
 // as plain buttons below the chat row.
-const CTRL_COMMON = Object.keys(CTRL_STATE);
+const CTRL_COMMON = Object.keys(CTRL_STATE).filter((icon) => !CTRL_OPTIONAL.includes(icon));
 
 // The same four the room tablet offers, out of the eight the connector knows.
 const REACTIONS = [
@@ -868,6 +877,18 @@ function paintCapture() {
   if (hint) hint.textContent = none ? t.captureWaiting : t.captureHint;
 }
 
+// Same rule for the dual screen switch: it only changes what a share looks like
+// in the room, so with nothing shared it is greyed and says when it will work.
+function paintDualAvailability() {
+  const sw = document.querySelector('.ctrl__switch[data-icon="dual_screen_icon"]');
+  if (!sw) return;
+  const none = shareSeen === false;
+  const row = sw.closest('.ctrl');
+  sw.disabled = none;
+  row.classList.toggle('ctrl--waiting', none);
+  if (none) row.querySelector('.ctrl__hint').textContent = TEXTS[currentLang].dualWaiting;
+}
+
 async function syncCtrlState() {
   const ui = await fetchCtrlState();
   if (ui) {
@@ -892,6 +913,7 @@ async function syncCtrlState() {
     sw.checked = on;
     paintCtrlRow(sw.closest('.ctrl'), icon, on);
   });
+  paintDualAvailability();
 }
 
 async function renderMenuOptions() {
@@ -915,6 +937,7 @@ async function renderMenuOptions() {
   // two seconds. A started gateway that still reports nothing is one whose
   // connector has no uiState: the second empty read is taken as the answer.
   ctrlState = await fetchCtrlState();
+  if (ctrlState) shareSeen = typeof ctrlState.screenShare === 'boolean' ? ctrlState.screenShare : null;
   if (!ctrlState && !ctrlOnceBlind) {
     // Nothing is drawn yet, and menuDisplayed is left false so the next poll
     // comes back here rather than deciding the screen is already up. Without
@@ -965,7 +988,8 @@ async function renderMenuOptions() {
     const common = CTRL_COMMON.includes(icon);
     if (icon.toLowerCase().includes('chat')) hasChat = true;
 
-    if (probe && ctrlState) {
+    const reported = !CTRL_OPTIONAL.includes(icon) || (ctrlState && typeof probe(ctrlState) === 'boolean');
+    if (probe && ctrlState && reported) {
       const on = probe(ctrlState) === true;
 
       const row = document.createElement('label');
@@ -1003,6 +1027,7 @@ async function renderMenuOptions() {
   }
   // The chat row sits under the commands rather than among them: typing a
   // message is a different gesture from pressing a control.
+  paintDualAvailability();
   const chatRow = $('chat-row');
   chatRow.hidden = !hasChat;
   if (hasChat) {
