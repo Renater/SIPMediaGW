@@ -65,7 +65,7 @@ class Teams extends UIHelper {
     }
 
     // Returns true once the message is handed to Teams: HTTPLauncher treats any falsy
-    // value as a failure (404), and the room macro then sends the message again.
+    // value as a failure (404).
     async sendChat(message) {
         const host = document.querySelector('div[data-tid="ckeditor"]');
         const ed = host && host.ckeditorInstance;
