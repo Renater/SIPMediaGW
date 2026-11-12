@@ -157,7 +157,7 @@ def event_handler(data, args):
                 displayName = data['peerdisplayname']
         # The SIP proxy cuts the From header before '<', which keeps the space
         # that separates the display name from the URI ("Room <sip:…>" gives
-        # "Room "). Teams refuses to join with that trailing space.
+        # "Room ").
         displayName = displayName.strip()
         if not displayName:
             displayName = data['peeruri'].split(';')[0].split(':')[1]
