@@ -835,6 +835,9 @@ let currentRoom = '';
 
 // Last state read from the connector, or null on one that reports none.
 let ctrlState = null;
+// Until this time the poll leaves the switches alone: a command was just sent and
+// its effect is being waited for (see syncCtrlStateExpecting).
+let ctrlHoldUntil = 0;
 
 // Set once a read has come back empty on a gateway that is started. The second
 // such read is taken at face value: this connector does not report its state,
@@ -889,7 +892,8 @@ function paintDualAvailability() {
   if (none) row.querySelector('.ctrl__hint').textContent = TEXTS[currentLang].dualWaiting;
 }
 
-async function syncCtrlState() {
+async function syncCtrlState(force = false) {
+  if (!force && Date.now() < ctrlHoldUntil) return;
   const ui = await fetchCtrlState();
   if (ui) {
     shareSeen = typeof ui.screenShare === 'boolean' ? ui.screenShare : null;
@@ -914,6 +918,26 @@ async function syncCtrlState() {
     paintCtrlRow(sw.closest('.ctrl'), icon, on);
   });
   paintDualAvailability();
+}
+
+// After a switch is pressed, the far side can take a moment to apply it.
+// The state is read until it shows what was asked, for a short while, 
+// and only then painted; the poll waits too.
+// If it never does, the state read last is painted: the switch then tells the truth.
+async function syncCtrlStateExpecting(icon, want, timeoutMs = 3000) {
+  const probe = CTRL_STATE[icon];
+  ctrlHoldUntil = Date.now() + timeoutMs + 1000;
+  try {
+    const start = Date.now();
+    while (probe && Date.now() - start < timeoutMs) {
+      const ui = await fetchCtrlState();
+      if (ui && probe(ui) === want) break;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+  } finally {
+    ctrlHoldUntil = 0;
+  }
+  await syncCtrlState(true);
 }
 
 async function renderMenuOptions() {
@@ -1005,8 +1029,10 @@ async function renderMenuOptions() {
       sw.dataset.icon = icon;
       sw.checked = on;
       sw.addEventListener('change', async () => {
+        const want = sw.checked;
+        ctrlHoldUntil = Date.now() + 5000;
         await sendKey(opt.dtmf);
-        await syncCtrlState();
+        await syncCtrlStateExpecting(icon, want);
       });
 
       row.appendChild(sw);
