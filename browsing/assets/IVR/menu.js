@@ -324,9 +324,7 @@ window.updateQrCode = function() {
         container.appendChild(info);
     }
 
-    // Built with DOM nodes, not innerHTML: pages that enforce Trusted Types (Teams)
-    // reject any innerHTML assignment, which threw here before the container was
-    // attached, so the QR code never showed in a Teams meeting.
+    // Built with DOM nodes
     if (info) {
         info.replaceChildren();
         if (pairingCode) {
