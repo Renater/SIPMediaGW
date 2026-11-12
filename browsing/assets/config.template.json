@@ -55,6 +55,12 @@
                 "fr": "Nom de la visioconférence Nextcloud" },
       "placeholder": { "en": "my-metting-1234",
                        "fr": "ma-reunion-1234" }
+    },
+    "edumeet": {
+      "hint": { "en": "Edumeet conference name",
+                "fr": "Nom de la visioconférence Edumeet" },
+      "placeholder": { "en": "my-meeting-1234",
+                       "fr": "ma-reunion-1234" }
     }
   },
   "menus": {
@@ -395,6 +401,40 @@
           "en": "Raise / Lower your hand",
           "fr": "Lever / Baisser la main",
           "icon": "hand_icon"
+        }
+      ]
+    },
+    "edumeet": {
+      "options": [
+        {
+          "dtmf": 1,
+          "en": "Mute / Unmute",
+          "fr": "Muet / Actif",
+          "icon": "microphone_icon"
+        },
+        {
+          "dtmf": 2,
+          "en": "Start / Stop camera",
+          "fr": "Démarrer / Arrêter la caméra",
+          "icon": "camera_icon"
+        },
+        {
+          "dtmf": 3,
+          "en": "Show / Hide chat",
+          "fr": "Afficher / Masquer le chat",
+          "icon": "chat_icon"
+        },
+        {
+          "dtmf": 4,
+          "en": "Raise / Lower your hand",
+          "fr": "Lever / Baisser la main",
+          "icon": "hand_icon"
+        },
+        {
+          "dtmf": 5,
+          "en": "Show / Hide the participants list",
+          "fr": "Afficher / Masquer la liste des participants",
+          "icon": "participants_icon"
         }
       ]
     }

@@ -155,6 +155,10 @@ def event_handler(data, args):
                 displayName = data['peerdisplayname'].split('-',1)[1][roomLen:]
             except:
                 displayName = data['peerdisplayname']
+        # The SIP proxy cuts the From header before '<', which keeps the space
+        # that separates the display name from the URI ("Room <sip:…>" gives
+        # "Room ").
+        displayName = displayName.strip()
         if not displayName:
             displayName = data['peeruri'].split(';')[0].split(':')[1]
         print("My name: "+displayName, flush=True)
