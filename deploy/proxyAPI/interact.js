@@ -898,10 +898,9 @@ async function syncCtrlState(force = false) {
   });
 }
 
-// After a switch is pressed, the far side can take a moment to apply it (Teams
-// raises a hand through its server: the first read-back still gave the old state,
-// so the switch went on, off, then on again). The state is read until it shows
-// what was asked, for a short while, and only then painted; the poll waits too.
+// After a switch is pressed, the far side can take a moment to apply it.
+// The state is read until it shows what was asked, for a short while, 
+// and only then painted; the poll waits too.
 // If it never does, the state read last is painted: the switch then tells the truth.
 async function syncCtrlStateExpecting(icon, want, timeoutMs = 3000) {
   const probe = CTRL_STATE[icon];
