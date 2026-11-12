@@ -124,7 +124,7 @@ class IVR:
         self.applyBrowserLanguage(self.config.get("lang", "en"))
         IVRPath = "file://"
         IVRPath += os.path.join(os.path.dirname(os.path.normpath(__file__)), '../browsing/assets/IVR/index.html')
-        self.url = '{}?displayName={}'.format(IVRPath, self.name)
+        self.url = '{}?displayName={}'.format(IVRPath, urllib.parse.quote(self.name))
         if self.roomName:
             self.url = '{}&roomId={}'.format(self.url, self.roomName)
         if self.browsingId:
