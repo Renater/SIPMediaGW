@@ -324,11 +324,22 @@ window.updateQrCode = function() {
         container.appendChild(info);
     }
 
+    // Built with DOM nodes
     if (info) {
-        const urlHtml = pairingUrl ? `<a href="${pairingUrl}" target="_blank">${pairingUrl}</a>` : '';
-        info.innerHTML = pairingCode
-            ? `Code: ${pairingCode}${urlHtml ? '<br/>(' + urlHtml + ')' : ''}`
-            : (urlHtml ? `(${urlHtml})` : '');
+        info.replaceChildren();
+        if (pairingCode) {
+            info.append('Code: ' + pairingCode);
+        }
+        if (pairingUrl) {
+            if (pairingCode) {
+                info.append(document.createElement('br'));
+            }
+            const link = document.createElement('a');
+            link.href = pairingUrl;
+            link.target = '_blank';
+            link.textContent = pairingUrl;
+            info.append('(', link, ')');
+        }
     }
 
     // Ensure visible and on top
