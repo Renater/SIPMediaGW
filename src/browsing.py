@@ -214,7 +214,7 @@ class Browsing:
                 self.screenShared = False
         except Exception as e:
             return
-        self.driver.execute_script(f"document.dispatchEvent(new KeyboardEvent('keydown',{{'key':'{inKey}'}}));")
+        self.driver.execute_script(f"if(window.meeting){{window.meeting.interact('{inKey}');}}")
 
     def unset(self):
         pass
