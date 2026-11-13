@@ -188,7 +188,7 @@ class EduMeet extends UIHelper {
         } else if (key == '5') {
             this._clickAria(['participants']);
         } else if (key == 's' || key == 'q') {
-            this._clickAria(['screen', 'écran']);
+            this._clickAria(['sharing', 'partage']);
         } else {
             console.warn('[!] Unknown DTMF key: ' + key);
         }
