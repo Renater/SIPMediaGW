@@ -159,6 +159,11 @@ function initIVR(config) {
                     }
                 } else {
                     showStatus(messages[lang].invalid(inputDigits.join('')));
+                    // With more than nine platforms the digits add up: start again.
+                    if (Object.keys(domains).length > 9) {
+                        inputDigits = [];
+                        updateDisplay();
+                    }
                 }
             } else if (stage === "room") {
                 if(window.inputRoomName){

@@ -562,6 +562,10 @@ function renderDomainButtons() {
 
     btn.append(icon, text);
     btn.onclick = async () => {
+      // Past nine platforms the gateway adds digits up: clear any typed on the room's keypad.
+      if (domains.length > 9) {
+        for (let i = 0; i < String(domains.length).length; i++) await sendKey('*');
+      }
       for (const d of digit) await sendKey(d);
       await sendKey('#');
       showInputAndPrepareMenu(key);
