@@ -9,7 +9,7 @@ Each gateway is stored under the key `gateway:<gw_id>` as a JSON object
 
 | Field | Written by | Meaning |
 |---|---|---|
-| `gw_ip` | `/register` | the launcher's address, `HOST_IP:GW_API_PORT` (port 8100 by default) |
+| `gw_ip` | `/register` | the launcher's address, `HOST_IP:GW_API_PORT` (port 8100 by default); the proxy calls it over `GW_API_SCHEME` (`http` by default) |
 | `gw_state` | `/register`, `/start`, `/stop`, the monitor, the media scaler | `created`, `started`, `stopped`, `deleted`; `stopping` from the scaler |
 | `gw_type` | `/register` | `media`, `baresip`, `recording`, `streaming` |
 | `room`, `browsing`, `peer_uri`, `peer_name`, `call_started` | the monitor, from `/gateway/status` | what the container is doing; `call_started` is UTC, `Z`-suffixed, written by the gateway at CALL_ESTABLISHED |
