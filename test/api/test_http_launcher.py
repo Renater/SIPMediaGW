@@ -516,10 +516,10 @@ class TestGetStatusMethod:
         """Teste le statut d'une passerelle lancée avec une salle physique (-P)."""
         mock_gw_info.return_value = {"Name": "my-gw-1"}
         mock_parse_history.return_value = {}
-        
+
         mock_process = MagicMock()
         mock_popen.return_value = mock_process
-        
+
         # Status, pas d'enregistrement, pas de transcription (pas de liste mp4), salle physique
         mock_process.communicate.side_effect = [
             (b'[{"Name":"my-gw","Status":"running"}]', b''),  # get_gateway_docker_status
@@ -527,7 +527,7 @@ class TestGetStatusMethod:
             (b'', b''),  # WITH_TRANSCRIPT
             (b'Salle 2.14', b''),  # PHYSICAL_ROOM
         ]
-        
+
         gw = DockerGateway()
         result = gw.get_status("my-gw")
         assert result["physical_room"] == "Salle 2.14"
@@ -740,3 +740,118 @@ class TestRoutesCoverage:
         
         # Peut être 404 si le fichier n'existe pas, c'est normal
         assert response.status_code in [200, 404]
+
+# === TESTS - sendCommand : commandes transmises au connecteur de la page ===
+@pytest.fixture
+def connector_gw():
+    """Une passerelle dont la page répond via executeInExistingChromeSession."""
+    with patch('HTTPLauncher.DockerGateway.get_gw_info', return_value={"Name": "my-gw-1"}), \
+            patch('subprocess.Popen') as popen, \
+            patch.object(DockerGateway, 'executeInExistingChromeSession') as execute:
+        process = MagicMock()
+        process.communicate.return_value = (b':99\n3', b'')  # DISPLAY_WEB, GW_ID
+        popen.return_value = process
+        yield DockerGateway(), execute, popen
+
+
+class TestSendCommandConnector:
+    """Commandes du téléphone exécutées par le connecteur (window.meeting)."""
+
+    def test_send_chat(self, connector_gw):
+        gw, execute, _ = connector_gw
+        execute.return_value = True
+        assert gw.sendCommand("my-gw", {"command": "sendChat", "param1": "hello"}) == {"ack": True, "sendChat": True}
+        gw_id, script, message = execute.call_args.args
+        assert gw_id == "3"
+        assert "window.meeting.sendChat(arguments[0])" in script
+        assert message == "hello"
+
+    def test_send_chat_refused(self, connector_gw):
+        gw, execute, _ = connector_gw
+        execute.return_value = False
+        with pytest.raises(ValueError, match="sendChat failed"):
+            gw.sendCommand("my-gw", {"command": "sendChat", "param1": "hello"})
+
+    def test_end_call_hangs_up_baresip(self, connector_gw):
+        gw, execute, popen = connector_gw
+        gw.sendCommand("my-gw", {"command": "endCall"})
+        assert popen.call_args_list[-1].args[0] == [
+            'docker', 'exec', 'my-gw-1', 'sh', '-c', 'echo "/hangup" | netcat -q 1 127.0.0.1 5555']
+        execute.assert_not_called()
+
+    def test_slide_shot(self, connector_gw):
+        gw, execute, _ = connector_gw
+        execute.return_value = "iVBORw0KGgo"
+        assert gw.sendCommand("my-gw", {"command": "slideShot"}) == {"ack": True, "slideImg": "iVBORw0KGgo"}
+        assert execute.call_args.args == ("3", "return window.meeting.slideShot();")
+
+    def test_reaction(self, connector_gw):
+        gw, execute, _ = connector_gw
+        execute.return_value = True
+        result = gw.sendCommand("my-gw", {"command": "reaction", "param1": "clapping-hands"})
+        assert result == {"ack": True, "reaction": "clapping-hands"}
+        assert execute.call_args.args[2] == "clapping-hands"
+        assert "window.meeting.reaction(arguments[0])" in execute.call_args.args[1]
+
+    def test_reaction_needs_a_name(self, connector_gw):
+        gw, execute, _ = connector_gw
+        with pytest.raises(ValueError, match="reaction requires param1"):
+            gw.sendCommand("my-gw", {"command": "reaction"})
+        execute.assert_not_called()
+
+    def test_reaction_not_supported(self, connector_gw):
+        gw, execute, _ = connector_gw
+        execute.return_value = False
+        with pytest.raises(ValueError, match="not supported by this connector"):
+            gw.sendCommand("my-gw", {"command": "reaction", "param1": "red-heart"})
+
+    @pytest.mark.parametrize("command", ["mediaState", "uiState", "panelState"])
+    def test_state_queries(self, connector_gw, command):
+        gw, execute, _ = connector_gw
+        execute.return_value = {"microphone": True}
+        assert gw.sendCommand("my-gw", {"command": command, "param1": ""}) == {"ack": True, command: {"microphone": True}}
+        assert f"window.meeting.{command}()" in execute.call_args.args[1]
+
+    @pytest.mark.parametrize("command", ["camera", "microphone"])
+    @pytest.mark.parametrize("state", ["on", "off"])
+    def test_switches(self, connector_gw, command, state):
+        gw, execute, _ = connector_gw
+        assert gw.sendCommand("my-gw", {"command": command, "param1": state}) == {"ack": True, command: state}
+        assert execute.call_args.args == ("3", f"return window.meeting.{command}(arguments[0]);", state)
+
+    @pytest.mark.parametrize("command", ["camera", "microphone"])
+    def test_switch_value_is_checked(self, connector_gw, command):
+        gw, execute, _ = connector_gw
+        with pytest.raises(ValueError, match="must be 'on' or 'off'"):
+            gw.sendCommand("my-gw", {"command": command, "param1": "maybe"})
+        execute.assert_not_called()
+
+    def test_display_name_is_set_in_the_url(self, connector_gw):
+        gw, execute, _ = connector_gw
+        assert gw.sendCommand("my-gw", {"command": "displayName", "param1": "Room 2.14"}) == {"ack": True}
+        script, name = execute.call_args.args[1:]
+        assert "params.set('displayName', arguments[0])" in script
+        assert name == "Room 2.14"
+
+    def test_display_name_is_read(self, connector_gw):
+        gw, execute, _ = connector_gw
+        execute.return_value = "Room 1"
+        assert gw.sendCommand("my-gw", {"command": "displayName"}) == {"ack": True, "displayName": "Room 1"}
+        assert "get('displayName')" in execute.call_args.args[1]
+
+    def test_room_name_goes_to_the_ivr(self, connector_gw):
+        gw, execute, _ = connector_gw
+        assert gw.sendCommand("my-gw", {"command": "roomName", "param1": "lecture1"}) == {"ack": True}
+        script, room = execute.call_args.args[1:]
+        assert "window.inputRoomName = arguments[0]" in script
+        assert "'key': '#'" in script
+        assert room == "lecture1"
+
+    def test_route_answers_404_for_an_unsupported_command(self, client, override_backend):
+        override_backend.sendCommand.side_effect = ValueError("reaction 'red-heart' not supported by this connector")
+        response = client.post("/gateway/command", json={
+            "gw_id": "my-gw",
+            "payload": {"command": "reaction", "param1": "red-heart"}
+        })
+        assert response.status_code == 404
+        assert response.json()["error"]["detail"] == "reaction 'red-heart' not supported by this connector"
