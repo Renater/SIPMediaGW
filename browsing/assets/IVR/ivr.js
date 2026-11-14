@@ -48,7 +48,7 @@ function initIVR(config) {
         const dict = {};
         let index = 1;
         for (const [key, obj] of Object.entries(raw)) {
-            dict[index] = { id: index, key, name: obj.name, domain: obj.domain };
+            dict[index] = { id: index, key, name: obj.name, domain: obj.domain, browsing: obj.browsing || key };
             index++;
         }
         return dict;
@@ -103,7 +103,7 @@ function initIVR(config) {
             domainsEl.classList.remove("hidden");
             domainsEl.innerHTML = Object.values(domains)
                 .map(d => {
-                    const iconSrc = `./images/domain-icons/${encodeURIComponent(d.key)}.png`;
+                    const iconSrc = `./images/domain-icons/${encodeURIComponent(d.browsing)}.png`;
                     return `<div class="domain-item" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;margin:6px 0;background:#fff;border:1px solid #e2e2e2;">
                                 <div style="display:flex;align-items:center;gap:8px;min-width:0;">
                                   <div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #ccc;border-radius:6px;font-weight:700;background:#fafafa;flex:0 0 34px;">${d.id}</div>
@@ -134,7 +134,7 @@ function initIVR(config) {
     function handleInput(char) {
         activateDigitsHalo()
         if (/^[a-zA-Z0-9-_/-_.]$/.test(char)) {
-            if (stage === "domain") inputDigits = [char];
+            if (stage === "domain") inputDigits = Object.keys(domains).length > 9 ? [...inputDigits, char] : [char];
             else inputDigits.push(char);
         } else if (char === '*') {
             inputDigits.pop();
@@ -249,7 +249,7 @@ function initIVR(config) {
             }
         }
         if (r && !/^[0-9]$/.test(r)) pendingRoomId = r;
-        if (d && /^[1-9]$/.test(d)) {
+        if (d && /^[1-9][0-9]*$/.test(d)) {
             if (domains[d]) {
                 selectedDomain = domains[d];
                 (selectedDomain.id + '#').split('').forEach(handleInput);
