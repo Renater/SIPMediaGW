@@ -207,9 +207,15 @@ class IVR:
                 print("IVR error: {}".format(e), flush=True)
                 return {}
 
+    def browsingModule(self, key):
+        # A webrtc_domains entry may name its connector in "browsing", so that
+        # several instances of one platform can share it; the key is the default.
+        entry = (getattr(self, 'config', None) or {}).get('webrtc_domains', {}).get(key) or {}
+        return (entry.get('browsing') or key).lower().replace(" ", "")
+
     def attend(self, room):
         sys.path.append("{}/../browsing".format(os.path.dirname(os.path.abspath(__file__))))
-        modName = self.browsingName
+        modName = self.browsingModule(self.browsingKey)
         print("Browsing mod name: " + modName, flush=True)
         mod = importlib.import_module(modName)
         isClassMember = lambda member: inspect.isclass(member) and member.__module__ == modName
@@ -218,7 +224,7 @@ class IVR:
             raise ImportError(f"No class found in {modName}")
         browsingObj = browsingClass[0][1]
         self.browsingObj = browsingObj(self.width, self.height, self.config,
-                                       self.browsingName, room, self.name,
+                                       modName, room, self.name,
                                        self.service, self.chromeOptions,
                                        self.userInputs, self.readPairingCode)
         self.browsingObj.run()
@@ -228,6 +234,7 @@ class IVR:
         try:
             browsingName, room = self.prompt()
             self.roomName = room['roomName'] if room and 'roomName' in room else ''
+            self.browsingKey = browsingName
             self.browsingName = browsingName.lower().replace(" ", "")
             # Close IVR:
             self.driver.close()
