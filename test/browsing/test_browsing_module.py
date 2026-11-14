@@ -16,7 +16,7 @@ RUNTIME_ONLY = ("qrcode", "requests", "selenium", "selenium.webdriver",
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../src"))
 with patch.dict(sys.modules, {name: MagicMock() for name in RUNTIME_ONLY if name not in sys.modules}):
-    from ivr import IVR  # noqa: E402
+    import ivr as ivr_module
 
 DOMAINS = {
     "jitsi": {"name": "Jitsi Meet", "domain": "meet.example.org"},
@@ -25,8 +25,14 @@ DOMAINS = {
 }
 
 
+def new_ivr():
+    # The IVR writes a Chrome policy file under /etc when it can: not from a test.
+    with patch.object(ivr_module.os, "makedirs", side_effect=OSError("read-only")):
+        return ivr_module.IVR(width=1280, height=720)
+
+
 def ivr_with_domains():
-    ivr = IVR(width=1280, height=720)
+    ivr = new_ivr()
     ivr.config = {"webrtc_domains": DOMAINS}
     return ivr
 
@@ -43,7 +49,7 @@ def test_browsing_names_the_connector():
 
 def test_unknown_key_and_missing_config_fall_back_to_the_key():
     assert ivr_with_domains().browsingModule("Some Platform") == "someplatform"
-    assert IVR(width=1280, height=720).browsingModule("jitsi") == "jitsi"
+    assert new_ivr().browsingModule("jitsi") == "jitsi"
 
 
 def test_attend_loads_the_connector_of_the_entry():
@@ -60,12 +66,12 @@ def test_attend_loads_the_connector_of_the_entry():
     module = types.ModuleType("fakeconnector")
     Connector.__module__ = "fakeconnector"
     module.Connector = Connector
-    sys.modules["fakeconnector"] = module
 
-    ivr = IVR(width=1280, height=720)
+    ivr = new_ivr()
     ivr.config = {"webrtc_domains": {"x.example.org": {"domain": "x.example.org", "browsing": "fakeconnector"}}}
     ivr.browsingKey = "x.example.org"
     room = {"roomName": "lecture1", "config": {"webrtc_domain": "x.example.org"}}
-    ivr.attend(room)
+    with patch.dict(sys.modules, {"fakeconnector": module}):
+        ivr.attend(room)
 
     assert created == {"modName": "fakeconnector", "room": room, "ran": True}
