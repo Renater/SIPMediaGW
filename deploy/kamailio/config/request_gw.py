@@ -106,6 +106,8 @@ class RequestGw:
         return
 
     def handler(self, msg, args):
+        # A $var keeps its value from the previous message of the process.
+        KSR.pv.seti("$var(nogw)", 0)
         Logger.LM_ERR("Loggers.py:      LM_ERR: msg: %s" % str(args))
         Logger.LM_ERR('RequestGw.handler(%s, %s)\n' % (KSR.pv.get("$mt"), str(args)))
         if (KSR.pv.get("$mt") == 1 and
@@ -128,6 +130,9 @@ class RequestGw:
                     displayNameWRoom = '"%s-%s%s"' % (str(len(room)), room, displayName.replace('"',''))
                     KSR.uac.uac_replace_from(displayNameWRoom, "")
                     Logger.LM_ERR('########## SIP request, method = %s, RURI = %s, From = %s\n' % (KSR.pv.get("$rm"), KSR.pv.get("$ru"), KSR.pv.get("$hdr(From)")))
+                else:
+                    Logger.LM_ERR('No free gateway for %s\n' % room)
+                    KSR.pv.seti("$var(nogw)", 1)
 
         return 1
 
