@@ -32,6 +32,7 @@ class IVR:
         self.height = height
         self.driver = None
         self.browsingObj = None
+        self.screenShared = False
         self.IVRTimeout = int(os.environ.get('IVR_TIMEOUT')) if os.environ.get('IVR_TIMEOUT') else None
         self.userInputs = queue.Queue()
         self.service = []
@@ -221,7 +222,17 @@ class IVR:
                                        self.browsingName, room, self.name,
                                        self.service, self.chromeOptions,
                                        self.userInputs, self.readPairingCode)
+        self.browsingObj.slidesShown = lambda: self.screenShared
         self.browsingObj.run()
+
+    def showSlides(self, shown):
+        # Before the meeting is joined, s and q would reach the keypad of the room
+        # screen: the browsing shares the slides when it joins if they are still shown.
+        if shown == self.screenShared:
+            return
+        self.screenShared = shown
+        if self.browsingObj and self.browsingObj.joined:
+            self.userInputs.put('s' if shown else 'q')
 
     def run(self):
         self.launchBrowser()

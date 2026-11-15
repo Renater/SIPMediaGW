@@ -27,6 +27,8 @@ class Browsing:
         self.initScript = ''
         self.screenShared = False
         self.streamedSlide = False
+        self.joined = False
+        self.slidesShown = lambda: False
         self.userInputs = inputs
         self.readPairingCode = readPairingCode
         self.service = service
@@ -241,6 +243,9 @@ class Browsing:
                 if joined:
                     break
                 self.interact()
+            self.joined = True
+            if self.slidesShown():
+                self.userInputs.put('s')
             self.monitorLeftMeeting()
             if os.getenv("ENDING_TIMEOUT"):
                 self.monitorSingleParticipant(int(os.getenv("ENDING_TIMEOUT")), checkInterval=60)
