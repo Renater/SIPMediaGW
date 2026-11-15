@@ -114,7 +114,9 @@ class RequestGw:
             if KSR.pv.get("$rm") == 'INVITE' and KSR.pv.get("$ru").find(self.gwNamePart) == -1:
                 Logger.LM_ERR('SIP request, method = %s, RURI = %s, From = %s\n' % (KSR.pv.get("$rm"), KSR.pv.get("$ru"), KSR.pv.get("$hdr(From)")))
                 uri = KSR.pv.get("$ru")
-                room = (uri.split(":", 1)[1]).split('@')[0]
+                # An address without a user part ("sip:sip.example.org") names no room.
+                address = uri.split(":", 1)[1]
+                room = address.split('@')[0] if '@' in address else ""
                 displayName = ""
                 if "<" in KSR.pv.get("$hdr(From)"):
                     displayName = (KSR.pv.get("$hdr(From)").split('<')[0])
