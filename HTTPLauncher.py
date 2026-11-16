@@ -723,5 +723,7 @@ def get_logo(logo_name: str, gw_id: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HTTP Launcher for SIP Media Gateway")
     parser.add_argument("--port", type=int, default=8100, help="Port to run the HTTP server on")
+    parser.add_argument("--host", default="0.0.0.0",
+                        help="Address to listen on, for example 127.0.0.1 behind a reverse proxy")
     args = parser.parse_args()
-    uvicorn.run(app, host="0.0.0.0", port=args.port)
+    uvicorn.run(app, host=args.host, port=args.port)

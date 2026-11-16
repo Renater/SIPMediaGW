@@ -43,6 +43,13 @@ adminToken = os.getenv("PROXY_ADMIN_TOKEN", "")
 # gateway id. Empty by default, which keeps /gateway_id closed: the route is
 # only enabled on deployments where endpoints can be trusted to hold a secret.
 roomToken = os.getenv("PROXY_ROOM_TOKEN", "")
+# "https" when a TLS reverse proxy runs in front of each gateway's launcher,
+# for gateways that the proxy reaches over the internet.
+gwApiScheme = os.getenv("GW_API_SCHEME") or "http"
+
+
+def gatewayUrl(gwIp: str, path: str) -> str:
+    return f"{gwApiScheme}://{gwIp}/gateway/{path}"
 
 # Redis Mapping:
 # gateway:<gw_id> => {"gw_ip": …, "gw_state": …, "gw_type": …, "room": …,
@@ -528,7 +535,7 @@ async def _fetchAndStoreGatewayStatus(gw_id: str, gw_ip: str, gw: dict):
     Fetch /gateway/status from a single gateway and update its Redis entry.
     Used by the periodic monitor and the on‑demand monitor.
     """
-    url = f"http://{gw_ip}/gateway/status"
+    url = gatewayUrl(gw_ip, "status")
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             headers = {"Authorization": f"Bearer {allowedToken}"}
@@ -765,7 +772,7 @@ async def startGateway(request: Request):
 
     params = dict(request.query_params)
 
-    gwUrl = f"http://{gwIp}/gateway/start"
+    gwUrl = gatewayUrl(gwIp, "start")
     headers = {"Authorization": request.headers.get("Authorization", "")}
     body = await request.json()
     body["gw_id"]= gw_id
@@ -819,7 +826,7 @@ async def stopGateway(request: Request):
     body = await request.json()
 
     params = dict(request.query_params)
-    gwUrl = f"http://{gwIp}/gateway/stop"
+    gwUrl = gatewayUrl(gwIp, "stop")
     headers = {"Authorization": request.headers.get("Authorization", "")}
 
     gwResponse = await proxyToGateway(gwUrl, request, params, body, headers)
@@ -953,7 +960,7 @@ async def genericGatewayProxy(request: Request, endpoint: str):
     params = dict(request.query_params)
     headers = {"Authorization": request.headers.get("Authorization", "")}
     body = await request.json() if request.method != "GET" else None
-    gw_url = f"http://{gw_ip}/gateway/{endpoint}"
+    gw_url = gatewayUrl(gw_ip, endpoint)
 
     gw_response = await proxyToGateway(gw_url, request, params, body, headers)
 
