@@ -83,6 +83,7 @@ def test_updateProgressInfo_updates_redis_mapping(redis_mock):
         "transcript_progress": "50%",
         "gw_state": "up",
         "room": "room1",
+        "physical_room": "Salle 2.14",
         "browsing": "JITSI"
     }
 
@@ -94,7 +95,7 @@ def test_updateProgressInfo_updates_redis_mapping(redis_mock):
     assert key == "gateway:gw1"
     assert json.loads(raw) == {
         "gw_ip": "1.2.3.4", "gw_state": "started", "gw_type": "media",
-        "room": "room1", "start_time": "00:00:00", "media_duration": "00:05:30",
+        "room": "room1", "physical_room": "Salle 2.14", "start_time": "00:00:00", "media_duration": "00:05:30",
         "transcript_progress": "50%", "browsing": "JITSI",
         "peer_uri": None, "peer_name": None, "call_started": None,
     }
@@ -239,7 +240,7 @@ def test_updateProgressInfo_with_state_down(redis_mock):
     # carried them, and nothing here writes one.
     assert json.loads(redis_mock.set.call_args[0][1]) == {
         "gw_ip": "1.2.3.4", "gw_state": "stopped", "gw_type": "media",
-        "room": None, "browsing": "IDLE",
+        "room": None, "physical_room": None, "browsing": "IDLE",
         "peer_uri": None, "peer_name": None, "call_started": None,
     }
 
@@ -258,7 +259,7 @@ def test_updateProgressInfo_with_streaming_duration(redis_mock):
 
     assert json.loads(redis_mock.set.call_args[0][1]) == {
         "gw_ip": "1.2.3.4", "gw_state": "created", "gw_type": "media",
-        "room": "room1", "start_time": "0", "media_duration": "00:10:20",
+        "room": "room1", "physical_room": None, "start_time": "0", "media_duration": "00:10:20",
         "browsing": "STREAMING",
         "peer_uri": None, "peer_name": None, "call_started": None,
     }
