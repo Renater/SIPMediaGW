@@ -5,7 +5,7 @@ SIPMediaGW is an open-source set of components that allows traditional meeting r
 <br><br><br>
 The room connector is compatible with all video devices supporting the SIP protocol. It has been tested with major devices from Polycom, Cisco, Huawei, and Aver.
 
-<img src="docs/architecture.png">
+<img src="docs/architecture.svg">
 
 ## Features
 
