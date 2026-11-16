@@ -36,16 +36,20 @@ class Browsing:
             self.chromeOptions.add_argument('--use-fake-ui-for-media-stream')
         self.driver = None
         self.rtcstatsOn = False
-        self.initScript = "window.meeting = new window.Browsing('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(
-                                                    self.room['config']['webrtc_domain'],
-                                                    self.room['roomName'],
-                                                    self.room['displayName'],
-                                                    self.room['config']['lang'],
-                                                    json.dumps(self.room['config']['ivr_prompts']),
-                                                    self.room['roomToken'],
-                                                    os.environ.get('AUDIO_ONLY'),
-                                                    True if os.getenv("DUAL_SCREEN_LAYOUT") == "true"
-                                                        and os.getenv("DUAL_SCREEN_BY_DEFAULT") == "true" else False)
+        # Each value goes to the connector as a JavaScript string. A JSON string
+        # is one, and it keeps quotes in names ("Salle d'honneur"). str() keeps
+        # the strings the connectors expect: 'None', 'True', 'False'.
+        connectorArgs = [self.room['config']['webrtc_domain'],
+                         self.room['roomName'],
+                         self.room['displayName'],
+                         self.room['config']['lang'],
+                         json.dumps(self.room['config']['ivr_prompts'], ensure_ascii=False),
+                         self.room['roomToken'],
+                         os.environ.get('AUDIO_ONLY'),
+                         True if os.getenv("DUAL_SCREEN_LAYOUT") == "true"
+                             and os.getenv("DUAL_SCREEN_BY_DEFAULT") == "true" else False]
+        self.initScript = "window.meeting = new window.Browsing({})".format(
+            ", ".join(json.dumps(str(value)) for value in connectorArgs))
 
     def loadJS(self, jsScript):
         cssPath = os.path.join(os.path.dirname(__file__),
