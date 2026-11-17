@@ -93,6 +93,7 @@ body {
 #digits.room-mode {
   min-width: 14ch !important;
   max-width: 30ch;
+  width: auto;
 }
 
 /* Glow */
