@@ -220,7 +220,10 @@ class Browsing:
                 self.screenShared = False
         except Exception as e:
             return
-        self.driver.execute_script(f"if(window.meeting){{window.menu.interact('{inKey}');}}")
+        # The menu only exists once the meeting is joined: a key before that goes to the
+        # meeting page, as it did before the menu took the keys.
+        self.driver.execute_script(f"if(window.menu){{window.menu.interact('{inKey}');}}"
+                                   f"else if(window.meeting){{window.meeting.interact('{inKey}');}}")
 
     def unset(self):
         pass

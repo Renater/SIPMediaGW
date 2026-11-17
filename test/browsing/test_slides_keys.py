@@ -111,6 +111,20 @@ def joined_session(slides_shown):
     return session
 
 
+def interact_script(key):
+    session = browsing_module.Browsing(1280, 720, ROOM["config"], "fakeconnector", dict(ROOM), "Room A",
+                                       None, MagicMock(), ivr_module.queue.Queue(), MagicMock())
+    session.driver = MagicMock()
+    session.userInputs.put(key)
+    session.interact()
+    return session.driver.execute_script.call_args.args[0]
+
+
+def test_a_key_goes_to_the_menu_or_before_the_join_to_the_meeting_page():
+    assert interact_script("1") == ("if(window.menu){window.menu.interact('1');}"
+                                    "else if(window.meeting){window.meeting.interact('1');}")
+
+
 def test_slides_shown_at_the_join_are_shared_then():
     session = joined_session(True)
     assert session.joined is True
