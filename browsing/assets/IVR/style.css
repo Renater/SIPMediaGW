@@ -43,9 +43,14 @@ body {
    Main message
    ============================ */
 
+/* In the middle of the screen and narrow enough to stay clear of the logo in the corner,
+   also when the list below is wider. */
 #message {
-  max-width: 620px;
+  max-width: 560px;
   text-align: center;
+  text-wrap: balance;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 1.4rem;
 
   font-size: 1.35rem;
@@ -63,8 +68,10 @@ body {
   justify-content: center;
   align-items: center;
   margin: 0 auto;
+  /* Grows with the input: a platform number of two digits stays on one line. */
+  width: fit-content;
   min-width: 2ch;
-  max-width: 2ch;
+  white-space: nowrap;
   font-family: "Roboto Mono", monospace;
   font-size: 2.2rem;
   font-weight: 600;
@@ -113,8 +120,16 @@ body {
    Domains list
    ============================ */
 
+/* Columns keep a page of the list on a 720p screen; --page-size is the number of platforms that
+   a page shows (rows times columns), and a longer list goes page by page. */
 #domains {
-  max-width: 680px;
+  --page-size: 6;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+  align-content: start;
+  width: min(940px, 92vw);
+  box-sizing: border-box;
   padding: 1rem 1.2rem;
 
   background: rgba(255,255,255,0.6);
@@ -127,7 +142,15 @@ body {
   text-align: left;
 }
 
+#pages {
+  margin: -1rem 0 1rem;
+  font-size: 1rem;
+  color: #6b7390;
+  text-align: center;
+}
+
 #domains .domain-item {
+  min-width: 0;
   padding: 0.35rem 0;
   font-size: 1.15rem;
   font-weight: 500;

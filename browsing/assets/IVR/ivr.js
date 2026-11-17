@@ -7,7 +7,8 @@ const messages = {
         incomplete: (count, expected) => `Le code est trop court (${count}/${expected})`,
         error: reason => `Erreur : ${reason}`,
         chosenDomain: (id, name) => `Plateforme sélectionnée (${id}) : ${name}`,
-        confirmContinue: "— appuyez sur '#' pour continuer"
+        confirmContinue: "— appuyez sur '#' pour continuer",
+        pages: (page, count) => `Page ${page} sur ${count} · # page suivante · * page précédente`
     },
     en: {
         valid: code => `Code validated: ${code}`,
@@ -15,7 +16,8 @@ const messages = {
         incomplete: (count, expected) => `The code is too short (${count}/${expected})`,
         error: reason => `Error: ${reason}`,
         chosenDomain: (id, name) => `Platform selected (${id}): ${name}`,
-        confirmContinue: "— press '#' to continue"
+        confirmContinue: "— press '#' to continue",
+        pages: (page, count) => `Page ${page} of ${count} · # next page · * previous page`
     }
 };
 
@@ -36,6 +38,9 @@ function initIVR(config) {
     const lang = config['lang'] || 'fr';
     const expectedLength = parseInt(config['min_ivr_digit_length'], 10) || 0;
     const domains = parseDomains(config['webrtc_domains']);
+    // A list longer than a page of the room screen is shown page by page; the numbers stay
+    // the same on every page. The style sheet sets the page size with its columns.
+    let page = 0;
 
     let inputDigits = [];
     let stage = "domain"; // 'domain' -> 'room'
@@ -96,25 +101,57 @@ function initIVR(config) {
         };
     }
 
+    function pageSize() {
+        return parseInt(getComputedStyle(domainsEl).getPropertyValue('--page-size'), 10) || 20;
+    }
+
+    function pageCount() {
+        return Math.ceil(Object.keys(domains).length / pageSize());
+    }
+
+    function pageLine() {
+        let el = document.getElementById("pages");
+        if (!el) {
+            el = document.createElement("div");
+            el.id = "pages";
+            domainsEl.insertAdjacentElement("afterend", el);
+        }
+        return el;
+    }
+
+    function renderDomains() {
+        const size = pageSize();
+        const all = Object.values(domains);
+        const shown = pageCount() > 1 ? all.slice(page * size, (page + 1) * size) : all;
+        domainsEl.innerHTML = shown
+            .map(d => {
+                const iconSrc = `./images/domain-icons/${encodeURIComponent(d.browsing)}.png`;
+                return `<div class="domain-item" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;margin:6px 0;background:#fff;border:1px solid #e2e2e2;">
+                            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                              <div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #ccc;border-radius:6px;font-weight:700;background:#fafafa;flex:0 0 34px;">${d.id}</div>
+                              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;">${d.name}</div>
+                            </div>
+                            <img src="${iconSrc}" alt="" style="width:28px;height:28px;object-fit:contain;margin-left:12px;flex:0 0 28px;" onerror="this.style.display='none'">
+                        </div>`;
+            })
+            .join("");
+        const pages = pageLine();
+        pages.textContent = pageCount() > 1 ? messages[lang].pages(page + 1, pageCount()) : '';
+        pages.hidden = pageCount() <= 1;
+        // Every page keeps the height of the first one: the screen does not jump.
+        domainsEl.style.minHeight = '';
+        if (pageCount() > 1 && page === 0) domainsEl.dataset.pageHeight = domainsEl.offsetHeight;
+        if (pageCount() > 1) domainsEl.style.minHeight = `${domainsEl.dataset.pageHeight}px`;
+    }
+
     function showPrompt() {
-        if (messageEl.innerHTML === prompts[lang][stage]) return;
         if (stage === "domain" && Object.keys(domains).length > 1) {
             messageEl.innerHTML = prompts[lang].domain;
             domainsEl.classList.remove("hidden");
-            domainsEl.innerHTML = Object.values(domains)
-                .map(d => {
-                    const iconSrc = `./images/domain-icons/${encodeURIComponent(d.browsing)}.png`;
-                    return `<div class="domain-item" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;margin:6px 0;background:#fff;border:1px solid #e2e2e2;">
-                                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-                                  <div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #ccc;border-radius:6px;font-weight:700;background:#fafafa;flex:0 0 34px;">${d.id}</div>
-                                  <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;">${d.name}</div>
-                                </div>
-                                <img src="${iconSrc}" alt="" style="width:28px;height:28px;object-fit:contain;margin-left:12px;flex:0 0 28px;" onerror="this.style.display='none'">
-                            </div>`;
-                })
-                .join("");
+            renderDomains();
             playPromptAudio("platform", lang);
         } else {
+            if (messageEl.innerHTML === prompts[lang].room) return;
             messageEl.innerHTML = prompts[lang].room;
             domainsEl.innerHTML = '';
             domainsEl.classList.add("hidden");
@@ -137,8 +174,19 @@ function initIVR(config) {
             if (stage === "domain") inputDigits = Object.keys(domains).length > 9 ? [...inputDigits, char] : [char];
             else inputDigits.push(char);
         } else if (char === '*') {
+            // With nothing typed, * on a list of several pages shows the page before.
+            if (stage === "domain" && !inputDigits.length && pageCount() > 1) {
+                page = (page - 1 + pageCount()) % pageCount();
+                renderDomains();
+            }
             inputDigits.pop();
         } else if (char === '#') {
+            // With nothing typed, # on a list of several pages shows the next page.
+            if (stage === "domain" && !inputDigits.length && pageCount() > 1) {
+                page = (page + 1) % pageCount();
+                renderDomains();
+                return;
+            }
             if (stage === "domain") {
                 const domainId = parseInt(inputDigits.join(''), 10);
                 if (!isNaN(domainId) && domains[domainId]) {
