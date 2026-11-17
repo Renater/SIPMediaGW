@@ -11,6 +11,14 @@ from deploy.proxyAPI import proxy
 pytestmark = pytest.mark.usefixtures("disable_proxy_monitor_gateways")
 
 
+def test_logo_svg_is_served_directly(client):
+    response = client.get("/favicon/logo.svg")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert "<svg" in response.text.lower()
+
+
 def test_authorize_valid_token():
     request = Mock(headers={"Authorization": "Bearer 1234"})
     assert proxy.authorize(request) is True
