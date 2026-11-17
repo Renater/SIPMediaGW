@@ -209,7 +209,7 @@ class Browsing:
             subprocess.run(['echo "/slidesrc fakevideo,nil,2x2,1,1000" | netcat -q 1 127.0.0.1 5555'], shell=True)
             self.streamedSlide = False
 
-    def interact(self):
+def interact(self):
         try:
             inKey = self.userInputs.get(True, 0.02)
             if inKey == 's':
@@ -218,7 +218,22 @@ class Browsing:
                 self.screenShared = False
         except Exception as e:
             return
-        self.driver.execute_script(f"if(window.meeting){{window.menu.interact('{inKey}');}}")
+        try:
+            self.driver.execute_script("""
+                const key = arguments[0];
+                try {
+                    if (window.menu) {
+                        window.menu.interact(key);
+                    } else if (window.meeting && typeof window.meeting.interact === 'function') {
+                        // Avant l'arrivée du menu (ex. validation de l'enregistrement)
+                        window.meeting.interact(key);
+                    }
+                } catch (e) {
+                    console.warn('[WARN] interact error, key:', key, e);
+                }
+            """, inKey)
+        except Exception as e:
+            print(f"interact error: {e}", flush=True)
 
     def unset(self):
         pass
