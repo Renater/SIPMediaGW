@@ -50,6 +50,19 @@ You can add or modify entries in this JSON to match your own webconference servi
 Simply update the `WEBRTC_DOMAINS` variable in your `.env` file with the appropriate service name and domain.
 SIPMediaGW will then present these choices in the IVR menu, allowing you to select your platform before entering the meeting ID.
 
+The key of an entry is also the name of its browsing script (`browsing/<key>.py` and `browsing/assets/<key>.js`).
+To offer several instances of the same platform, give each instance its own key and name the script in a `browsing` field:
+
+```json
+{
+    "edumeet-a": { "name": "eduMEET (a.example.org)", "domain": "a.example.org", "browsing": "edumeet" },
+    "edumeet-b": { "name": "eduMEET (b.example.org)", "domain": "b.example.org", "browsing": "edumeet" }
+}
+```
+
+The menus, the room name hints (`config.template.json`) and the icons (`IVR/images/domain-icons/`) of such entries are those of the script named in `browsing`.
+With more than nine entries, the platform number has several digits: enter it on the keypad, then `#`.
+
 ### SIPMediaGW being provided thourgh a dockerized envrironment, is it possible to deploy it in a Kubernetes cluster ?
 
 At this stage, the advantage of Docker lies in the portability and deployment flexibility offered by the containerized approach. \

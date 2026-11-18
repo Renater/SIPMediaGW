@@ -144,10 +144,18 @@ function updateSlideControlsVisibility() {
   ctrl.style.display = menuDisplayed ? 'flex' : 'none';
 }
 
+// The connector of a platform: its "browsing" field, or the key itself. Menus,
+// room name hints and logos belong to the connector, so that several instances
+// of one platform share them.
+function browsingModule(key) {
+  const val = webrtcDomains[key] || {};
+  return val.browsing || key;
+}
+
 function getRoomNamePlaceholder() {
   const captureEl = $('key-capture');
   if (!captureEl) return '';
-  const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
+  const selectedInfo = browsingName && roomNameInfo[browsingModule(browsingName)] ? roomNameInfo[browsingModule(browsingName)] : null;
   const lang = currentLang === 'fr' ? 'fr' : 'en';
   const fallback = TEXTS[lang].meetingFallback;
   return selectedInfo?.placeholder?.[lang] || selectedInfo?.placeholder?.en || fallback;
@@ -158,7 +166,7 @@ function updateRoomNameInputUi() {
   const hintEl = $('room-name-hint');
   if (!captureEl) return;
 
-  const selectedInfo = browsingName && roomNameInfo[browsingName] ? roomNameInfo[browsingName] : null;
+  const selectedInfo = browsingName && roomNameInfo[browsingModule(browsingName)] ? roomNameInfo[browsingModule(browsingName)] : null;
   const lang = currentLang === 'fr' ? 'fr' : 'en';
   const placeholder = getRoomNamePlaceholder();
   const hint = selectedInfo?.hint?.[lang] || selectedInfo?.hint?.en || '';
@@ -372,7 +380,7 @@ function showInCall(roomKnown) {
   $('in-call-room').hidden = !currentRoom;
 
   const icon = $('in-call-icon');
-  const src = `${apiUrl('/logo')}/${encodeURIComponent(browsingName)}?gw_id=${encodeURIComponent(gwId)}`;
+  const src = `${apiUrl('/logo')}/${encodeURIComponent(browsingModule(browsingName))}?gw_id=${encodeURIComponent(gwId)}`;
   if (icon.getAttribute('src') !== src) {
     icon.hidden = true;
     icon.onload = () => { icon.hidden = false; };
@@ -488,7 +496,7 @@ async function fetchIvrConfigAndRestoreState() {
     let rn = statusData.data.room;
     lastScreen = `${bn || ''}|${rn || ''}`;
     if (rn && bn) {
-      menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
+      menuOptions = (ivrMenus[browsingModule(bn)] && ivrMenus[browsingModule(bn)].options) ? ivrMenus[browsingModule(bn)].options : [];
       currentRoom = rn;
       browsingName = bn;
       // Awaited: it reads the connector's state before drawing, so leaving it
@@ -533,7 +541,7 @@ function renderDomainButtons() {
     const icon = document.createElement('img');
     icon.className = 'platform__icon';
     icon.alt = '';
-    icon.src = `${apiUrl('/logo')}/${encodeURIComponent(key)}?gw_id=${encodeURIComponent(gwId)}`;
+    icon.src = `${apiUrl('/logo')}/${encodeURIComponent(browsingModule(key))}?gw_id=${encodeURIComponent(gwId)}`;
     // A connector with no logo shipped simply shows none: the previous fallback
     // pointed at a relative path that stopped resolving once the page moved to
     // the proxy, so it only ever produced a second 404.
@@ -554,7 +562,11 @@ function renderDomainButtons() {
 
     btn.append(icon, text);
     btn.onclick = async () => {
-      await sendKey(digit);
+      // Past nine platforms the gateway adds digits up: clear any typed on the room's keypad.
+      if (domains.length > 9) {
+        for (let i = 0; i < String(domains.length).length; i++) await sendKey('*');
+      }
+      for (const d of digit) await sendKey(d);
       await sendKey('#');
       showInputAndPrepareMenu(key);
     };
@@ -580,7 +592,7 @@ function showInputAndPrepareMenu(selectedDomainKey) {
   icon.hidden = true;
   icon.onload = () => { icon.hidden = false; };
   icon.onerror = () => { icon.hidden = true; };
-  icon.src = `${apiUrl('/logo')}/${encodeURIComponent(selectedDomainKey)}?gw_id=${encodeURIComponent(gwId)}`;
+  icon.src = `${apiUrl('/logo')}/${encodeURIComponent(browsingModule(selectedDomainKey))}?gw_id=${encodeURIComponent(gwId)}`;
 
   const capture = $('key-capture');
   capture.disabled = false;
@@ -694,7 +706,7 @@ async function checkGwStatus() {
     if (!leaving && screen !== lastScreen) {
       lastScreen = screen;
       if (rn && bn) {
-        menuOptions = (ivrMenus[bn] && ivrMenus[bn].options) ? ivrMenus[bn].options : [];
+        menuOptions = (ivrMenus[browsingModule(bn)] && ivrMenus[browsingModule(bn)].options) ? ivrMenus[browsingModule(bn)].options : [];
         currentRoom = rn;
         browsingName = bn;
         renderMenuOptions();
