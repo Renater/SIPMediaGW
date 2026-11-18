@@ -38,6 +38,9 @@ function initIVR(config) {
     const lang = config['lang'] || 'fr';
     const expectedLength = parseInt(config['min_ivr_digit_length'], 10) || 0;
     const domains = parseDomains(config['webrtc_domains']);
+    // A platform number has as many digits as the highest platform id. One more key
+    // starts a new number instead of adding to the previous one.
+    const platformDigits = String(Object.keys(domains).length).length;
     // A list longer than a page of the room screen is shown page by page; the numbers stay
     // the same on every page. The style sheet sets the page size with its columns.
     let page = 0;
@@ -119,6 +122,21 @@ function initIVR(config) {
         return el;
     }
 
+    function showPages(visible) {
+        const pages = document.getElementById("pages");
+        if (pages) pages.hidden = !visible;
+    }
+
+    function hideDomainList() {
+        showPages(false);
+        domainsEl.innerHTML = '';
+        domainsEl.classList.add("hidden");
+        // The list kept the height of its first page: release it, otherwise the
+        // room prompt is separated from the input by an empty area.
+        domainsEl.style.minHeight = '';
+        domainsEl.style.display = "none";
+    }
+
     function renderDomains() {
         const size = pageSize();
         const all = Object.values(domains);
@@ -137,7 +155,7 @@ function initIVR(config) {
             .join("");
         const pages = pageLine();
         pages.textContent = pageCount() > 1 ? messages[lang].pages(page + 1, pageCount()) : '';
-        pages.hidden = pageCount() <= 1;
+        showPages(pageCount() > 1);
         // Every page keeps the height of the first one: the screen does not jump.
         domainsEl.style.minHeight = '';
         if (pageCount() > 1 && page === 0) domainsEl.dataset.pageHeight = domainsEl.offsetHeight;
@@ -151,10 +169,9 @@ function initIVR(config) {
             renderDomains();
             playPromptAudio("platform", lang);
         } else {
+            hideDomainList();
             if (messageEl.innerHTML === prompts[lang].room) return;
             messageEl.innerHTML = prompts[lang].room;
-            domainsEl.innerHTML = '';
-            domainsEl.classList.add("hidden");
             playPromptAudio("conference", lang);
         }
     }
@@ -171,8 +188,11 @@ function initIVR(config) {
     function handleInput(char) {
         activateDigitsHalo()
         if (/^[a-zA-Z0-9-_/-_.]$/.test(char)) {
-            if (stage === "domain") inputDigits = Object.keys(domains).length > 9 ? [...inputDigits, char] : [char];
-            else inputDigits.push(char);
+            if (stage === "domain") {
+                inputDigits = inputDigits.length >= platformDigits ? [char] : [...inputDigits, char];
+            } else {
+                inputDigits.push(char);
+            }
         } else if (char === '*') {
             // With nothing typed, * on a list of several pages shows the page before.
             if (stage === "domain" && !inputDigits.length && pageCount() > 1) {
@@ -196,6 +216,7 @@ function initIVR(config) {
                     window.browsing = selectedDomain.key;
                     inputDigits = [];
                     stage = "room";
+                    hideDomainList();
                     updateDisplay();
                     if (stage === "room") digitsEl.classList.add("room-mode");
                     if (pendingRoomId) {

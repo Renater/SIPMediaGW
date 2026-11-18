@@ -91,6 +91,7 @@ body {
 
 /* When switching to ROOM mode, the field widens */
 #digits.room-mode {
+  margin-top: 5rem;
   min-width: 14ch !important;
   max-width: 30ch;
   width: auto;
