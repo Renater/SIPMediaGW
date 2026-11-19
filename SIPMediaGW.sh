@@ -167,7 +167,7 @@ AUDIO_ONLY=$audio_only
 VIDEO_DEV=$video_dev
 DISPLAY=${display:+:$display}
 PULSE_SERVER=$pulse_server
-WITH_ALSA=$with_alsa
+WITH_ALSA=${with_alsa:-$WITH_ALSA}
 USER=$user_name
 export COMPOSE_FILE SERVICES \
        MAIN_APP RESTART LOOP CHECK_REG HOST_TZ \
