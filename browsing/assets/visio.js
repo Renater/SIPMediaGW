@@ -290,6 +290,9 @@ class Visio extends UIHelper{
         };
     }
     interact(key) {
+        // DTMF carries letters in upper case (RFC 4733 events A-D): a room pressing
+        // the "a" reaction sends "A". Match keys case-insensitively.
+        key = String(key).toLowerCase();
         const reactionKeys = {
             "7": "thumbs-up",
             "8": "red-heart",
