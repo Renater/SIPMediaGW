@@ -225,7 +225,7 @@ def interact(self):
                     if (window.menu) {
                         window.menu.interact(key);
                     } else if (window.meeting && typeof window.meeting.interact === 'function') {
-                        // Avant l'arrivée du menu (ex. validation de l'enregistrement)
+                        // Before the menu appears
                         window.meeting.interact(key);
                     }
                 } catch (e) {
