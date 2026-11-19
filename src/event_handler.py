@@ -190,13 +190,8 @@ def event_handler(data, args):
 
     if data['type'] == 'VIDEO_DISP':
         print(data, flush=True)
-        if data['param'] == 'VIDEO_SLIDES_START':
-            args['ivr'].userInputs.put('s')
-            args['ivr'].screenShared = True
-        if (data['param'] == 'VIDEO_SLIDES_STOP' and
-            args['ivr'].screenShared == True):
-            args['ivr'].userInputs.put('q')
-            args['ivr'].screenShared = False
+        if data['param'] in ('VIDEO_SLIDES_START', 'VIDEO_SLIDES_STOP'):
+            args['ivr'].showSlides(data['param'] == 'VIDEO_SLIDES_START')
 
     if data['type'] == 'CHAT_INPUT':
         if 'text' in data:
