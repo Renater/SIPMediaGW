@@ -128,17 +128,26 @@ class Browsing:
         return thread
 
     def monitorLeftMeeting(self, checkInterval=60):
+        # This runs once the meeting has been joined. A page without
+        # window.meeting from then on is a page that navigated away, for
+        # example a platform that reloads its page when the meeting ends: it
+        # can no longer be driven, so the call ends. A script error is not
+        # taken as a departure.
         def checkLoop():
             while True:
                 try:
                     left = self.driver.execute_script(
+                        "if (!window.meeting) return 'gone';"
                         "return ('hasLeft' in window.meeting) ? window.meeting.hasLeft() : null")
                 except Exception:
                     return
                 if left is None:
                     return
                 if left:
-                    print("Gateway is no longer in the conference, hanging up.", flush=True)
+                    if left == 'gone':
+                        print("The meeting page has gone, hanging up.", flush=True)
+                    else:
+                        print("Gateway is no longer in the conference, hanging up.", flush=True)
                     subprocess.run(['echo "/hangup" | netcat -q 1 127.0.0.1 5555'], shell=True)
                     return
                 time.sleep(checkInterval)
