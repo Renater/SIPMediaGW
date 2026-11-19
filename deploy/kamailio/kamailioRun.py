@@ -92,6 +92,9 @@ if os.getenv('HEPLIFY_SRV'):
 if os.getenv('ANTIFLOOD', 'False').lower() == 'true':
     kamRunCmd+= ' -A WITH_ANTIFLOOD'
 
+if os.getenv('IPAUTH', 'False').lower() == 'true':
+    kamRunCmd+= ' -A WITH_IPAUTH'
+
 print("Kamailio run command: {}".format(kamRunCmd), flush=True)
 
 cmd = subprocess.Popen(kamRunCmd,
