@@ -864,7 +864,7 @@ async def stopGateway(request: Request):
 
 @app.get("/status")
 @app.get("/progress")
-async def statusGateway(request: Request, gw_id: str = None, room: str = None):
+async def statusGateway(request: Request, gw_id: str = None):
     """GET /status?gw_id=gatewayName - Get gateway status"""
     # if not authorize(request):
     #     return Response(
@@ -874,23 +874,8 @@ async def statusGateway(request: Request, gw_id: str = None, room: str = None):
     #         media_type="application/json"
     #     )
 
-    if not gw_id and not room:
-        raise HTTPException(status_code=400, detail="Missing 'gw_id' or 'room' parameter")
-
-    if room:
-        # Find gateway by room
-        gw_id = None
-        for key in redisClient.scan_iter(match="gateway:*"):
-            rawValue = redisClient.get(key)
-            if not rawValue:
-                continue
-            gw = gwLoad(rawValue)
-            gwRoom = gw.get("room")
-            if gwRoom == room:
-                gw_id = key.split(":")[-1]
-                break
-        if not gw_id:
-            raise HTTPException(status_code=404, detail=f"No gateway found for room '{room}'")
+    if not gw_id:
+        raise HTTPException(status_code=400, detail="Missing 'gw_id' parameter")
 
     rawValue = redisClient.get(f"gateway:{gw_id}")
     if not rawValue:

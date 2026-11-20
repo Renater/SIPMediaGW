@@ -622,7 +622,7 @@ def test_status_gateway_missing_parameters(client):
         response = client.get("/status")
 
     assert response.status_code == 400
-    assert "gw_id" in response.json()["error"]["detail"]
+    assert response.json()["error"]["detail"] == "Missing 'gw_id' parameter"
 
 
 def test_status_gateway_by_gw_id(client, redis_mock):
@@ -634,29 +634,6 @@ def test_status_gateway_by_gw_id(client, redis_mock):
 
     assert response.status_code == 200
     assert response.json()["data"]["gw_id"] == "gw1"
-
-
-def test_status_gateway_by_room(client, redis_mock):
-    redis_mock.scan_iter.return_value = ["gateway:gw1"]
-    redis_mock.get.return_value = "{\"gw_ip\": \"1.2.3.4\", \"gw_state\": \"started\", \"gw_type\": \"media\", \"room\": \"room\", \"start_time\": \"start\", \"media_duration\": \"00:05:30\", \"transcript_progress\": \"60%\", \"browsing\": \"ROOM\"}"
-
-    with patch.object(proxy, 'redisClient', redis_mock), \
-        patch.object(proxy, 'monitorGateways', return_value=None):
-        response = client.get("/status?room=room")
-
-    assert response.status_code == 200
-    assert response.json()["status"] == "success"
-
-
-def test_status_gateway_room_not_found(client, redis_mock):
-    redis_mock.scan_iter.return_value = ["gateway:gw1"]
-    redis_mock.get.return_value = "{\"gw_ip\": \"1.2.3.4\", \"gw_state\": \"started\", \"gw_type\": \"media\", \"room\": \"other_room\", \"start_time\": \"start\", \"media_duration\": \"0\", \"transcript_progress\": \"0\", \"browsing\": null}"
-
-    with patch.object(proxy, 'redisClient', redis_mock), \
-        patch.object(proxy, 'monitorGateways', new=AsyncMock(return_value=None)):
-        response = client.get("/status?room=nonexistent")
-
-    assert response.status_code == 404
 
 
 def test_status_gateway_not_found(client, redis_mock):

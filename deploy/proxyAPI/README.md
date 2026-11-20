@@ -83,12 +83,12 @@ Stop a gateway (body JSON).
   - 404 — No mapping found for provided gw_id
 
 ### GET /status and GET /progress
-Get per-gateway status/progress. Query by gw_id or room.
+Get per-gateway status/progress. Query by gw_id.
 - Query params:
-  - gw_id (preferred) or room
+  - gw_id
 - Examples:
   - /status?gw_id=gw01
-  - /progress?room=math101
+  - /progress?gw_id=gw01
 - Behaviour: returns the status stored in Redis for the gateway (no external call unless necessary).
 - Responses:
   - 200 — success
