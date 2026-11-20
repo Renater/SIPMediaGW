@@ -229,10 +229,22 @@ class Browsing:
                 self.screenShared = False
         except Exception as e:
             return
-        # The menu only exists once the meeting is joined: a key before that goes to the
-        # meeting page, as it did before the menu took the keys.
-        self.driver.execute_script(f"if(window.menu){{window.menu.interact('{inKey}');}}"
-                                   f"else if(window.meeting){{window.meeting.interact('{inKey}');}}")
+        try:
+            self.driver.execute_script("""
+                const key = arguments[0];
+                try {
+                    if (window.menu) {
+                        window.menu.interact(key);
+                    } else if (window.meeting && typeof window.meeting.interact === 'function') {
+                        // Before the menu appears
+                        window.meeting.interact(key);
+                    }
+                } catch (e) {
+                    console.warn('[WARN] interact error, key:', key, e);
+                }
+            """, inKey)
+        except Exception as e:
+            print(f"interact error: {e}", flush=True)
 
     def unset(self):
         pass
