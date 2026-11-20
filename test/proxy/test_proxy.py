@@ -12,7 +12,7 @@ pytestmark = pytest.mark.usefixtures("disable_proxy_monitor_gateways")
 
 
 def test_logo_svg_is_served_directly(client):
-    response = client.get("/favicon/logo.svg")
+    response = client.get("/favicon/favicon.svg")
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("image/svg+xml")
