@@ -1,7 +1,7 @@
 # SIPMediaGW
 SIPMediaGW is an open-source set of components that allows traditional meeting rooms with conferencing systems to join any modern platform (like Jitsi, BigBlueButton, LiveKit — and even Google Meet & Microsoft Teams).
 <br><br><br>
-![sipmediagw_demo](https://github.com/user-attachments/assets/4da15b2f-026e-4a5f-acae-7b5c9085714d)
+<img width="1600" height="900" alt="demo4" src="https://github.com/user-attachments/assets/854e13ac-35e6-4764-a4d8-e277dddcb5f4" />
 <br><br><br>
 The room connector is compatible with all video devices supporting the SIP protocol. It has been tested with major devices from Polycom, Cisco, Huawei, and Aver.
 
