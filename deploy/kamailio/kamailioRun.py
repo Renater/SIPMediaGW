@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import sys
+import time
 from contextlib import closing
 import mysql.connector as mysqlcon
 from configparser import ConfigParser
@@ -27,6 +29,31 @@ def unlock(dstUser):
                               WHERE  contact LIKE CONCAT('%',%s,'%');''',
                            (dstUser,))
             res = con.commit()
+
+# At boot, Docker starts the containers in any order, so the database may not answer yet, and
+# Kamailio stops when a module cannot connect while it initialises.
+def waitForDatabase(timeout):
+    deadline = time.time() + timeout
+    while True:
+        try:
+            with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
+                                          user='root',
+                                          password=kamctlrc['DBROOTPW'],
+                                          connection_timeout=5)):
+                return True
+        except mysqlcon.Error as e:
+            # A refused login comes from a database that answers.
+            if e.errno in (1044, 1045):
+                return True
+            if time.time() > deadline:
+                print('The database {} does not answer after {} s: {}'.format(
+                      kamctlrc['DBHOST'], timeout, e), flush=True)
+                return False
+            print('Waiting for the database {}: {}'.format(kamctlrc['DBHOST'], e), flush=True)
+            time.sleep(3)
+
+if not waitForDatabase(int(os.getenv('DB_WAIT_SECONDS') or 180)):
+    sys.exit(1)
 
 try:
     with closing(mysqlcon.connect(host=kamctlrc['DBHOST'],
@@ -100,22 +127,22 @@ print("Kamailio run command: {}".format(kamRunCmd), flush=True)
 cmd = subprocess.Popen(kamRunCmd,
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
-while True:
+for line in iter(cmd.stdout.readline, b''):
+    logs = line.decode(errors='replace')
     try:
-        line = cmd.stdout.readline()
-        if line:
-            logs = line.decode()
-            try:
-                if logs.find('ACC: call missed:') != -1:
-                    accLog = logs.split('ACC: call missed:')[1]
-                    accDict = dict(el.split("=") for el in accLog.split(";"))
-                    if accDict['code'] == '500':
-                        print('Unlock gateway: ',accDict['dst_user'], '\n', flush=True)
-                        unlock(accDict['dst_user'])
-            except:
-                print('ACC logs parsing error \n', flush=True)
-            print(logs, end='', flush=True)
+        if logs.find('ACC: call missed:') != -1:
+            accLog = logs.split('ACC: call missed:')[1]
+            accDict = dict(el.split("=") for el in accLog.split(";"))
+            if accDict['code'] == '500':
+                print('Unlock gateway: ',accDict['dst_user'], '\n', flush=True)
+                unlock(accDict['dst_user'])
     except:
-        pass
+        print('ACC logs parsing error \n', flush=True)
+    print(logs, end='', flush=True)
+
+# Kamailio has stopped. Leaving makes the container stop, so that its restart policy starts it again.
+code = cmd.wait()
+print('Kamailio stopped with exit code {}'.format(code), flush=True)
+sys.exit(code or 1)
 
 
