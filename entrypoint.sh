@@ -161,13 +161,10 @@ if [[ -z "$DISPLAY" ]]; then
     fi
     if [ "$WITH_ALSA" == "true" ]; then
         ALSA_DEV='plug:baresip'
+        # Card numbers, not names: from the eleventh card on, ALSA names them Loopback_A, Loopback_B, ...
         HW0=$(( 2*$GW_ID ))
-        (($HW0)) || HW0=""
         HW1=$(( 2*$GW_ID + 1 ))
-        ALSA_CARD0="Loopback"${HW0:+'_'$HW0}
-        ALSA_CARD1="Loopback"${HW1:+'_'$HW1}
-        sed -i 's/Loopback,/'$ALSA_CARD0',/g' /etc/asound.conf
-        sed -i 's/Loopback_1,/'$ALSA_CARD1',/g' /etc/asound.conf
+        sed -i 's/hw:Loopback,/hw:'$HW0',/g; s/hw:Loopback_1,/hw:'$HW1',/g' /etc/asound.conf
     else
         ./pulseaudio_init.sh  1> >( logParse -p "Pulse") \
                               2> >( logParse -p "Pulse")
